@@ -199,6 +199,10 @@ namespace GymService.Services
             {
                 ["POST"] = "members.edit"
             },
+            ["/api/members/plans"] = new Dictionary<string, string>
+            {
+                ["GET"] = "members.view"
+            },
             // Access
             ["/api/access/generate"] = new Dictionary<string, string>
             {

@@ -109,6 +109,11 @@
 - **Cambio:** Agregados colores de estado: success (#10B981), danger (#F43F5E), warning (#F59E0B), info (#3AB3F2), purple (#8B5CF6).
 - **Cambio:** Todos los SVG inline reemplazados por iconos de `lucide-react`.
 
+### Tarea D01 — README desactualizado
+- **Bug:** README.md mencionaba ".NET 8" (3 veces), "Next.js" y decía que los controllers estaban "pendientes" y los módulos eran "stubs", cuando el proyecto ya usa .NET 10, el frontend es React+Vite y los 15 controllers están operativos.
+- **Solución:** 5 ediciones: .NET 8 → .NET 10 (3 ocurrencias), Next.js → React 19 + Vite + Tailwind CSS 4, sección Estado del Proyecto actualizada con 15 controllers, ~67 endpoints, frontend con 14 páginas y pendientes reales (tests, WiX, OTP por correo).
+- **Verificación:** `grep "Next.js|\.NET 8" README.md` → 0 resultados.
+
 ### Tarea F01 — Colores `primary-*` residuales en Members y Sales
 - **Bug:** Members.jsx y Sales.jsx aún usaban clases `primary-*` (spinner, botón, inputs, avatar, badge) que no generan CSS con la paleta `brand-*` de TailAdmin.
 - **Solución:** Reemplazadas 10 ocurrencias de `primary-*` por `brand-*` conservando el tono numérico. 8 en Members.jsx (spinner, botón gradiente, 5 inputs, avatar) y 2 en Sales.jsx (spinner, badge).
@@ -143,10 +148,27 @@
 - **App settings:** `GymService/appsettings.json` queda ignorado por git; se agregó `appsettings.example.json` sin credenciales.
 - **Git:** repositorio inicializado y publicado en https://github.com/DanielCB096/gym-dotnet. Se eliminó la contraseña de la base de datos del `CHANGELOG.md`.
 
+### Cierre del frontend: Inventario, Ventas y Membresías (18-nov-2026)
+
+- **Inventario:** página con CRUD real (crear, eliminar, búsqueda y ajuste de stock).
+  El módulo backend usaba la columna `stock`, que no existe en la base; ahora usa
+  `stock_quantity`, que es la que ya declaraba `ModelGym.cs`.
+- **Ventas:** formulario de nueva venta con selección de socio, método de pago y varios
+  productos; calcula subtotal, IVA (16%) y total. Se registra con `POST /api/sales`.
+- **Miembros:** el plan se elige desde `GET /api/members/plans` (planes activos reales) y la
+  membresía se crea con la duración del plan (`duration_days`) en lugar de un mes fijo.
+- **Correcciones de backend:**
+  - `SalesModule.CreateSale()` generaba `sale_number` con `NEWID()`, que no cabe en
+    `nvarchar(20)`; ahora genera un código compacto de 19 caracteres.
+  - `SalesController` enviaba `cashierId` pero el módulo leía `createdBy`; ahora usa `createdBy`.
+  - `MembersModule.GetMembershipPlans()` + `GET /api/members/plans`, con regla `members.view`
+    en `PermissionMatrix`.
+- **Datos:** se sembraron los planes Básico, Premium y VIP en `gym_membership_plans`,
+  que estaba vacía.
+
 ### Pendiente en frontend
-- `Inventory`: pasar de solo lectura a CRUD completo (el backend ya lo soporta).
-- `Sales`: formulario de nueva venta con selección de productos e items.
-- `Members`: selector de planes desde la base de datos en lugar de valores fijos.
+- Página 404 real, accesibilidad y persistencia del sidebar (tareas F06/F07, delegadas a Junie).
+- Documentación del frontend (F08) y actualización del README raíz (D01).
 
 ---
 
@@ -154,16 +176,16 @@
 
 | Componente | Estado |
 |---|---|
-| Backend API | ✅ ~68 endpoints de 15 controllers operativos |
+| Backend API | ✅ ~69 endpoints de 15 controllers operativos |
 | Base de datos | ✅ 35 tablas, 26 foreign keys en SQL Server |
 | Autenticación JWT | ✅ Funcional con bootstrap y login |
 | Frontend Login | ✅ Completo con validación y mensajes de error |
 | Frontend Dashboard | ✅ Completo con datos reales de la API |
+| Frontend Miembros | ✅ Tabla + formulario con selector real de planes |
 | Frontend Layout | ✅ Sidebar + Header estilo TailAdmin, responsivo |
-| Frontend Miembros | ✅ Tabla + formulario de creación |
 | Frontend 10 módulos | ✅ CRUD real (clases, rutinas, personal, facturación, finanzas, fisio, mantenimiento, reportes, kiosco, accesos) |
-| Frontend Inventario | ⚠️ Solo lectura (pendiente CRUD) |
-| Frontend Ventas | ⚠️ Solo lectura (pendiente formulario de venta) |
+| Frontend Inventario | ✅ CRUD real + ajuste de stock |
+| Frontend Ventas | ✅ Formulario de nueva venta con productos, IVA y total |
 | Componentes UI | ✅ 9 componentes reutilizables + `CrudPage` + `useApiList` |
 
 ---

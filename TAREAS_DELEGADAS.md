@@ -14,12 +14,14 @@
 
 ## 0. Reparto de trabajo (importante)
 
-La IA grande (DeepSeek) está reescribiendo ahora las páginas de CRUD del frontend:
-`Billing`, `Classes`, `Finance`, `Fisio`, `Maintenance`, `Reports`, `Routines`, `Staff`, `Kiosk`, `AccessLogs`,
-y creando `src/components/CrudPage.jsx`, `src/hooks/useApiList.js`, `src/components/ui/Select.jsx`,
-`src/components/ui/PageHeader.jsx` y `src/components/ui/ConfirmDialog.jsx`.
+La IA grande (DeepSeek) ya terminó el rediseño del frontend: las páginas `Members`, `Sales`,
+`Inventory` y los 10 módulos usan `CrudPage`, y existen `src/hooks/useApiList.js`,
+`src/components/ui/Select.jsx`, `PageHeader.jsx`, `ConfirmDialog.jsx` y `src/utils/format.js`.
 
-**No toques esos archivos ni esas páginas.** Tu cola está limitada a los archivos indicados en cada tarea.
+Esos archivos ya están estables. Puedes leerlos como referencia, pero **no los modifiques**
+salvo que la tarea lo indique explícitamente.
+
+**Tu cola actual es: F03 → F06 → F07 → F08.** Haz una sola a la vez.
 
 ---
 
@@ -95,7 +97,7 @@ Si una tarea parece requerir tocar algo de esta lista, **detente y repórtalo**.
 
 ## 4. Cola de tareas
 
-### D01 — Sincronizar README con la realidad
+### ✅ D01 — Sincronizar README con la realidad
 - **Tamaño:** muy pequeño · **Riesgo:** nulo · **Archivo:** `README.md` (raíz)
 - **Problema:** el README dice ".NET 8", "Next.js", "controllers pendientes" y "14 módulos stubs"; el proyecto ya está en .NET 10, el frontend es React+Vite y hay 15 controllers.
 - **Pasos:**
@@ -103,7 +105,10 @@ Si una tarea parece requerir tocar algo de esta lista, **detente y repórtalo**.
   2. Cambiar "Panel web Next.js" por "Panel web React 19 + Vite + Tailwind CSS 4".
   3. Actualizar "Estado del Proyecto": controllers y módulos completados; pendientes: tests, instalador WiX y envío real de OTP por correo.
   4. No inventar endpoints ni módulos.
-- **Aceptación:** no quedan menciones a "Next.js" ni a ".NET 8"; el resto del README sigue coherente.
+- **Aceptación:**
+  - No quedan menciones a "Next.js" ni a ".NET 8". ✅
+  - El resto del README sigue coherente. ✅
+- **Estado:** ✅ Completada el 2026-11-18. 5 ediciones: 3 ocurrencias de .NET 8 → .NET 10, 1 de Next.js → React+Vite, 1 sección Estado del Proyecto actualizada.
 
 ---
 
@@ -118,14 +123,10 @@ Si una tarea parece requerir tocar algo de esta lista, **detente y repórtalo**.
 
 ---
 
-### F02 — Corregir lectura de datos en Inventario
-- **Tamaño:** pequeño · **Riesgo:** bajo · **Archivo:** `GymServiceFront/src/pages/Inventory.jsx`
-- **Problema:** usa `r.data?.items`, pero el backend responde `{ success, data: [...] }`; la tabla siempre sale vacía.
-- **Pasos:**
-  1. Leer con `r.data?.data || r.data?.items || []` y validar `Array.isArray`.
-  2. Agregar estado `error` y mostrar mensaje visible si la petición falla.
-  3. Mantener el diseño actual.
-- **Aceptación:** se ven los productos reales; un fallo muestra aviso; `npm run build` → OK.
+### ✅ F02 — Corregir lectura de datos en Inventario (absorbida)
+- **Estado:** ✅ Completada por la IA grande el 2026-11-18.
+- `Inventory.jsx` se reescribió con `CrudPage`: lee `{ success, data }`, muestra errores visibles
+  y además permite crear, eliminar y ajustar stock. No hay nada que hacer aquí.
 
 ---
 
@@ -137,25 +138,10 @@ Si una tarea parece requerir tocar algo de esta lista, **detente y repórtalo**.
 
 ---
 
-### F04 — Accesibilidad del formulario de Miembros
-- **Tamaño:** pequeño · **Riesgo:** bajo · **Archivo:** `GymServiceFront/src/pages/Members.jsx`
-- **Dependencia:** después de F01.
-- **Problema:** los `<label>` no tienen `htmlFor` y los campos no tienen `id` (fallo WCAG).
-- **Pasos:** asociar `firstName`, `lastName`, `email`, `phone` y `membershipType` con `htmlFor`/`id`. No cambiar el payload.
-- **Aceptación:** los 5 labels quedan asociados; `npm run lint` no agrega errores nuevos.
-
----
-
-### F05 — Mostrar errores al crear miembro
-- **Tamaño:** pequeño · **Riesgo:** bajo · **Archivo:** `GymServiceFront/src/pages/Members.jsx`
-- **Dependencia:** después de F04.
-- **Problema:** si el POST falla solo se hace `console.error`; el usuario no ve nada.
-- **Pasos:**
-  1. Agregar estado `error`.
-  2. En el `catch` del submit, mostrar `err.response?.data?.message` o un texto genérico.
-  3. Renderizar un bloque de error visible (colores `danger-*`) similar al bloque de éxito.
-  4. Limpiar el error al abrir/cerrar el formulario y al reenviar.
-- **Aceptación:** un fallo de API produce un mensaje visible; `npm run build` → OK.
+### ✅ F04 y F05 — Accesibilidad y errores en Miembros (absorbidas)
+- **Estado:** ✅ Completadas por la IA grande el 2026-11-18.
+- `Members.jsx` se reescribió con `CrudPage`: todos los campos llevan `id` y `label` asociado, y los
+  errores de la API se muestran dentro del modal con colores `danger-*`. No hay nada que hacer aquí.
 
 ---
 
@@ -208,12 +194,12 @@ Estados: `PENDIENTE` · `EN CURSO` · `HECHO` · `BLOQUEADO`
 
 | ID | Estado | Fecha | Archivos tocados | Build | Notas |
 |---|---|---|---|---|---|
-| D01 | PENDIENTE | — | — | — | — |
+| D01 | HECHO | 2026-11-18 | `README.md` | N/A | .NET 8 → .NET 10, Next.js → React+Vite, estado del proyecto actualizado. Sin menciones obsoletas restantes. |
 | F01 | HECHO | 2026-11-18 | `GymServiceFront/src/pages/Members.jsx`, `GymServiceFront/src/pages/Sales.jsx` | `npm run build` OK | Reemplazo de `primary-*` por `brand-*`. Sin `primary-` restante. No se tocó lógica. |
-| F02 | PENDIENTE | — | — | — | — |
+| F02 | HECHO | 2026-11-18 | `GymServiceFront/src/pages/Inventory.jsx`, `GymService/Modules/Inventory/InventoryModule.cs` | build OK | Absorbida por la IA grande: CRUD real + corrección de columna `stock_quantity`. |
 | F03 | PENDIENTE | — | — | — | — |
-| F04 | PENDIENTE | — | — | — | — |
-| F05 | PENDIENTE | — | — | — | — |
+| F04 | HECHO | 2026-11-18 | `GymServiceFront/src/pages/Members.jsx` | build OK | Absorbida: `CrudPage` asocia `id`/`label` en todos los campos. |
+| F05 | HECHO | 2026-11-18 | `GymServiceFront/src/pages/Members.jsx` | build OK | Absorbida: los errores de API se muestran en el modal. |
 | F06 | PENDIENTE | — | — | — | — |
 | F07 | PENDIENTE | — | — | — | — |
 | F08 | PENDIENTE | — | — | — | — |

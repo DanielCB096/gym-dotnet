@@ -33,6 +33,20 @@ namespace GymService.Controllers
             return success ? Ok(response) : BadRequest(response);
         }
 
+        [HttpGet]
+        [Route("api/members/plans")]
+        public ActionResult<Dictionary<string, object>> GetMembershipPlans()
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Members == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Members.GetMembershipPlans(out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
         [HttpPost]
         [Route("api/memberships/{membershipId}/freeze")]
         public ActionResult<Dictionary<string, object>> FreezeMembership(long membershipId, [FromBody] Dictionary<string, string> request)

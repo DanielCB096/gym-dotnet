@@ -169,16 +169,20 @@ namespace GymService.Modules.Members
                 {
                     // Look up plan_id by membershipType (plan_name)
                     var planResult = _tools.ExecuteQueryResultSet(
-                        "SELECT id FROM gym_membership_plans WHERE plan_name = ?", membershipType
+                        "SELECT id, duration_days FROM gym_membership_plans WHERE plan_name = ? AND is_active = 1", membershipType
                     );
                     long planId = 0;
+                    int durationDays = 30;
                     if (planResult != null && planResult.Rows.Count > 0)
                     {
                         planId = Convert.ToInt64(planResult.Rows[0].GetObject(0));
+                        var durationValue = planResult.Rows[0].GetObject(1);
+                        if (durationValue != null && durationValue != DBNull.Value)
+                            durationDays = Convert.ToInt32(durationValue);
                     }
                     if (planId > 0)
                     {
-                        var endDate = DateTime.Now.AddMonths(1);
+                        var endDate = DateTime.Now.AddDays(durationDays > 0 ? durationDays : 30);
                         session = _tools.CreateSession(SubModule);
                         session.ExecuteTransaction(
                             "INSERT INTO gym_memberships (member_id, plan_id, start_date, end_date, status, created_at) VALUES (?, ?, GETDATE(), ?, 'active', GETDATE())",
@@ -204,6 +208,54 @@ namespace GymService.Modules.Members
             catch (Exception ex)
             {
                 Logger.AddErrorSubModule(SubModule, $"Error en CreateMember: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Get active membership plans
+        /// </summary>
+        public bool GetMembershipPlans(out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var result = _tools.ExecuteQueryResultSet(
+                    "SELECT id, plan_name, description, price, currency, duration_days, max_daily_entries, includes_classes, includes_premium_classes " +
+                    "FROM gym_membership_plans WHERE is_active = 1 ORDER BY price"
+                );
+
+                var plans = new List<Dictionary<string, object>>();
+                if (result != null && result.Rows.Count > 0)
+                {
+                    foreach (Row row in result.Rows)
+                    {
+                        plans.Add(new Dictionary<string, object>
+                        {
+                            ["id"] = Convert.ToInt64(GetRowValue(row, result, "id")),
+                            ["planName"] = Convert.ToString(GetRowValue(row, result, "plan_name")) ?? "",
+                            ["description"] = Convert.ToString(GetRowValue(row, result, "description")) ?? "",
+                            ["price"] = Convert.ToDecimal(GetRowValue(row, result, "price")),
+                            ["currency"] = Convert.ToString(GetRowValue(row, result, "currency")) ?? "MXN",
+                            ["durationDays"] = Convert.ToInt32(GetRowValue(row, result, "duration_days")),
+                            ["maxDailyEntries"] = Convert.ToInt32(GetRowValue(row, result, "max_daily_entries")),
+                            ["includesClasses"] = Convert.ToBoolean(GetRowValue(row, result, "includes_classes")),
+                            ["includesPremiumClasses"] = Convert.ToBoolean(GetRowValue(row, result, "includes_premium_classes"))
+                        });
+                    }
+                }
+
+                response["success"] = true;
+                response["data"] = plans;
+                response["count"] = plans.Count;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en GetMembershipPlans: {ex.Message}");
                 response["success"] = false;
                 response["message"] = "Error interno del servidor";
                 return false;

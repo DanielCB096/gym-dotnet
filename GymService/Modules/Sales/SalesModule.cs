@@ -54,10 +54,13 @@ namespace GymService.Modules.Sales
                 var isOffline = saleData.ContainsKey("isOffline") ? Convert.ToBoolean(saleData["isOffline"]) : false;
                 var items = saleData.ContainsKey("items") ? (List<Dictionary<string, object>>)saleData["items"] : new List<Dictionary<string, object>>();
 
+                // sale_number is nvarchar(20): NEWID() would not fit, so build a compact unique code
+                var saleNumber = "V" + DateTime.Now.ToString("yyMMddHHmmssfff") + Random.Shared.Next(100, 1000);
+
                 var session = _tools.CreateSession(SubModule);
                 session.ExecuteTransaction(
-                    "INSERT INTO gym_sales (sale_number, member_id, total_amount, tax_amount, payment_method, sale_date, is_offline, created_by) VALUES (NEWID(), ?, ?, ?, ?, GETDATE(), ?, ?)",
-                    memberId, totalAmount, taxAmount, paymentMethod, isOffline, createdBy
+                    "INSERT INTO gym_sales (sale_number, member_id, total_amount, tax_amount, payment_method, sale_date, is_offline, created_by) VALUES (?, ?, ?, ?, ?, GETDATE(), ?, ?)",
+                    saleNumber, memberId, totalAmount, taxAmount, paymentMethod, isOffline, createdBy
                 );
 
                 if (session.TryExecute().IsError)

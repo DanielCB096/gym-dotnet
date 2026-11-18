@@ -60,7 +60,7 @@ namespace GymService.Modules.Inventory
                 }
 
                 var session = _tools.CreateSession();
-                session.ExecuteTransaction("INSERT INTO gym_inventory (product_name, category, price, stock, min_stock, is_active) VALUES (?, ?, ?, ?, ?, 1)", productName, category, price, stock, minStock);
+                session.ExecuteTransaction("INSERT INTO gym_inventory (product_name, category, price, stock_quantity, min_stock, is_active) VALUES (?, ?, ?, ?, ?, 1)", productName, category, price, stock, minStock);
 
                 if (!session.TryExecute().IsError)
                 {
@@ -94,7 +94,7 @@ namespace GymService.Modules.Inventory
             try
             {
                 var session = _tools.CreateSession();
-                session.ExecuteTransaction("UPDATE gym_inventory SET stock = ? WHERE id = ?", newStock, productId);
+                session.ExecuteTransaction("UPDATE gym_inventory SET stock_quantity = ? WHERE id = ?", newStock, productId);
 
                 if (!session.TryExecute().IsError)
                 {
@@ -203,7 +203,7 @@ namespace GymService.Modules.Inventory
                             ["productName"] = Convert.ToString(GetRowValue(row, result, "product_name")) ?? "",
                             ["category"] = Convert.ToString(GetRowValue(row, result, "category")) ?? "",
                             ["price"] = Convert.ToDecimal(GetRowValue(row, result, "price")),
-                            ["stock"] = Convert.ToInt32(GetRowValue(row, result, "stock")),
+                            ["stock"] = Convert.ToInt32(GetRowValue(row, result, "stock_quantity")),
                             ["minStock"] = Convert.ToInt32(GetRowValue(row, result, "min_stock"))
                         });
                     }

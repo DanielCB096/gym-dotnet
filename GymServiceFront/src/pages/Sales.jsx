@@ -1,88 +1,302 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { AlertCircle, Plus, ShoppingCart, Trash2 } from 'lucide-react';
 import api from '../services/api';
+import CrudPage from '../components/CrudPage';
+import Badge from '../components/ui/Badge';
+import Modal from '../components/ui/Modal';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import Select from '../components/ui/Select';
+import { formatCurrency, formatDateTime, humanize } from '../utils/format';
 
-export default function Sales() {
-  const [sales, setSales] = useState([]);
-  const [loading, setLoading] = useState(true);
+const TAX_RATE = 0.16;
 
-  useEffect(() => {
-    api.get('/sales')
-      .then((r) => setSales(r.data?.data || r.data?.items || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+const emptyItem = () => ({ productId: '', quantity: 1 });
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <svg className="animate-spin w-8 h-8 mx-auto text-brand-600 mb-3" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <p className="text-slate-500">Cargando ventas...</p>
-        </div>
-      </div>
-    );
-  }
+function NewSaleButton({ onDone }) {
+  const [open, setOpen] = useState(false);
+  const [members, setMembers] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [form, setForm] = useState({ memberId: '', paymentMethod: 'cash', items: [emptyItem()] });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const loadCatalogs = async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const [membersResponse, productsResponse] = await Promise.all([
+        api.get('/members', { params: { limit: 200 } }),
+        api.get('/inventory', { params: { limit: 200 } }),
+      ]);
+      const memberList = membersResponse.data?.data || membersResponse.data?.items || [];
+      const productList = productsResponse.data?.data || productsResponse.data?.items || [];
+      setMembers(Array.isArray(memberList) ? memberList : []);
+      setProducts(Array.isArray(productList) ? productList : []);
+    } catch (err) {
+      setLoadError(err.response?.data?.message || 'No se pudieron cargar socios y productos.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openModal = () => {
+    setForm({ memberId: '', paymentMethod: 'cash', items: [emptyItem()] });
+    setError('');
+    setOpen(true);
+    loadCatalogs();
+  };
+
+  const closeModal = () => {
+    if (saving) return;
+    setOpen(false);
+  };
+
+  const updateItem = (index, changes) => {
+    setForm((prev) => ({
+      ...prev,
+      items: prev.items.map((item, i) => (i === index ? { ...item, ...changes } : item)),
+    }));
+  };
+
+  const addItem = () => setForm((prev) => ({ ...prev, items: [...prev.items, emptyItem()] }));
+
+  const removeItem = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      items: prev.items.length === 1 ? prev.items : prev.items.filter((_, i) => i !== index),
+    }));
+  };
+
+  const priceOf = (productId) => {
+    const product = products.find((item) => String(item.id) === String(productId));
+    return product ? Number(product.price) : 0;
+  };
+
+  const subtotal = form.items.reduce(
+    (sum, item) => sum + priceOf(item.productId) * (Number(item.quantity) || 0),
+    0
+  );
+  const tax = subtotal * TAX_RATE;
+  const total = subtotal + tax;
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const items = form.items
+      .filter((item) => item.productId && Number(item.quantity) > 0)
+      .map((item) => ({
+        productId: Number(item.productId),
+        quantity: Number(item.quantity),
+        price: priceOf(item.productId),
+      }));
+
+    if (items.length === 0) {
+      setError('Agrega al menos un producto con cantidad mayor a cero.');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    try {
+      const response = await api.post('/sales', {
+        memberId: Number(form.memberId) || 0,
+        paymentMethod: form.paymentMethod,
+        totalAmount: Number(total.toFixed(2)),
+        taxAmount: Number(tax.toFixed(2)),
+        isOffline: false,
+        items,
+      });
+      onDone(response.data?.message || 'Venta registrada correctamente.');
+      setOpen(false);
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo registrar la venta.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <div className="animate-fade-in">
-      {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h2 className="text-2xl lg:text-3xl font-bold text-slate-800 tracking-tight">Ventas</h2>
-          <p className="text-slate-500 mt-1">{sales.length} venta{sales.length !== 1 ? 's' : ''} registrada{sales.length !== 1 ? 's' : ''}</p>
-        </div>
-      </div>
+    <>
+      <Button icon={ShoppingCart} onClick={openModal}>
+        Nueva venta
+      </Button>
 
-      {/* Table card */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        {sales.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-50 flex items-center justify-center">
-              <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
-              </svg>
+      <Modal isOpen={open} onClose={closeModal} title="Nueva venta" size="lg">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {loading && <p className="text-sm text-slate-500">Cargando socios y productos...</p>}
+
+          {loadError && (
+            <div className="flex items-start gap-2 rounded-lg border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger-700">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>{loadError}</span>
             </div>
-            <p className="text-slate-500 font-medium">No hay ventas registradas</p>
-            <p className="text-slate-400 text-sm mt-1">Las ventas aparecerán aquí cuando se realicen</p>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Select
+              id="memberId"
+              label="Socio"
+              value={form.memberId}
+              onChange={(event) => setForm({ ...form, memberId: event.target.value })}
+              placeholder="Público general"
+              options={members.map((member) => ({
+                value: member.id,
+                label: `${member.firstName} ${member.lastName}`.trim() || `Socio #${member.id}`,
+              }))}
+            />
+            <Select
+              id="paymentMethod"
+              label="Método de pago"
+              value={form.paymentMethod}
+              onChange={(event) => setForm({ ...form, paymentMethod: event.target.value })}
+              options={[
+                { value: 'cash', label: 'Efectivo' },
+                { value: 'card', label: 'Tarjeta' },
+                { value: 'transfer', label: 'Transferencia' },
+              ]}
+            />
           </div>
-        ) : (
-          <div className="table-responsive">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">No. Venta</th>
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Miembro</th>
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Total</th>
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden sm:table-cell">Método</th>
-                  <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Fecha</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {sales.map((s, i) => (
-                  <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-5 py-4">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-brand-50 text-brand-700">
-                        {s.saleNumber || '—'}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-sm text-slate-700">{s.memberName || <span className="text-slate-300">—</span>}</td>
-                    <td className="px-5 py-4">
-                      <span className="text-sm font-semibold text-emerald-600">
-                        ${s.totalAmount?.toFixed(2) || '0.00'}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-sm text-slate-600 hidden sm:table-cell">{s.paymentMethod || <span className="text-slate-300">—</span>}</td>
-                    <td className="px-5 py-4 text-sm text-slate-600">{s.saleDate || <span className="text-slate-300">—</span>}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-slate-700">Productos</h4>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                icon={Plus}
+                onClick={addItem}
+                disabled={products.length === 0}
+              >
+                Agregar producto
+              </Button>
+            </div>
+
+            {products.length === 0 && !loading && (
+              <p className="text-sm text-slate-500">
+                No hay productos en inventario. Registra productos en la sección Inventario para poder vender.
+              </p>
+            )}
+
+            {form.items.map((item, index) => (
+              <div key={index} className="flex items-start gap-2">
+                <div className="flex-1">
+                  <Select
+                    id={`product-${index}`}
+                    label="Producto"
+                    value={item.productId}
+                    onChange={(event) => updateItem(index, { productId: event.target.value })}
+                    placeholder="Selecciona un producto"
+                    options={products.map((product) => ({
+                      value: product.id,
+                      label: `${product.productName} — ${formatCurrency(product.price)} (stock ${product.stock ?? 0})`,
+                    }))}
+                  />
+                </div>
+                <div className="w-24">
+                  <Input
+                    id={`quantity-${index}`}
+                    label="Cantidad"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={item.quantity}
+                    onChange={(event) => updateItem(index, { quantity: event.target.value })}
+                  />
+                </div>
+                <button
+                  type="button"
+                  aria-label="Quitar producto"
+                  title="Quitar producto"
+                  onClick={() => removeItem(index)}
+                  disabled={form.items.length === 1}
+                  className="mt-7 p-2 rounded-lg text-danger-500 hover:bg-danger-50 transition-colors disabled:opacity-40 disabled:hover:bg-transparent"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
-    </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+            <div className="flex justify-between text-slate-600">
+              <span>Subtotal</span>
+              <span>{formatCurrency(subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-slate-600 mt-1">
+              <span>IVA (16%)</span>
+              <span>{formatCurrency(tax)}</span>
+            </div>
+            <div className="flex justify-between font-semibold text-slate-800 mt-2 pt-2 border-t border-slate-200">
+              <span>Total</span>
+              <span>{formatCurrency(total)}</span>
+            </div>
+          </div>
+
+          {error && (
+            <div className="flex items-start gap-2 rounded-lg border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger-700">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" onClick={closeModal} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button type="submit" loading={saving} disabled={loading}>
+              Registrar venta
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </>
+  );
+}
+
+export default function Sales() {
+  return (
+    <CrudPage
+      title="Ventas"
+      subtitle="Historial de ventas de mostrador"
+      endpoint="/sales"
+      emptyText="No hay ventas registradas"
+      canCreate={false}
+      canEdit={false}
+      columns={[
+        {
+          key: 'saleNumber',
+          label: 'No. venta',
+          render: (row) => (
+            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-brand-50 text-brand-700">
+              {row.saleNumber || '—'}
+            </span>
+          ),
+        },
+        { key: 'memberName', label: 'Socio', render: (row) => row.memberName?.trim() || 'Público general' },
+        { key: 'totalAmount', label: 'Total', render: (row) => formatCurrency(row.totalAmount) },
+        { key: 'paymentMethod', label: 'Método', render: (row) => humanize(row.paymentMethod) },
+        {
+          key: 'isOffline',
+          label: 'Origen',
+          render: (row) => (
+            <Badge variant={row.isOffline ? 'warning' : 'neutral'}>
+              {row.isOffline ? 'Sin conexión' : 'En línea'}
+            </Badge>
+          ),
+        },
+        { key: 'saleDate', label: 'Fecha', render: (row) => formatDateTime(row.saleDate) },
+      ]}
+      toolbar={({ reload, notify }) => (
+        <NewSaleButton
+          onDone={(message) => {
+            notify('success', message);
+            reload();
+          }}
+        />
+      )}
+    />
   );
 }

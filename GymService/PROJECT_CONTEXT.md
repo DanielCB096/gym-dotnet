@@ -922,3 +922,19 @@ if (!session.TryExecute().IsError)
 - **PDF:** se eliminó el paquete `QuestPDF` (sin uso). Se reevaluará al implementar tickets imprimibles.
 - **Pendiente frontend:** CRUD de Inventario, formulario de nueva venta y selector de planes reales en Miembros.
 - **Nota operativa:** el servicio `GymService.exe` (PID 7276) estaba en ejecución durante el build; usar `dotnet build -t:Compile` para validar sin bloquear el ejecutable.
+
+### Sesión 18: Cierre de Inventario, Ventas y Membresías
+- **Inventario:** `Inventory.jsx` ahora usa `CrudPage` (crear, eliminar, búsqueda y ajuste de stock).
+  - **Bug corregido:** `InventoryModule` usaba la columna `stock`, pero la tabla real tiene
+    `stock_quantity` (como ya declaraba `ModelGym.cs`). El listado de inventario fallaba en SQL.
+- **Ventas:** formulario de nueva venta con socio opcional, método de pago y varios productos;
+  calcula subtotal, IVA 16% y total. Envía `POST /api/sales`.
+  - **Bug corregido:** `sale_number` se generaba con `NEWID()` (36 caracteres) en una columna
+    `nvarchar(20)`. Ahora se genera un código de 19 caracteres: `V` + `yyMMddHHmmssfff` + 3 dígitos.
+  - **Bug corregido:** `SalesController` enviaba `cashierId` y el módulo leía `createdBy`.
+- **Miembros:** `GET /api/members/plans` (`MembersModule.GetMembershipPlans()`) alimenta el selector
+  de planes; la membresía usa `duration_days` del plan. Regla `members.view` añadida a `PermissionMatrix`.
+- **Datos:** `gym_membership_plans` estaba vacía; se sembraron Básico ($399), Premium ($599) y VIP ($899),
+  todos de 30 días.
+- **Validación:** frontend `npm run build` OK y sin warnings nuevos; backend `dotnet build -t:Compile` con 0 errores.
+  - Se validó el esquema real con una transacción SQL de prueba (venta + items + membresía) y `ROLLBACK`.

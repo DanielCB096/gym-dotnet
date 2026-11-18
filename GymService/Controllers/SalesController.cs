@@ -18,9 +18,9 @@ namespace GymService.Controllers
             if (DataCenter.BusinessProcess.Sales == null)
                 return BadRequest(new { success = false, message = "Servicio no disponible" });
 
-            // Enrich saleData with cashierId from authenticated user
-            if (!saleData.ContainsKey("cashierId"))
-                saleData["cashierId"] = SecurityValidation.GetUserId(userData!);
+            // Enrich saleData with the authenticated user id for the audit column
+            if (!saleData.ContainsKey("createdBy"))
+                saleData["createdBy"] = SecurityValidation.GetUserId(userData!);
 
             var success = DataCenter.BusinessProcess.Sales.CreateSale(saleData, out var response);
             return success ? Ok(response) : BadRequest(response);
