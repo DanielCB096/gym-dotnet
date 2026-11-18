@@ -208,7 +208,8 @@ namespace GymService.Modules.Staff
                             ["username"] = Convert.ToString(GetRowValue(row, result, "username")) ?? "",
                             ["email"] = Convert.ToString(GetRowValue(row, result, "email")) ?? "",
                             ["role"] = Convert.ToString(GetRowValue(row, result, "role")) ?? "",
-                            ["position"] = Convert.ToString(GetRowValue(row, result, "position")) ?? ""
+                            ["position"] = Convert.ToString(GetRowValue(row, result, "position")) ?? "",
+                            ["department"] = Convert.ToString(GetRowValue(row, result, "department")) ?? ""
                         });
                     }
                 }
@@ -309,6 +310,49 @@ namespace GymService.Modules.Staff
             catch (Exception ex)
             {
                 Logger.AddErrorSubModule(SubModule, $"Error en GetPushSubscriptions: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Get active system users available to link as staff
+        /// </summary>
+        public bool GetAvailableUsers(out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var result = _tools.ExecuteQueryResultSet(
+                    "SELECT id, username, email, role, full_name FROM gym_users WHERE is_active = 1 ORDER BY username"
+                );
+
+                var users = new List<Dictionary<string, object>>();
+                if (result != null && result.Rows.Count > 0)
+                {
+                    foreach (Row row in result.Rows)
+                    {
+                        users.Add(new Dictionary<string, object>
+                        {
+                            ["id"] = Convert.ToInt64(GetRowValue(row, result, "id")),
+                            ["username"] = Convert.ToString(GetRowValue(row, result, "username")) ?? "",
+                            ["email"] = Convert.ToString(GetRowValue(row, result, "email")) ?? "",
+                            ["role"] = Convert.ToString(GetRowValue(row, result, "role")) ?? "",
+                            ["fullName"] = Convert.ToString(GetRowValue(row, result, "full_name")) ?? ""
+                        });
+                    }
+                }
+
+                response["success"] = true;
+                response["data"] = users;
+                response["count"] = users.Count;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en GetAvailableUsers: {ex.Message}");
                 response["success"] = false;
                 response["message"] = "Error interno del servidor";
                 return false;

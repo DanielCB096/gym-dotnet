@@ -26,7 +26,15 @@ dotnet publish -c Release -o .\publish
 
 ## Configuration
 
-Edit `appsettings.json` in the output directory:
+Copia la plantilla y edita los valores reales:
+
+```powershell
+Copy-Item appsettings.example.json appsettings.json
+```
+
+> `appsettings.json` contiene credenciales y está ignorado por git. Nunca lo subas al repositorio.
+
+Edita `appsettings.json` en el directorio de salida:
 
 ```json
 {
@@ -56,7 +64,7 @@ Edit `appsettings.json` in the output directory:
 Run PowerShell as **Administrator**:
 
 ```powershell
-cd C:\proyectos\gimnasio-dotnet\GymService\bin\Release\net8.0-windows7.0
+cd C:\proyectos\gimnasio-dotnet\GymService\bin\Release\net10.0-windows7.0
 .\install-service.ps1
 ```
 

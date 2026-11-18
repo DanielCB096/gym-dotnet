@@ -1,32 +1,37 @@
 # Tareas delegadas — GymService / Centro Fit
 
-> **Para la IA pequeña:** este archivo es tu única fuente de trabajo.
-> Haz **UNA sola tarea a la vez**, la que te indiquen. No adelantes otras tareas.
-> No reescribas archivos completos: usa cambios mínimos y localizados.
+> **IA asignada:** Junie (JetBrains) — Qwen/Qwen3.6-27B-FP8.
+> **Repositorio:** https://github.com/DanielCB096/gym-dotnet (público).
 >
-> **Para el usuario:** pídele a la IA pequeña algo como:
-> *"Lee `TAREAS_DELEGADAS.md` y ejecuta SOLO la tarea F01. No toques otros archivos. Al terminar, actualiza la bitácora y pega la salida de `npm run build`."*
+> **Regla principal:** haz **UNA sola tarea a la vez**, la que te indiquen.
+> No adelantes otras tareas ni toques archivos fuera de los listados.
+> No reescribas archivos completos: cambios mínimos y localizados.
+>
+> **Para Daniel:** pídele a Junie algo como:
+> *"Lee `TAREAS_DELEGADAS.md`, haz SOLO la tarea F01 y actualiza la bitácora. No toques otros archivos."*
 
 ---
 
-## 1. Contexto mínimo (leer antes de tocar código)
+## 0. Reparto de trabajo (importante)
+
+La IA grande (DeepSeek) está reescribiendo ahora las páginas de CRUD del frontend:
+`Billing`, `Classes`, `Finance`, `Fisio`, `Maintenance`, `Reports`, `Routines`, `Staff`, `Kiosk`, `AccessLogs`,
+y creando `src/components/CrudPage.jsx`, `src/hooks/useApiList.js`, `src/components/ui/Select.jsx`,
+`src/components/ui/PageHeader.jsx` y `src/components/ui/ConfirmDialog.jsx`.
+
+**No toques esos archivos ni esas páginas.** Tu cola está limitada a los archivos indicados en cada tarea.
+
+---
+
+## 1. Contexto mínimo
 
 **Stack real:**
-- Backend: `GymService/` — .NET 10 (`net10.0-windows7.0`), Windows Service, Kestrel, SQL Server vía framework propietario **Anxo**.
-- Frontend: `GymServiceFront/` — React 19 + Vite 8 + Tailwind CSS 4 + axios + lucide-react. **No es Next.js.**
-- Base de datos: 35+ tablas en `GymService/Models/ModelGym.cs`.
-
-**Reglas del backend (obligatorias, no inventar API):**
-1. SELECT → `tools.ExecuteQueryResultSet(sql, params)`.
-2. INSERT/UPDATE/DELETE → `tools.CreateSession("MODULO")` + `session.ExecuteTransaction(sql, params)` + `session.TryExecute().IsError`.
-3. `Row` no tiene indexador. Se lee con `row.GetObject(i)` + helper de columnas.
-4. `Session` **no** implementa `IDisposable`: nunca usar `using`.
-5. Logs → `Logger.AddErrorSubModule("MODULO", "mensaje")`, `Logger.AddWarningSubModule(...)`. No existe `AddWarn`.
-6. DataType: `Int64`, `String`, `Boolean`, `Int32`. No existen `BigInt`, `NVarChar`, `Bit`, `Int`.
-7. Los módulos reciben `DatabaseTools`, no `OODatabaseManager`.
+- Frontend: React 19 + Vite 8 + Tailwind CSS 4 + axios + lucide-react. **No es Next.js.**
+- Backend: `GymService/` — .NET 10 (`net10.0-windows7.0`), Kestrel, SQL Server (instancia **LETO**), framework propietario **Anxo**.
+- Config local: `GymService/appsettings.json` (ignorado por git; hay plantilla en `appsettings.example.json`).
 
 **Reglas del frontend:**
-1. Tailwind 4 con tema en `src/index.css`. La paleta válida es **`brand-*`** (NO `primary-*`).
+1. Tailwind 4 con tema en `src/index.css`. La paleta válida es **`brand-*`**; **`primary-*` no existe** y no genera CSS.
 2. Iconos con `lucide-react`. No agregar SVGs inline nuevos.
 3. No instalar dependencias nuevas.
 4. Respuesta estándar del backend:
@@ -35,64 +40,81 @@
    ```
    Leer con: `r.data?.data || r.data?.items || r.data || []`.
 5. UI en español. Componentes funcionales con hooks.
+6. Manejar siempre los errores de API con un mensaje visible (nunca `catch(() => {})`).
+
+**Reglas del backend (por si una tarea lo toca):**
+1. SELECT → `tools.ExecuteQueryResultSet(sql, params)`.
+2. INSERT/UPDATE/DELETE → `tools.CreateSession("MODULO")` + `session.ExecuteTransaction(sql, params)` + `session.TryExecute().IsError`.
+3. `Row` no tiene indexador: se usa `row.GetObject(i)`.
+4. `Session` **no** implementa `IDisposable`: nunca `using`.
+5. Logs → `Logger.AddErrorSubModule(...)`, `Logger.AddWarningSubModule(...)`.
+6. DataType: `Int64`, `String`, `Boolean`, `Int32` (no `BigInt`, `NVarChar`, `Bit`, `Int`).
 
 **Comandos de verificación:**
 ```powershell
-# Frontend
 cd C:\proyectos\gimnasio-dotnet\GymServiceFront
 npm run build
 npm run lint
 
-# Backend
 cd C:\proyectos\gimnasio-dotnet\GymService
 dotnet build
 ```
 
-**Baseline actual (18-nov-2026):** frontend build ✅, backend build ✅ 0 errores, lint con 8 warnings preexistentes (no son errores). No debe aparecer ningún error nuevo.
+**Baseline (18-nov-2026):** frontend build ✅, backend build ✅ 0 errores, lint con 8 warnings preexistentes. No debe aparecer ningún error nuevo.
 
 ---
 
-## 2. Zonas prohibidas (no tocar sin autorización explícita)
+## 2. Zonas prohibidas
 
-- `GymService/Modules/Identity/IdentityModule.cs` (autenticación, MFA, OTP)
-- `GymService/Tools/SecurityValidation.cs`
-- `GymService/Services/DatabaseService.cs`
-- `GymService/Models/ModelGym.cs` (esquema de BD)
-- `GymService/Program.cs`, `DataCenter.cs`, `ServiceImplementation.cs`
-- `GymService/appsettings.json` (contiene credenciales)
-- Cualquier archivo en `C:\repositorios\pilot\ANXO LIBRARIES\` (framework compartido)
-- Actualizar/eliminar paquetes NuGet
-- Refactors masivos, renombrados o borrados de archivos
+- Todo `GymService/Modules/Identity/`, `GymService/Tools/SecurityValidation.cs`.
+- `GymService/Services/DatabaseService.cs`, `GymService/Models/ModelGym.cs`.
+- `GymService/Program.cs`, `DataCenter.cs`, `ServiceImplementation.cs`.
+- `GymService/appsettings.json` y cualquier archivo con contraseñas.
+- `C:\repositorios\pilot\ANXO LIBRARIES\` (framework compartido).
+- Actualizar/eliminar paquetes NuGet.
+- Refactors masivos, renombrados o borrados de archivos.
+- Archivos reservados por la IA grande (ver sección 0).
 
 Si una tarea parece requerir tocar algo de esta lista, **detente y repórtalo**.
 
 ---
 
-## 3. Cola de tareas
+## 3. Reglas de git (dos IAs en el mismo repo)
 
-Regla: respetar el orden y las dependencias. No ejecutar dos tareas que toquen el mismo archivo.
-
-### D01 — Sincronizar README con la realidad
-- **Tamaño:** muy pequeño · **Riesgo:** nulo · **Archivo:** `README.md` (raíz)
-- **Problema:** el README dice ".NET 8", "Next.js", "controllers pendientes" y "14 módulos stubs", pero el proyecto ya está en .NET 10, el frontend es React+Vite y hay 15 controllers.
-- **Pasos:**
-  1. Cambiar ".NET 8" por ".NET 10" en las referencias al backend.
-  2. Cambiar "Panel web Next.js" por "Panel web React 19 + Vite + Tailwind CSS 4".
-  3. En "Estado del Proyecto", marcar controllers y módulos como completados, y dejar como pendientes solo lo que sigue pendiente (tests, instalador WiX, correo OTP real).
-  4. No inventar endpoints ni módulos nuevos.
-- **Aceptación:** `grep -n "Next.js\|\.NET 8" README.md` no devuelve nada; el resto del README queda coherente.
+- **Nunca** uses `git add -A`, `git add .`, `git commit -a` ni `git push`.
+- Si Daniel te pide commitear, agrega **solo los archivos de tu tarea**:
+  ```powershell
+  git add GymServiceFront/src/pages/Members.jsx
+  git commit -m "junie(F01): usar paleta brand en Members y Sales"
+  ```
+- No cambies de rama ni hagas merge/rebase.
+- No commitees `appsettings.json`, `node_modules`, `dist`, `bin` u `obj`.
+- El repo es público: **nunca** subas credenciales.
 
 ---
 
-### F01 — Reemplazar colores `primary-*` por `brand-*`
-- **Tamaño:** pequeño · **Riesgo:** bajo · **Archivos:** `GymServiceFront/src/pages/Members.jsx`, `GymServiceFront/src/pages/Sales.jsx`
-- **Problema:** el tema de Tailwind 4 solo define `brand-*`. Las clases `primary-*` no generan CSS, así que spinners, botones y badges se ven sin color.
+## 4. Cola de tareas
+
+### D01 — Sincronizar README con la realidad
+- **Tamaño:** muy pequeño · **Riesgo:** nulo · **Archivo:** `README.md` (raíz)
+- **Problema:** el README dice ".NET 8", "Next.js", "controllers pendientes" y "14 módulos stubs"; el proyecto ya está en .NET 10, el frontend es React+Vite y hay 15 controllers.
 - **Pasos:**
-  1. En ambos archivos, sustituir cada `primary-` por `brand-` respetando el tono (`primary-600` → `brand-600`, etc.).
-  2. No cambiar estructura, textos ni lógica.
+  1. Cambiar ".NET 8" por ".NET 10".
+  2. Cambiar "Panel web Next.js" por "Panel web React 19 + Vite + Tailwind CSS 4".
+  3. Actualizar "Estado del Proyecto": controllers y módulos completados; pendientes: tests, instalador WiX y envío real de OTP por correo.
+  4. No inventar endpoints ni módulos.
+- **Aceptación:** no quedan menciones a "Next.js" ni a ".NET 8"; el resto del README sigue coherente.
+
+---
+
+### ✅ F01 — Reemplazar colores `primary-*` por `brand-*`
+- **Tamaño:** pequeño · **Riesgo:** bajo · **Archivos:** `GymServiceFront/src/pages/Members.jsx`, `GymServiceFront/src/pages/Sales.jsx`
+- **Problema:** el tema de Tailwind 4 solo define `brand-*`; las clases `primary-*` no generan CSS.
+- **Pasos:** sustituir cada `primary-` por `brand-` conservando el tono (`primary-600` → `brand-600`, etc.). No cambiar lógica, textos ni estructura.
 - **Aceptación:**
-  - `grep -rn "primary-" src/pages/Members.jsx src/pages/Sales.jsx` → sin resultados.
-  - `npm run build` → OK.
+  - `grep -rn "primary-" src/pages/Members.jsx src/pages/Sales.jsx` → sin resultados. ✅
+  - `npm run build` → OK. ✅
+- **Estado:** ✅ Completada el 2026-11-18. 10 ocurrencias reemplazadas (8 en Members.jsx, 2 en Sales.jsx). Build: 2210 módulos, 815ms, 0 errores.
 
 ---
 
@@ -100,111 +122,107 @@ Regla: respetar el orden y las dependencias. No ejecutar dos tareas que toquen e
 - **Tamaño:** pequeño · **Riesgo:** bajo · **Archivo:** `GymServiceFront/src/pages/Inventory.jsx`
 - **Problema:** usa `r.data?.items`, pero el backend responde `{ success, data: [...] }`; la tabla siempre sale vacía.
 - **Pasos:**
-  1. Cambiar a `r.data?.data || r.data?.items || []` y validar con `Array.isArray`.
-  2. Agregar estado `error` y mostrar un mensaje visible si la petición falla (hoy el `catch` está vacío).
-  3. Mantener el resto del diseño igual.
-- **Aceptación:**
-  - La página muestra productos cuando la API devuelve `data`.
-  - Si la API falla, se ve un mensaje de error y no una tabla vacía sin explicación.
-  - `npm run build` → OK.
+  1. Leer con `r.data?.data || r.data?.items || []` y validar `Array.isArray`.
+  2. Agregar estado `error` y mostrar mensaje visible si la petición falla.
+  3. Mantener el diseño actual.
+- **Aceptación:** se ven los productos reales; un fallo muestra aviso; `npm run build` → OK.
 
 ---
 
 ### F03 — Quitar logs de depuración de `api.js`
 - **Tamaño:** muy pequeño · **Riesgo:** bajo · **Archivo:** `GymServiceFront/src/services/api.js`
 - **Problema:** imprime cada petición y respuesta en consola de producción.
-- **Pasos:**
-  1. Eliminar los dos `console.log` (`[API] Petición` y `[API] Respuesta`).
-  2. Conservar el `console.error` de errores y toda la lógica del interceptor 401.
+- **Pasos:** eliminar los dos `console.log`. Conservar `console.error` y toda la lógica del interceptor 401.
 - **Aceptación:** `grep -n "console.log" src/services/api.js` → sin resultados; `npm run build` → OK.
 
 ---
 
-### F04 — Accesibilidad de etiquetas en formulario de Miembros
+### F04 — Accesibilidad del formulario de Miembros
 - **Tamaño:** pequeño · **Riesgo:** bajo · **Archivo:** `GymServiceFront/src/pages/Members.jsx`
-- **Dependencia:** ejecutar después de F01.
-- **Problema:** los `<label>` del formulario no tienen `htmlFor` y los `<input>`/`<select>` no tienen `id` (fallo WCAG).
-- **Pasos:**
-  1. Agregar `htmlFor` a cada label: `firstName`, `lastName`, `email`, `phone`, `membershipType`.
-  2. Agregar el `id` correspondiente a cada campo.
-  3. No cambiar nombres de estado ni el payload.
-- **Aceptación:** los 5 labels están asociados; `npm run lint` no agrega errores nuevos.
+- **Dependencia:** después de F01.
+- **Problema:** los `<label>` no tienen `htmlFor` y los campos no tienen `id` (fallo WCAG).
+- **Pasos:** asociar `firstName`, `lastName`, `email`, `phone` y `membershipType` con `htmlFor`/`id`. No cambiar el payload.
+- **Aceptación:** los 5 labels quedan asociados; `npm run lint` no agrega errores nuevos.
 
 ---
 
 ### F05 — Mostrar errores al crear miembro
 - **Tamaño:** pequeño · **Riesgo:** bajo · **Archivo:** `GymServiceFront/src/pages/Members.jsx`
-- **Dependencia:** ejecutar después de F04.
+- **Dependencia:** después de F04.
 - **Problema:** si el POST falla solo se hace `console.error`; el usuario no ve nada.
 - **Pasos:**
   1. Agregar estado `error`.
-  2. En el `catch` del submit, mostrar el `message` que devuelve el backend o un texto genérico.
-  3. Renderizar un bloque de error similar al bloque de éxito existente (colores `danger-*` o `rose-*`).
-  4. Limpiar el error al abrir/cerrar el formulario y al enviar de nuevo.
+  2. En el `catch` del submit, mostrar `err.response?.data?.message` o un texto genérico.
+  3. Renderizar un bloque de error visible (colores `danger-*`) similar al bloque de éxito.
+  4. Limpiar el error al abrir/cerrar el formulario y al reenviar.
 - **Aceptación:** un fallo de API produce un mensaje visible; `npm run build` → OK.
 
 ---
 
-### F06 — Paginación opcional en `GenericPage`
-- **Tamaño:** mediano · **Riesgo:** medio · **Archivo:** `GymServiceFront/src/pages/GenericPage.jsx`
-- **Problema:** las 9 páginas genéricas solo muestran la primera página (límite por defecto del backend).
+### F06 — Página 404 real
+- **Tamaño:** pequeño · **Riesgo:** bajo · **Archivos:** `GymServiceFront/src/pages/NotFound.jsx` (nuevo), `GymServiceFront/src/App.jsx`
+- **Problema:** cualquier ruta desconocida redirige a `/` silenciosamente.
 - **Pasos:**
-  1. Enviar `page` y `limit` (50 por defecto) como query params.
-  2. Leer `r.data.pagination`.
-  3. Si existe `pagination`, mostrar botones "Anterior"/"Siguiente", página actual y total. Si no existe, no mostrar controles.
-  4. Al cambiar de página, volver a cargar.
-  5. No tocar los archivos de página que usan `GenericPage`; la mejora debe ser centralizada.
-- **Aceptación:**
-  - `/members`, `/sales`, `/billing`, etc. paginan sin errores.
-  - Endpoints sin paginación siguen funcionando y no muestran controles.
-  - `npm run build` → OK.
+  1. Crear `NotFound.jsx` con un mensaje claro y un botón "Volver al inicio" (`Link` de `react-router-dom`). Diseño con `brand-*` y un icono de `lucide-react`.
+  2. En `App.jsx`, cambiar la ruta `*` para renderizar `<NotFound />` dentro de `<Layout>` y `<ProtectedRoute>`.
+  3. No tocar las demás rutas.
+- **Aceptación:** `/cualquier-cosa` muestra la página 404 dentro del layout; `npm run build` → OK.
 
 ---
 
-### F07 — Estado de error en páginas genéricas
-- **Tamaño:** pequeño · **Riesgo:** bajo · **Archivo:** `GymServiceFront/src/pages/GenericPage.jsx`
-- **Dependencia:** ejecutar después de F06.
-- **Problema:** si la API falla, se muestra "0 registros" como si no hubiera datos.
+### F07 — Persistir el sidebar y accesibilidad en `Layout`
+- **Tamaño:** mediano · **Riesgo:** medio · **Archivo:** `GymServiceFront/src/components/Layout.jsx`
+- **Problema:** al recargar se pierde el estado del sidebar; algunos botones solo tienen icono y carecen de `aria-label`.
 - **Pasos:**
-  1. Agregar estado `error`.
-  2. En el `catch`, guardar el mensaje y mostrar un aviso visible.
-  3. Mantener los datos anteriores si ya había una carga exitosa (no borrar la tabla).
-- **Aceptación:** un fallo de red muestra un aviso; `npm run build` → OK.
+  1. Inicializar el estado del sidebar desde `localStorage` (`sidebar-collapsed`) y guardarlo al cambiar.
+  2. Agregar `aria-label` descriptivo a los botones de icono (menú, notificaciones, perfil, cerrar sesión).
+  3. Mantener el comportamiento responsive actual (<1024px cierra el sidebar).
+  4. No cambiar la navegación ni las rutas.
+- **Aceptación:** el estado se conserva al recargar; botones con nombre accesible; `npm run build` → OK.
 
 ---
 
-## 4. Tareas explícitamente NO delegadas (las asume la IA grande)
+### F08 — Documentar el frontend
+- **Tamaño:** pequeño · **Riesgo:** nulo · **Archivo:** `GymServiceFront/README.md`
+- **Pasos:** documentar en español: requisitos (Node 20+), instalación (`npm install`), scripts (`dev`, `build`, `lint`, `preview`), proxy `/api` → `http://localhost:5000`, estructura de `src/` y variables de entorno si aplican.
+- **Aceptación:** un desarrollador nuevo puede levantar el frontend siguiendo solo ese README.
 
-- Implementar envío real de OTP por correo (MailKit) en `IdentityModule`.
-- Cambios de autenticación, sesiones, permisos o rate limiting.
-- Cambios al esquema de BD o a `ModelGym.cs`.
+---
+
+## 5. Tareas NO delegadas (las asume la IA grande / Daniel)
+
+- CRUD completo de las 10 páginas genéricas y componentes reutilizables.
+- Envío real de OTP por correo (MailKit) en `IdentityModule`.
+- Autenticación, sesiones, permisos y rate limiting.
+- Esquema de BD y `ModelGym.cs`.
 - Migración de datos desde PostgreSQL.
-- Instalador WiX en `GymServiceSetup/`.
+- Instalador WiX (`GymServiceSetup/`).
 - Actualización de paquetes con vulnerabilidades (MimeKit/MailKit/JWT/MySqlConnector).
-- Creación de proyecto de tests.
+- Proyecto de tests.
 
 ---
 
-## 5. Bitácora (actualizar al terminar cada tarea)
+## 6. Bitácora
 
 Estados: `PENDIENTE` · `EN CURSO` · `HECHO` · `BLOQUEADO`
 
 | ID | Estado | Fecha | Archivos tocados | Build | Notas |
 |---|---|---|---|---|---|
 | D01 | PENDIENTE | — | — | — | — |
-| F01 | PENDIENTE | — | — | — | — |
+| F01 | HECHO | 2026-11-18 | `GymServiceFront/src/pages/Members.jsx`, `GymServiceFront/src/pages/Sales.jsx` | `npm run build` OK | Reemplazo de `primary-*` por `brand-*`. Sin `primary-` restante. No se tocó lógica. |
 | F02 | PENDIENTE | — | — | — | — |
 | F03 | PENDIENTE | — | — | — | — |
 | F04 | PENDIENTE | — | — | — | — |
 | F05 | PENDIENTE | — | — | — | — |
 | F06 | PENDIENTE | — | — | — | — |
 | F07 | PENDIENTE | — | — | — | — |
+| F08 | PENDIENTE | — | — | — | — |
 
-**Al cerrar una tarea, la IA debe reportar exactamente:**
+**Al cerrar una tarea, Junie debe reportar:**
 1. ID de la tarea.
 2. Archivos modificados (rutas completas).
 3. Qué cambió (2-4 líneas).
 4. Salida de `npm run build` o `dotnet build`.
-5. Cualquier duda o efecto colateral.
+5. Dudas o efectos colaterales.
 
-Si no puede completar la tarea, marcar `BLOQUEADO` y explicar qué falta. **No improvisar.**
+Si no puede completarla, marcar `BLOQUEADO` y explicar qué falta. **No improvisar.**

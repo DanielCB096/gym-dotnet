@@ -109,21 +109,62 @@
 - **Cambio:** Agregados colores de estado: success (#10B981), danger (#F43F5E), warning (#F59E0B), info (#3AB3F2), purple (#8B5CF6).
 - **Cambio:** Todos los SVG inline reemplazados por iconos de `lucide-react`.
 
+### Tarea F01 — Colores `primary-*` residuales en Members y Sales
+- **Bug:** Members.jsx y Sales.jsx aún usaban clases `primary-*` (spinner, botón, inputs, avatar, badge) que no generan CSS con la paleta `brand-*` de TailAdmin.
+- **Solución:** Reemplazadas 10 ocurrencias de `primary-*` por `brand-*` conservando el tono numérico. 8 en Members.jsx (spinner, botón gradiente, 5 inputs, avatar) y 2 en Sales.jsx (spinner, badge).
+- **Verificación:** `npm run build` → 2210 módulos, 815ms, 0 errores.
+
+---
+
+## Rediseño del frontend a CRUD real (18-nov-2026)
+
+### Páginas con CRUD completo
+- Se reemplazaron las 9 páginas genéricas de solo lectura por páginas reales con crear, editar y eliminar:
+  `Billing`, `Classes`, `Finance`, `Fisio`, `Maintenance`, `Reports`, `Routines`, `Staff`, `Kiosk` y `AccessLogs`.
+- Se corrigieron los nombres de campo que no coincidían con la respuesta real del backend:
+  - **Classes:** `typeName`, `durationMinutes` (antes `name`, `instructor`).
+  - **Finance:** `bankName`, `accountNumber`, `currency` (antes `accountName`, `accountType`).
+  - **Fisio:** `name` (antes `packageName`).
+  - **Routines:** `planName`, `durationMinutes` (antes `name`, `type`, `duration`).
+  - **Reports:** `lastRun` (antes `format`, `isActive`).
+  - **Staff:** `employeeName`, `username`, `position` (antes `name`, `role` como puesto).
+  - **Billing:** `amount` (antes `totalAmount`) y `memberId` (no existe `memberName`).
+
+### Infraestructura nueva
+- `components/CrudPage.jsx`: página CRUD configurable (tabla, formulario modal, validación, paginación, confirmación de borrado, notificaciones y acciones por fila).
+- `hooks/useApiList.js`: carga paginada con manejo de errores y protección contra respuestas obsoletas.
+- `components/ui/Select.jsx`, `PageHeader.jsx`, `ConfirmDialog.jsx`.
+- `utils/format.js`: moneda MXN, fechas y textos legibles.
+- `StaffModule.GetAvailableUsers()` + `GET /api/staff/users`: selector de usuario al crear personal.
+- `StaffModule.GetStaff()` ahora devuelve `department`.
+
+### Decisiones
+- **PDF:** se eliminó `QuestPDF` del `.csproj` porque no se usa y su versión instalada tiene una API incompatible. Cuando se implemente impresión de tickets se agregará la versión estable actual y se decidirá la licencia.
+- **App settings:** `GymService/appsettings.json` queda ignorado por git; se agregó `appsettings.example.json` sin credenciales.
+- **Git:** repositorio inicializado y publicado en https://github.com/DanielCB096/gym-dotnet. Se eliminó la contraseña de la base de datos del `CHANGELOG.md`.
+
+### Pendiente en frontend
+- `Inventory`: pasar de solo lectura a CRUD completo (el backend ya lo soporta).
+- `Sales`: formulario de nueva venta con selección de productos e items.
+- `Members`: selector de planes desde la base de datos en lugar de valores fijos.
+
 ---
 
 ## Estado actual del sistema
 
 | Componente | Estado |
 |---|---|
-| Backend API | ✅ ~67 endpoints de 14 controllers operativos |
+| Backend API | ✅ ~68 endpoints de 15 controllers operativos |
 | Base de datos | ✅ 35 tablas, 26 foreign keys en SQL Server |
 | Autenticación JWT | ✅ Funcional con bootstrap y login |
 | Frontend Login | ✅ Completo con validación y mensajes de error |
 | Frontend Dashboard | ✅ Completo con datos reales de la API |
 | Frontend Layout | ✅ Sidebar + Header estilo TailAdmin, responsivo |
 | Frontend Miembros | ✅ Tabla + formulario de creación |
-| Frontend 9 módulos | ⚠️ Solo lectura (usan GenericPage) |
-| Componentes UI | ✅ 6 componentes reutilizables (Button, Card, Table, Badge, Input, Modal) |
+| Frontend 10 módulos | ✅ CRUD real (clases, rutinas, personal, facturación, finanzas, fisio, mantenimiento, reportes, kiosco, accesos) |
+| Frontend Inventario | ⚠️ Solo lectura (pendiente CRUD) |
+| Frontend Ventas | ⚠️ Solo lectura (pendiente formulario de venta) |
+| Componentes UI | ✅ 9 componentes reutilizables + `CrudPage` + `useApiList` |
 
 ---
 

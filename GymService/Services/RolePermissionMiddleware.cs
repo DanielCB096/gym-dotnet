@@ -326,6 +326,10 @@ namespace GymService.Services
                 ["PUT"] = "staff.manage",
                 ["DELETE"] = "staff.manage"
             },
+            ["/api/staff/users"] = new Dictionary<string, string>
+            {
+                ["GET"] = "staff.view"
+            },
             ["/api/staff/push-subscriptions"] = new Dictionary<string, string>
             {
                 ["GET"] = "staff.view"

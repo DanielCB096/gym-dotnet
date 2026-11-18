@@ -22,6 +22,20 @@ namespace GymService.Controllers
         }
 
         [HttpGet]
+        [Route("api/staff/users")]
+        public ActionResult<Dictionary<string, object>> GetAvailableUsers()
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Staff == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Staff.GetAvailableUsers(out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpGet]
         [Route("api/staff/push-subscriptions")]
         public ActionResult<Dictionary<string, object>> GetPushSubscriptions([FromQuery] long? userId = null, [FromQuery] int page = 1, [FromQuery] int limit = 50)
         {

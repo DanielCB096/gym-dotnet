@@ -1,7 +1,7 @@
 # GymService - Contexto Completo del Proyecto
 
-> **Última actualización:** 18 de noviembre de 2026 — Exportación de reportes a Excel
-> **Estado:** Compilando (0 errores, 30 warnings nullable). 15 controllers con ~67 endpoints. Paginación en 7 módulos. Health checks con 3 endpoints. Middleware de roles con 27 permisos. Scripts de deployment. Rate limiting con 3 políticas. Importación masiva CSV/Excel. Exportación de reportes a Excel.
+> **Última actualización:** 18 de noviembre de 2026 — Frontend convertido a CRUD real
+> **Estado:** Compilando (0 errores, 24 warnings NuGet). 15 controllers con ~68 endpoints. Frontend React con CRUD en 10 módulos. Repositorio en GitHub: https://github.com/DanielCB096/gym-dotnet
 > **Framework:** .NET 8.0 Windows + Anxo Libraries (framework propietario)
 
 ---
@@ -907,5 +907,18 @@ if (!session.TryExecute().IsError)
   - `GET /api/reports/inventory/excel` — Exportar inventario a Excel
 - **Formato Excel:** Encabezados con colores por tipo de reporte (azul=ventas, verde=miembros, naranja=asistencia, púrpura=inventario), columnas auto-ajustadas
 - **Hallazgo:** QuestPDF 2024.7.1 tiene API incompatible con la documentación actual — se descartó PDF por ahora
-- **Paquete QuestPDF:** Instalado pero no usado (versión 2024.7.1 con API diferente a la documentada)
+- **Paquete QuestPDF:** Instalado pero no usado (versión 2024.7.1 con API diferente a la documentada). Eliminado del `.csproj` el 18-nov-2026.
 - El proyecto compila con 0 errores y 30 warnings de nullable references
+
+### Sesión 17: Frontend con CRUD real
+- Se reemplazaron las páginas genéricas de solo lectura por CRUD real en: Billing, Classes, Finance, Fisio, Maintenance, Reports, Routines, Staff, Kiosk y AccessLogs.
+- **Componentes nuevos:**
+  - `GymServiceFront/src/components/CrudPage.jsx` — CRUD configurable: tabla, formulario modal, validación, paginación, borrado con confirmación, acciones por fila y avisos.
+  - `GymServiceFront/src/hooks/useApiList.js` — listado paginado con manejo de errores.
+  - `Select.jsx`, `PageHeader.jsx`, `ConfirmDialog.jsx` y `src/utils/format.js`.
+- **Contratos corregidos:** varias páginas mostraban columnas vacías porque usaban nombres inventados (`name`, `instructor`, `accountName`, `packageName`, `totalAmount`). Ahora usan los campos reales del backend (`typeName`, `durationMinutes`, `bankName`, `accountNumber`, `name`, `planName`, `amount`, etc.).
+- **Backend:** `StaffModule.GetAvailableUsers()` + `GET /api/staff/users` para elegir el usuario al crear personal; `GetStaff()` ahora devuelve `department`; nueva regla en `PermissionMatrix` para `/api/staff/users`.
+- **Seguridad:** `appsettings.json` ignorado por git y reemplazado por `appsettings.example.json`; contraseña eliminada del `CHANGELOG.md`.
+- **PDF:** se eliminó el paquete `QuestPDF` (sin uso). Se reevaluará al implementar tickets imprimibles.
+- **Pendiente frontend:** CRUD de Inventario, formulario de nueva venta y selector de planes reales en Miembros.
+- **Nota operativa:** el servicio `GymService.exe` (PID 7276) estaba en ejecución durante el build; usar `dotnet build -t:Compile` para validar sin bloquear el ejecutable.
