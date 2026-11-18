@@ -52,7 +52,15 @@ namespace GymService.Modules.Sales
                 var totalAmount = saleData.ContainsKey("totalAmount") ? Convert.ToDecimal(saleData["totalAmount"]) : 0m;
                 var taxAmount = saleData.ContainsKey("taxAmount") ? Convert.ToDecimal(saleData["taxAmount"]) : 0m;
                 var isOffline = saleData.ContainsKey("isOffline") ? Convert.ToBoolean(saleData["isOffline"]) : false;
-                var items = saleData.ContainsKey("items") ? (List<Dictionary<string, object>>)saleData["items"] : new List<Dictionary<string, object>>();
+                var items = new List<Dictionary<string, object?>>();
+                if (saleData.TryGetValue("items", out var rawItems) && rawItems is IEnumerable<object?> rawList)
+                {
+                    foreach (var rawItem in rawList)
+                    {
+                        if (rawItem is Dictionary<string, object?> item)
+                            items.Add(item);
+                    }
+                }
 
                 // sale_number is nvarchar(20): NEWID() would not fit, so build a compact unique code
                 var saleNumber = "V" + DateTime.Now.ToString("yyMMddHHmmssfff") + Random.Shared.Next(100, 1000);

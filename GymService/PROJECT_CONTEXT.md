@@ -936,5 +936,11 @@ if (!session.TryExecute().IsError)
   de planes; la membresía usa `duration_days` del plan. Regla `members.view` añadida a `PermissionMatrix`.
 - **Datos:** `gym_membership_plans` estaba vacía; se sembraron Básico ($399), Premium ($599) y VIP ($899),
   todos de 30 días.
+- **Corrección sistémica de JSON:** `Tools/ObjectToInferredTypesConverter.cs` convierte los valores de
+  `Dictionary<string, object>` a primitivos CLR (`long`, `decimal`, `bool`, `string`, `List<object>`,
+  `Dictionary<string, object>`) en lugar de `JsonElement`. Registrado en `AddControllers()`.
+  - Sin esto, cualquier `Convert.ToInt64/ToDecimal/ToBoolean` sobre un body JSON lanzaba
+    `InvalidCastException`, afectando a ventas, inventario, clases, fisio, mantenimiento y facturación.
+  - `SalesModule.CreateSale()` ahora recorre los items como `IEnumerable<object?>`.
 - **Validación:** frontend `npm run build` OK y sin warnings nuevos; backend `dotnet build -t:Compile` con 0 errores.
   - Se validó el esquema real con una transacción SQL de prueba (venta + items + membresía) y `ROLLBACK`.

@@ -114,6 +114,11 @@
 - **Solución:** 5 ediciones: .NET 8 → .NET 10 (3 ocurrencias), Next.js → React 19 + Vite + Tailwind CSS 4, sección Estado del Proyecto actualizada con 15 controllers, ~67 endpoints, frontend con 14 páginas y pendientes reales (tests, WiX, OTP por correo).
 - **Verificación:** `grep "Next.js|\.NET 8" README.md` → 0 resultados.
 
+### Tarea F03 — Logs de depuración en api.js
+- **Bug:** api.js contenía 2 `console.log` que imprimían cada petición y respuesta en la consola del navegador, incluso en producción.
+- **Solución:** Eliminados los 2 `console.log` (interceptor de request y response). Se mantuvo `console.error` para errores reales y toda la lógica del interceptor 401.
+- **Verificación:** `grep "console.log" api.js` → 0 resultados. `npm run build` → 2217 módulos, 635ms, 0 errores.
+
 ### Tarea F01 — Colores `primary-*` residuales en Members y Sales
 - **Bug:** Members.jsx y Sales.jsx aún usaban clases `primary-*` (spinner, botón, inputs, avatar, badge) que no generan CSS con la paleta `brand-*` de TailAdmin.
 - **Solución:** Reemplazadas 10 ocurrencias de `primary-*` por `brand-*` conservando el tono numérico. 8 en Members.jsx (spinner, botón gradiente, 5 inputs, avatar) y 2 en Sales.jsx (spinner, badge).
@@ -163,6 +168,12 @@
   - `SalesController` enviaba `cashierId` pero el módulo leía `createdBy`; ahora usa `createdBy`.
   - `MembersModule.GetMembershipPlans()` + `GET /api/members/plans`, con regla `members.view`
     en `PermissionMatrix`.
+  - **JSON de entrada:** los endpoints que reciben `Dictionary<string, object>` obtenían
+    `JsonElement` y fallaban en `Convert.ToInt64/ToDecimal/ToBoolean`. Se añadió
+    `Tools/ObjectToInferredTypesConverter.cs` (registrado en `AddControllers()`), por lo que
+    los valores llegan como `long`, `decimal`, `bool`, `string`, `List<object>` o
+    `Dictionary<string, object>`. Esto repara los POST de ventas, inventario, clases, fisio,
+    mantenimiento y facturación.
 - **Datos:** se sembraron los planes Básico, Premium y VIP en `gym_membership_plans`,
   que estaba vacía.
 

@@ -17,6 +17,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using AxLogger;
+using GymService.Tools;
 
 namespace GymService.Services
 {
@@ -104,7 +105,13 @@ namespace GymService.Services
         private void ConfigureServices(IServiceCollection services)
         {
             // Add controllers
-            services.AddControllers();
+            services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    // Permite que los Dictionary<string, object> reciban primitivos CLR
+                    // en lugar de JsonElement (necesario para Convert.ToXxx en los módulos).
+                    options.JsonSerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
+                });
 
             // Add Swagger/OpenAPI
             services.AddEndpointsApiExplorer();
