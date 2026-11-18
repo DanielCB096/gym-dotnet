@@ -1,23 +1,23 @@
 # GymService - Centro Fit
 
-Nueva versión del sistema de gestión de gimnasios **Centro Fit**, reescrita en **.NET 8** que corre como **servicio de Windows**, reutilizando las bibliotecas ANXO de PILOT TMS.
+Nueva versión del sistema de gestión de gimnasios **Centro Fit**, reescrita en **.NET 10** que corre como **servicio de Windows**, reutilizando las bibliotecas ANXO de PILOT TMS.
 
 ## Stack Técnico
 
-- **Backend**: .NET 8 con ASP.NET Core Kestrel
+- **Backend**: .NET 10 con ASP.NET Core Kestrel
 - **Servicio Windows**: AnxoServiceTools
 - **Base de datos**: SQL Server con AnxoDatabase y AnxoObjectDatabaseManager
 - **Bibliotecas**: AnxoLibrary, AnxoServiceTools, AnxoDatabase, AnxoObjectDatabaseManager
 - **API REST**: Controllers con DTOs, Swagger/OpenAPI
 - **Autenticación**: Sesiones Bearer opacas, MFA TOTP, OTP por correo
-- **Frontend**: Panel web Next.js y app móvil React Native (reutilizados)
+- **Frontend**: Panel web React 19 + Vite + Tailwind CSS 4
 
 ## Estructura del Proyecto
 
 ```
 gimnasio-dotnet/
 ├── GymService/
-│   ├── GymService.csproj          # Proyecto .NET 8
+│   ├── GymService.csproj          # Proyecto .NET 10
 │   ├── Program.cs                 # Entry point
 │   ├── DataCenter.cs              # Estado global
 │   ├── ServiceImplementation.cs   # IServiceConsole
@@ -182,17 +182,18 @@ dotnet run
 
 ## Estado del Proyecto
 
-- ✅ Estructura del proyecto .NET 8
+- ✅ Estructura del proyecto .NET 10
 - ✅ Servicio Windows con AnxoServiceTools
 - ✅ Conexión a SQL Server con AnxoDatabase
 - ✅ Servidor Kestrel con ASP.NET Core
-- ✅ 35 tablas SQL Server definidas
-- ✅ 14 módulos de negocio (stubs)
+- ✅ 35 tablas SQL Server definidas con 26 foreign keys
+- ✅ 15 controllers REST con ~67 endpoints operativos
 - ✅ Módulo Identity completo (login, MFA, OTP, RBAC)
 - ✅ AuthController con endpoints REST
-- ⏳ Controllers restantes (Step 2-8)
-- ⏳ Instalador WiX (Step 9)
-- ⏳ Documentación completa
+- ✅ Frontend React 19 + Vite + Tailwind CSS 4 con 14 páginas
+- ⏳ Tests automatizados
+- ⏳ Instalador WiX
+- ⏳ Envío real de OTP por correo (MailKit)
 
 ## Migración desde PostgreSQL
 
