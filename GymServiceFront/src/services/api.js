@@ -10,20 +10,18 @@ const api = axios.create({
   },
 });
 
-// Agregar token a cada petición + log de depuración
+// Agregar token a cada petición
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  console.log('[API] Petición:', config.method?.toUpperCase(), config.url);
   return config;
 });
 
 // Manejar errores 401 (token expirado) - solo si NO es la ruta de login
 api.interceptors.response.use(
   (response) => {
-    console.log('[API] Respuesta:', response.status, response.config.url);
     return response;
   },
   (error) => {

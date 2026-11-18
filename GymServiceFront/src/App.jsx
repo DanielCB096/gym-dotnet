@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
@@ -17,6 +17,7 @@ import Routines from './pages/Routines';
 import Kiosk from './pages/Kiosk';
 import Reports from './pages/Reports';
 import AccessLogs from './pages/AccessLogs';
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
@@ -164,7 +165,16 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route
+            path="*"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <NotFound />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

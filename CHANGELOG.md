@@ -114,6 +114,11 @@
 - **Solución:** 5 ediciones: .NET 8 → .NET 10 (3 ocurrencias), Next.js → React 19 + Vite + Tailwind CSS 4, sección Estado del Proyecto actualizada con 15 controllers, ~67 endpoints, frontend con 14 páginas y pendientes reales (tests, WiX, OTP por correo).
 - **Verificación:** `grep "Next.js|\.NET 8" README.md` → 0 resultados.
 
+### Tarea F06 — Página 404 real
+- **Bug:** Cualquier ruta desconocida redirigía silenciosamente al dashboard (`/`) sin informar al usuario.
+- **Solución:** Creado `NotFound.jsx` con diseño TailAdmin (icono AlertTriangle, colores amber, botón "Volver al inicio" con ArrowLeft). En `App.jsx`, la ruta `*` ahora renderiza `<NotFound />` dentro de `<ProtectedRoute>` + `<Layout>` en lugar de redirigir a `/`.
+- **Verificación:** `npm run build` → 2218 módulos, 1.02s, 0 errores.
+
 ### Tarea F03 — Logs de depuración en api.js
 - **Bug:** api.js contenía 2 `console.log` que imprimían cada petición y respuesta en la consola del navegador, incluso en producción.
 - **Solución:** Eliminados los 2 `console.log` (interceptor de request y response). Se mantuvo `console.error` para errores reales y toda la lógica del interceptor 401.

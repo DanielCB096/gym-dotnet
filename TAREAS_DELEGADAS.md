@@ -130,11 +130,14 @@ Si una tarea parece requerir tocar algo de esta lista, **detente y repórtalo**.
 
 ---
 
-### F03 — Quitar logs de depuración de `api.js`
+### ✅ F03 — Quitar logs de depuración de `api.js`
 - **Tamaño:** muy pequeño · **Riesgo:** bajo · **Archivo:** `GymServiceFront/src/services/api.js`
 - **Problema:** imprime cada petición y respuesta en consola de producción.
 - **Pasos:** eliminar los dos `console.log`. Conservar `console.error` y toda la lógica del interceptor 401.
-- **Aceptación:** `grep -n "console.log" src/services/api.js` → sin resultados; `npm run build` → OK.
+- **Aceptación:**
+  - `grep -n "console.log" src/services/api.js` → sin resultados. ✅
+  - `npm run build` → OK. ✅
+- **Estado:** ✅ Completada el 2026-11-18. 2 console.log eliminados (líneas 19 y 26) y comentario de depuración limpiado. console.error y lógica del interceptor 401 intactos. Build: 2217 módulos, 635ms, 0 errores.
 
 ---
 
@@ -145,14 +148,17 @@ Si una tarea parece requerir tocar algo de esta lista, **detente y repórtalo**.
 
 ---
 
-### F06 — Página 404 real
+### ✅ F06 — Página 404 real
 - **Tamaño:** pequeño · **Riesgo:** bajo · **Archivos:** `GymServiceFront/src/pages/NotFound.jsx` (nuevo), `GymServiceFront/src/App.jsx`
 - **Problema:** cualquier ruta desconocida redirige a `/` silenciosamente.
 - **Pasos:**
-  1. Crear `NotFound.jsx` con un mensaje claro y un botón "Volver al inicio" (`Link` de `react-router-dom`). Diseño con `brand-*` y un icono de `lucide-react`.
-  2. En `App.jsx`, cambiar la ruta `*` para renderizar `<NotFound />` dentro de `<Layout>` y `<ProtectedRoute>`.
-  3. No tocar las demás rutas.
-- **Aceptación:** `/cualquier-cosa` muestra la página 404 dentro del layout; `npm run build` → OK.
+  1. Crear `NotFound.jsx` con un mensaje claro y un botón "Volver al inicio" (`Link` de `react-router-dom`). Diseño con `brand-*` y un icono de `lucide-react`. ✅
+  2. En `App.jsx`, cambiar la ruta `*` para renderizar `<NotFound />` dentro de `<Layout>` y `<ProtectedRoute>`. ✅
+  3. No tocar las demás rutas. ✅
+- **Aceptación:**
+  - `/cualquier-cosa` muestra la página 404 dentro del layout. ✅
+  - `npm run build` → OK. ✅
+- **Estado:** ✅ Completada el 2026-11-18. NotFound.jsx creado con icono AlertTriangle, colores amber y botón con ArrowLeft. App.jsx actualizado: ruta `*` renderiza NotFound dentro de ProtectedRoute + Layout. Build: 2218 módulos, 1.02s, 0 errores.
 
 ---
 
@@ -197,10 +203,10 @@ Estados: `PENDIENTE` · `EN CURSO` · `HECHO` · `BLOQUEADO`
 | D01 | HECHO | 2026-11-18 | `README.md` | N/A | .NET 8 → .NET 10, Next.js → React+Vite, estado del proyecto actualizado. Sin menciones obsoletas restantes. |
 | F01 | HECHO | 2026-11-18 | `GymServiceFront/src/pages/Members.jsx`, `GymServiceFront/src/pages/Sales.jsx` | `npm run build` OK | Reemplazo de `primary-*` por `brand-*`. Sin `primary-` restante. No se tocó lógica. |
 | F02 | HECHO | 2026-11-18 | `GymServiceFront/src/pages/Inventory.jsx`, `GymService/Modules/Inventory/InventoryModule.cs` | build OK | Absorbida por la IA grande: CRUD real + corrección de columna `stock_quantity`. |
-| F03 | PENDIENTE | — | — | — | — |
+| F03 | HECHO | 2026-11-18 | `GymServiceFront/src/services/api.js` | `npm run build` OK | 2 console.log eliminados, console.error y lógica 401 intactos. Build 2217 módulos, 635ms. |
 | F04 | HECHO | 2026-11-18 | `GymServiceFront/src/pages/Members.jsx` | build OK | Absorbida: `CrudPage` asocia `id`/`label` en todos los campos. |
 | F05 | HECHO | 2026-11-18 | `GymServiceFront/src/pages/Members.jsx` | build OK | Absorbida: los errores de API se muestran en el modal. |
-| F06 | PENDIENTE | — | — | — | — |
+| F06 | HECHO | 2026-11-18 | `GymServiceFront/src/pages/NotFound.jsx`, `GymServiceFront/src/App.jsx` | `npm run build` OK | Página 404 con icono AlertTriangle, colores amber y botón ArrowLeft. Ruta `*` renderiza NotFound dentro de ProtectedRoute + Layout. Build 2218 módulos, 1.02s. |
 | F07 | PENDIENTE | — | — | — | — |
 | F08 | PENDIENTE | — | — | — | — |
 
