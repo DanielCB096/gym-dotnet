@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<NLS>
+  <Module name="GymService">
+    <String id="1" value="Gym Service - Centro Fit" />
+    <String id="2" value="Servicio iniciado correctamente" />
+    <String id="3" value="Servicio detenido" />
+    <String id="4" value="Error al conectar a la base de datos" />
+    <String id="5" value="Error al iniciar el servidor web" />
+  </Module>
+</NLS>

@@ -1,0 +1,31 @@
+# ===== .NET / GymService =====
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.log
+
+# Configuración local con credenciales (NO subir)
+GymService/appsettings.json
+GymService/bin/**/appsettings.json
+
+# Logs del servicio
+GymService/logs/
+logs/
+
+# ===== Frontend =====
+GymServiceFront/node_modules/
+GymServiceFront/dist/
+GymServiceFront/.env
+GymServiceFront/.env.local
+
+# ===== Herramientas / sistema =====
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# ===== Temporales =====
+*.tmp
+*.bak
