@@ -67,7 +67,7 @@ namespace GymService.Services
 
                 client.Authenticate(_configuration["Email:SmtpUser"], _configuration["Email:SmtpPassword"]);
 
-                client.Send(message);
+                client.Send(new SmtpSendRequest(message));
                 client.Disconnect(true);
 
                 Logger.AddInfoSubModule(SubModule, $"CÃ³digo OTP enviado a {MaskEmail(to)}");

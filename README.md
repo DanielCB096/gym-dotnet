@@ -42,13 +42,14 @@ gimnasio-dotnet/
 │   │   ├── Kiosk/                 # Dispositivos kiosco
 │   │   └── Staff/                 # Personal y push
 │   ├── Models/
-│   │   └── ModelGym.cs            # 35 tablas SQL Server
+│   │   └── ModelGym.cs            # 36 tablas SQL Server
 │   ├── Services/
-│   │   ├── WebServerService.cs    # Kestrel
+│   │   ├── WebServerService.cs    # Kestrel + panel web
 │   │   └── DatabaseService.cs     # Esquema de BD
 │   └── Tools/
 │       └── SecurityValidation.cs  # Validación JWT/sesiones
-└── GymServiceSetup/               # Instalador WiX (pendiente)
+├── GymServiceSetup/               # Instalador/desinstalador PowerShell
+└── publish.ps1                    # Publicación (backend + frontend + ZIP)
 ```
 
 ## Módulos
@@ -243,15 +244,96 @@ Modo headless (CI/contenedor, sin esperar Enter):
 .\GymService.exe -console -daemon
 ```
 
-## Instalación como servicio Windows
+## Despliegue (producción)
+
+### 1. Publicar
 
 ```powershell
-# Instalar
-.\GymService.exe -install
-
-# Desinstalar
-.\GymService.exe -uninstall
+cd C:\proyectos\gimnasio-dotnet
+.\publish.ps1
 ```
+
+- Compila el panel React y lo copia a `wwwroot` del servicio (se sirve en la misma URL).
+- Publica el backend **self-contained** para `win-x64` (no requiere instalar .NET en el servidor).
+- Genera `artifacts\GymService-<versión>-win-x64.zip` con `install.ps1` y `uninstall.ps1`.
+
+Opciones útiles:
+
+```powershell
+.\publish.ps1 -Version 1.2.0                 # versión del paquete
+.\publish.ps1 -FrameworkDependent            # requiere .NET 10 en el servidor
+.\publish.ps1 -SkipFrontend -NoZip           # solo backend, sin ZIP
+.\publish.ps1 -AnxoRoot "D:\libs\ANXO LIBRARIES"
+```
+
+En CI, el workflow `Release` publica el ZIP al crear un tag `v*`.
+
+### 2. Instalar
+
+Copiar el ZIP al servidor y ejecutar **como Administrador**:
+
+```powershell
+.\install.ps1 `
+  -Source .\GymService-1.0.0-win-x64.zip `
+  -Port 5000 `
+  -DatabaseServer "sql.empresa.local,1433" `
+  -DatabaseName "GymManager" `
+  -DatabaseUser "gym_app" `
+  -DatabasePassword "********" `
+  -OpenFirewall
+```
+
+El instalador:
+
+- Copia los binarios a `C:\Program Files\Anxo\GymService`.
+- Crea `appsettings.json` desde la plantilla **solo si no existe** (las actualizaciones conservan la configuración).
+- Restringe los permisos de `appsettings.json` a SYSTEM y Administradores.
+- Registra el servicio `anxogymmservice`, configura recuperación ante fallos y lo inicia.
+- Opcionalmente abre el puerto en el firewall (`-OpenFirewall`).
+
+Panel web y API quedan en `http://<servidor>:<puerto>` (por defecto `http://0.0.0.0:5000`).
+
+### 3. Configuración mínima de producción
+
+Editar `C:\Program Files\Anxo\GymService\appsettings.json`:
+
+- `Database`: servidor, base de datos y **login SQL con permisos mínimos** (no `sa`).
+- `Authentication:MfaEncryptionKey`: clave aleatoria de 32 bytes en Base64.
+- `Authentication:AdminResetToken`: token largo y secreto (o vacío para deshabilitarlo).
+- `Email`: SMTP real y `ShowCodeInResponse: false`.
+- `WebServer:Urls`: por ejemplo `http://0.0.0.0:5000`; detrás de IIS/Nginx usar `http://localhost:5000`.
+- `WebServer:CorsOrigins`: solo los orígenes necesarios si el panel se sirve aparte.
+- `Logging:LogPath` y retención según política del cliente.
+
+Cualquier valor se puede sobrescribir por variables de entorno con doble guion bajo:
+`Database__Password`, `WebServer__Port`, `Email__SmtpPassword`, etc.
+
+### 4. Operación
+
+```powershell
+Get-Service anxogymmservice
+Restart-Service anxogymmservice
+Get-Content "C:\Program Files\Anxo\GymService\logs\*.log" -Tail 50
+
+# Desinstalar (conserva configuración y logs)
+.\uninstall.ps1
+
+# Desinstalar y borrar configuración/logs
+.\uninstall.ps1 -RemoveData
+```
+
+Actualizar = ejecutar de nuevo `install.ps1` con el ZIP nuevo (detiene, reemplaza binarios y arranca; conserva `appsettings.json` y `logs`).
+
+### 5. Checklist antes de entregar
+
+- [ ] Login SQL dedicado y contraseña fuerte (sin `sa`).
+- [ ] `MfaEncryptionKey` generada para ese servidor.
+- [ ] SMTP probado (código OTP real).
+- [ ] Backup programado de la base de datos.
+- [ ] HTTPS por reverse proxy si se publica fuera de la red local.
+- [ ] Firewall limitado a la red del gimnasio.
+- [ ] `GET /health` responde `healthy`.
+- [ ] Alta del owner y prueba de login/panel.
 
 ## Roles
 

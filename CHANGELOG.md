@@ -6,6 +6,14 @@
 
 ## Backend (.NET)
 
+### Despliegue y panel integrado (2026-11-19)
+- **Panel web servido por el servicio:** Kestrel publica `wwwroot` con fallback SPA; las rutas `/api`, `/swagger`, `/health` y archivos inexistentes conservan 404. El contenido se resuelve desde el directorio del ejecutable (`UseContentRoot`), necesario al correr como servicio Windows.
+- **Publicación:** `publish.ps1` compila el frontend, publica self-contained `win-x64`, copia el panel a `wwwroot`, genera `VERSION.txt` y un ZIP con instalador; nunca incluye `appsettings.json` con credenciales.
+- **Instalador:** `GymServiceSetup/install.ps1` (Administrador) copia a `Program Files`, crea la configuración desde la plantilla solo si no existe, restringe permisos de `appsettings.json`, registra el servicio, configura recuperación, firewall opcional y arranque. `uninstall.ps1` desinstala conservando o borrando datos según `-RemoveData`.
+- **CI:** workflow `Release` publica el ZIP al crear un tag `v*`.
+- **Seguridad de dependencias:** MailKit 5.0.0 (adaptado a `SmtpSendRequest`) y `System.IdentityModel.Tokens.Jwt` 8.23.0. Queda el aviso moderado de `MySqlConnector` 2.4.0 heredado de las librerías ANXO (no se usa MySQL en este despliegue).
+- **Documentación:** guía de despliegue, configuración mínima de producción, operación, actualización y checklist en `README.md`.
+
 ### Inventario y mantenimiento completos (2026-11-19)
 - **Inventario:** productos con SKU, categoría, costo, stock y mínimo; búsqueda por nombre/categoría/SKU, filtro de stock bajo, ajuste de stock, edición de datos, activación/desactivación y borrado protegido si hay ventas.
 - **Mantenimiento:** CRUD de equipos (categoría, ubicación, estado, compra y garantía) y tickets con prioridad, estados `open`/`in_progress`/`resolved`/`cancelled`, resolución con usuario y fecha, y bloqueo de tickets duplicados abiertos.

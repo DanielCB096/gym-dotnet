@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>GymService</RootNamespace>
     <AssemblyName>GymService</AssemblyName>
+    <Version>1.0.0</Version>
     <!-- Ruta de las ANXO Libraries (pilot). Se puede sobrescribir: -p:AnxoRoot=... -->
     <AnxoRoot Condition="'$(AnxoRoot)' == ''">..\..\..\repositorios\pilot\ANXO LIBRARIES</AnxoRoot>
   </PropertyGroup>
@@ -32,16 +33,22 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.0.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
-    <PackageReference Include="MailKit" Version="4.3.0" />
+    <PackageReference Include="MailKit" Version="5.0.0" />
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.4.0" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <!-- No se publica: contiene credenciales locales. El instalador crea el suyo. -->
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
+    <None Update="appsettings.example.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
     <!-- El NLS de Anxo se carga como recurso embebido (NlsTools.LoadAssemblyMessages). -->
     <EmbeddedResource Include="nls.xml" />

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.RateLimiting;
@@ -53,6 +54,9 @@ namespace GymService.Services
                 _host = Host.CreateDefaultBuilder()
                     .ConfigureWebHostDefaults(webBuilder =>
                     {
+                        // Como servicio Windows el directorio actual es System32;
+                        // el contenido (appsettings, wwwroot, logs) vive junto al exe.
+                        webBuilder.UseContentRoot(AppContext.BaseDirectory);
                         webBuilder.UseKestrel(options =>
                         {
                             // Configure Kestrel settings
@@ -290,6 +294,15 @@ namespace GymService.Services
             // Enable CORS
             app.UseCors("AllowFrontend");
 
+            // Panel web (si se publicó junto al servicio): archivos estáticos y SPA.
+            var indexFile = Path.Combine(AppContext.BaseDirectory, "wwwroot", "index.html");
+            if (File.Exists(indexFile))
+            {
+                app.UseDefaultFiles();
+                app.UseStaticFiles();
+                Logger.AddInfo($"Panel web habilitado desde {Path.GetDirectoryName(indexFile)}");
+            }
+
             // Enable routing
             app.UseRouting();
 
@@ -326,6 +339,29 @@ namespace GymService.Services
                 {
                     ResponseWriter = WriteHealthCheckResponse
                 });
+
+                // SPA: cualquier ruta del panel devuelve index.html. Las rutas de API
+                // y archivos inexistentes mantienen 404.
+                if (File.Exists(indexFile))
+                {
+                    endpoints.MapFallback(async context =>
+                    {
+                        var path = context.Request.Path;
+
+                        if (path.StartsWithSegments("/api") ||
+                            path.StartsWithSegments("/swagger") ||
+                            path.StartsWithSegments("/health") ||
+                            path.StartsWithSegments("/ready") ||
+                            Path.HasExtension(path.Value))
+                        {
+                            context.Response.StatusCode = StatusCodes.Status404NotFound;
+                            return;
+                        }
+
+                        context.Response.ContentType = "text/html; charset=utf-8";
+                        await context.Response.SendFileAsync(indexFile);
+                    });
+                }
             });
 
             Logger.AddInfo("Pipeline de aplicación configurado");

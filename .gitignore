@@ -20,6 +20,10 @@ GymServiceFront/dist/
 GymServiceFront/.env
 GymServiceFront/.env.local
 
+# ===== Despliegue =====
+artifacts/
+publish/
+
 # ===== Herramientas / sistema =====
 .idea/
 .vscode/
