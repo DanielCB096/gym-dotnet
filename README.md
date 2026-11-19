@@ -229,7 +229,7 @@ dotnet test GymService.Tests\GymService.Tests.csproj
   finanzas, catálogos) y **borran la BD al terminar**. Se omiten si no hay credenciales:
 
 ```powershell
-$env:GYM_TEST_DB_SERVER   = "leto.anxo.mx,1433"
+$env:GYM_TEST_DB_SERVER   = "localhost,1433"
 $env:GYM_TEST_DB_USER     = "sa"
 $env:GYM_TEST_DB_PASSWORD = "********"
 dotnet test GymService.Tests\GymService.Tests.csproj

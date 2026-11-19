@@ -1,4 +1,4 @@
-﻿using System.Buffers.Binary;
+using System.Buffers.Binary;
 using System.Security.Cryptography;
 using System.Text;
 using GymService.Modules.Identity;
@@ -10,7 +10,7 @@ namespace GymService.Tests.Integration;
 [Collection("Database")]
 public class IdentityFlowTests
 {
-    private const string Password = "Prueba123!";
+    private const string Password = "TestOwner!2026";
     private const string OwnerName = "owner";
 
     private static readonly IConfiguration Config = new ConfigurationBuilder()
