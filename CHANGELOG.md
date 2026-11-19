@@ -6,6 +6,11 @@
 
 ## Backend (.NET)
 
+### Membresías y control de acceso (2026-11-19)
+- **Estado del socio:** la lista devuelve `membershipStatus` (`active`/`frozen`/`expired`/`none`) y `hasActiveMembership`; el panel muestra “Sin membresía” o “Vencida” en lugar de “Activo” cuando no hay una membresía vigente. El estado de la cuenta (`status`) se mantiene separado.
+- **Accesos:** no se genera código para socios sin membresía activa, con membresía congelada/vencida o cuentas inactivas; la validación vuelve a comprobar la membresía al usar el código y registra el intento denegado en la bitácora.
+- **Pruebas:** 97 automatizadas, incluyendo socio con membresía, socio sin membresía y socio sin plan reportado correctamente.
+
 ### Pruebas amplias y correcciones (2026-11-19)
 - **Socios:** se rechaza correo duplicado, nombre/apellido vacío y planes inexistentes; al arrancar se crean los planes base (Mensual/Trimestral/Anual) si la tabla está vacía.
 - **Permisos:** la resolución de rutas usa la coincidencia más específica, por lo que subrutas como `/api/finance/accounts`, `/api/billing/invoices`, `/api/reports/*`, `/api/import/*` o `/api/kiosk/*` ya no se saltan el RBAC. Los roles ADMIN/STAFF/CASHIER reciben los permisos por defecto de la matriz aunque la tabla `gym_role_permissions` solo tenga al owner.

@@ -116,6 +116,42 @@ public class MembersFlowTests
     }
 
     [Fact]
+    public void Member_Without_Plan_Is_Not_Reported_As_Having_A_Membership()
+    {
+        if (!_fx.Available) return;
+
+        var module = new MembersModule(_fx.Tools!);
+        string email = $"noplan_{Guid.NewGuid():N}@test.local";
+
+        CurrentUser.Id = 1;
+
+        try
+        {
+            Assert.True(module.CreateMember(new Dictionary<string, object>
+            {
+                ["firstName"] = "Sin",
+                ["lastName"] = "Plan",
+                ["email"] = email,
+                ["membershipType"] = ""
+            }, out var created));
+
+            long memberId = Convert.ToInt64(created["memberId"]);
+
+            Assert.True(module.GetMembers(out var list, id: memberId));
+            var data = Assert.IsAssignableFrom<List<Dictionary<string, object>>>(list["data"]);
+            var row = Assert.Single(data);
+
+            Assert.Equal("active", row["status"]);
+            Assert.Equal("none", row["membershipStatus"]);
+            Assert.False(Convert.ToBoolean(row["hasActiveMembership"]));
+        }
+        finally
+        {
+            CurrentUser.Id = 0;
+        }
+    }
+
+    [Fact]
     public void Freeze_And_Resume_Membership_Updates_Status()
     {
         if (!_fx.Available) return;

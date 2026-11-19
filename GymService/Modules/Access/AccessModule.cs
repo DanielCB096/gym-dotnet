@@ -47,6 +47,37 @@ namespace GymService.Modules.Access
 
             try
             {
+                var memberState = GetMemberAccessState(memberId);
+                if (memberState == null)
+                {
+                    response["success"] = false;
+                    response["message"] = "El socio no existe";
+                    return false;
+                }
+
+                if (!string.Equals(memberState.Value.MemberStatus, "active", StringComparison.OrdinalIgnoreCase))
+                {
+                    response["success"] = false;
+                    response["message"] = "El socio no está activo";
+                    return false;
+                }
+
+                if (string.Equals(memberState.Value.MembershipStatus, "frozen", StringComparison.OrdinalIgnoreCase))
+                {
+                    response["success"] = false;
+                    response["message"] = "La membresía del socio está congelada";
+                    return false;
+                }
+
+                if (!string.Equals(memberState.Value.MembershipStatus, "active", StringComparison.OrdinalIgnoreCase) ||
+                    !memberState.Value.MembershipEnd.HasValue ||
+                    memberState.Value.MembershipEnd.Value.Date < DateTime.Now.Date)
+                {
+                    response["success"] = false;
+                    response["message"] = "El socio no tiene una membresía activa";
+                    return false;
+                }
+
                 var code = SecurityValidation.GenerateOtp(6);
                 var codeHash = SecurityValidation.Sha256Hash(code);
                 var hmacKey = SecurityValidation.GenerateToken(32);
@@ -98,9 +129,14 @@ namespace GymService.Modules.Access
                 var codeHash = SecurityValidation.Sha256Hash(code);
 
                 var result = _tools.ExecuteQueryResultSet(@"
-                    SELECT ac.id, ac.member_id, ac.used, m.first_name, m.last_name, m.status 
+                    SELECT ac.id, ac.member_id, ac.used, m.first_name, m.last_name,
+                           m.status AS member_status, mem.status AS membership_status, mem.end_date AS membership_end
                     FROM gym_access_codes ac 
                     INNER JOIN gym_members m ON ac.member_id = m.id 
+                    OUTER APPLY (SELECT TOP 1 mem2.status, mem2.end_date
+                                 FROM gym_memberships mem2 WHERE mem2.member_id = m.id
+                                 ORDER BY CASE WHEN mem2.status = 'active' THEN 0 WHEN mem2.status = 'frozen' THEN 1 ELSE 2 END,
+                                          mem2.end_date DESC) mem
                     WHERE ac.code_hash = ? AND ac.used = 0 AND ac.expires_at > GETDATE()",
                     codeHash
                 );
@@ -116,6 +152,35 @@ namespace GymService.Modules.Access
                 var accessCodeId = Convert.ToInt64(GetRowValue(row, result, "id"));
                 var memberId = Convert.ToInt64(GetRowValue(row, result, "member_id"));
                 var memberName = $"{GetRowValue(row, result, "first_name")} {GetRowValue(row, result, "last_name")}";
+                string memberStatus = Convert.ToString(GetRowValue(row, result, "member_status")) ?? "";
+                string membershipStatus = Convert.ToString(GetRowValue(row, result, "membership_status")) ?? "";
+                DateTime? membershipEnd = GetRowValue(row, result, "membership_end") != null
+                    ? Convert.ToDateTime(GetRowValue(row, result, "membership_end"))
+                    : (DateTime?)null;
+
+                bool hasAccess = string.Equals(memberStatus, "active", StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(membershipStatus, "active", StringComparison.OrdinalIgnoreCase) &&
+                    membershipEnd.HasValue && membershipEnd.Value.Date >= DateTime.Now.Date;
+
+                if (!hasAccess)
+                {
+                    var deniedSession = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                    deniedSession.InsertObject(new GYM_ACCESS_LOG
+                    {
+                        MEMBER_ID = memberId,
+                        ACCESS_TYPE = "code",
+                        ACCESS_RESULT = "denied",
+                        DEVICE_ID = deviceId,
+                        ACCESSED_AT = DateTime.Now
+                    });
+                    deniedSession.TryExecute();
+
+                    response["success"] = false;
+                    response["message"] = membershipStatus == "frozen"
+                        ? "La membresía del socio está congelada"
+                        : "El socio no tiene una membresía activa";
+                    return false;
+                }
 
                 // Mark as used and log the access in a single transaction.
                 // Nota: con objetos no se puede condicionar el UPDATE a USED = 0, se conserva el flujo actual.
@@ -310,6 +375,31 @@ namespace GymService.Modules.Access
                 response["message"] = "Error interno del servidor";
                 return false;
             }
+        }
+
+        private (string MemberStatus, string MembershipStatus, DateTime? MembershipEnd)? GetMemberAccessState(long memberId)
+        {
+            var result = _tools.ExecuteQueryResultSet(@"
+                SELECT m.status AS member_status, mem.status AS membership_status, mem.end_date AS membership_end
+                FROM GYM_MEMBERS m
+                OUTER APPLY (SELECT TOP 1 mem2.status, mem2.end_date
+                             FROM GYM_MEMBERSHIPS mem2 WHERE mem2.member_id = m.id
+                             ORDER BY CASE WHEN mem2.status = 'active' THEN 0 WHEN mem2.status = 'frozen' THEN 1 ELSE 2 END,
+                                      mem2.end_date DESC) mem
+                WHERE m.id = ?", memberId);
+
+            if (result == null || result.Rows.Count == 0)
+                return null;
+
+            var row = result.Rows[0];
+
+            return (
+                Convert.ToString(GetRowValue(row, result, "member_status")) ?? "",
+                Convert.ToString(GetRowValue(row, result, "membership_status")) ?? "",
+                GetRowValue(row, result, "membership_end") != null
+                    ? Convert.ToDateTime(GetRowValue(row, result, "membership_end"))
+                    : (DateTime?)null
+            );
         }
     }
 }

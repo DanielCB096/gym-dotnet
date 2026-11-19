@@ -76,8 +76,12 @@ namespace GymService.Modules.Members
                 totalCount = countResult;
 
                 // Main query with pagination (SQL Server OFFSET/FETCH)
-                var sql = $"SELECT m.*, mem.plan_id, mp.plan_name AS membership_type, mem.start_date, mem.end_date, mem.status " +
-                    $"FROM gym_members m LEFT JOIN gym_memberships mem ON m.id = mem.member_id AND mem.status = 'active' " +
+                var sql = $"SELECT m.*, mem.plan_id, mp.plan_name AS membership_type, mem.start_date, mem.end_date, " +
+                    $"m.status AS member_status, mem.status AS membership_status " +
+                    $"FROM gym_members m " +
+                    $"OUTER APPLY (SELECT TOP 1 mem2.plan_id, mem2.status, mem2.start_date, mem2.end_date " +
+                    $"             FROM gym_memberships mem2 WHERE mem2.member_id = m.id " +
+                    $"             ORDER BY CASE WHEN mem2.status = 'active' THEN 0 WHEN mem2.status = 'frozen' THEN 1 ELSE 2 END, mem2.end_date DESC) mem " +
                     $"LEFT JOIN gym_membership_plans mp ON mem.plan_id = mp.id " +
                     $"{whereClause} ORDER BY m.id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
@@ -91,6 +95,21 @@ namespace GymService.Modules.Members
                 {
                     foreach (Row row in result.Rows)
                     {
+                        string membershipType = Convert.ToString(GetRowValue(row, result, "membership_type")) ?? "";
+                        DateTime? membershipEnd = GetRowValue(row, result, "end_date") != null ? Convert.ToDateTime(GetRowValue(row, result, "end_date")) : (DateTime?)null;
+                        string rawMembershipStatus = Convert.ToString(GetRowValue(row, result, "membership_status")) ?? "";
+
+                        string membershipStatus;
+                        if (string.IsNullOrWhiteSpace(membershipType))
+                            membershipStatus = "none";
+                        else if (string.Equals(rawMembershipStatus, "frozen", StringComparison.OrdinalIgnoreCase))
+                            membershipStatus = "frozen";
+                        else if (string.Equals(rawMembershipStatus, "active", StringComparison.OrdinalIgnoreCase) &&
+                                 membershipEnd.HasValue && membershipEnd.Value.Date >= DateTime.Now.Date)
+                            membershipStatus = "active";
+                        else
+                            membershipStatus = "expired";
+
                         members.Add(new Dictionary<string, object>
                         {
                             ["id"] = Convert.ToInt64(GetRowValue(row, result, "id")),
@@ -98,9 +117,11 @@ namespace GymService.Modules.Members
                             ["lastName"] = Convert.ToString(GetRowValue(row, result, "last_name")) ?? "",
                             ["email"] = Convert.ToString(GetRowValue(row, result, "email")) ?? "",
                             ["phone"] = Convert.ToString(GetRowValue(row, result, "phone")) ?? "",
-                            ["status"] = Convert.ToString(GetRowValue(row, result, "status")) ?? "active",
-                            ["membershipType"] = Convert.ToString(GetRowValue(row, result, "membership_type")) ?? "",
-                            ["membershipEnd"] = GetRowValue(row, result, "end_date") != null ? Convert.ToDateTime(GetRowValue(row, result, "end_date")) : (DateTime?)null
+                            ["status"] = Convert.ToString(GetRowValue(row, result, "member_status")) ?? "active",
+                            ["membershipType"] = membershipType,
+                            ["membershipStatus"] = membershipStatus,
+                            ["hasActiveMembership"] = membershipStatus == "active",
+                            ["membershipEnd"] = membershipEnd
                         });
                     }
                 }

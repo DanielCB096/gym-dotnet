@@ -4,6 +4,13 @@ import CrudPage from '../components/CrudPage';
 import Badge from '../components/ui/Badge';
 import { formatCurrency, formatDate } from '../utils/format';
 
+const membershipStatusInfo = {
+  active: { variant: 'success', label: 'Activo' },
+  frozen: { variant: 'warning', label: 'Congelada' },
+  expired: { variant: 'danger', label: 'Vencida' },
+  none: { variant: 'warning', label: 'Sin membresía' },
+};
+
 export default function Members() {
   const [plans, setPlans] = useState([]);
   const [plansError, setPlansError] = useState('');
@@ -84,11 +91,14 @@ export default function Members() {
         {
           key: 'status',
           label: 'Estado',
-          render: (row) => (
-            <Badge variant={row.status === 'active' ? 'success' : 'neutral'} dot>
-              {row.status === 'active' ? 'Activo' : 'Inactivo'}
-            </Badge>
-          ),
+          render: (row) => {
+            if (row.status !== 'active') {
+              return <Badge variant="neutral" dot>Inactivo</Badge>;
+            }
+
+            const info = membershipStatusInfo[row.membershipStatus] || membershipStatusInfo.none;
+            return <Badge variant={info.variant} dot>{info.label}</Badge>;
+          },
         },
         { key: 'membershipEnd', label: 'Vence', render: (row) => formatDate(row.membershipEnd) },
       ]}
