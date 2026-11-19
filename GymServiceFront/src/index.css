@@ -77,9 +77,12 @@
   --color-sidebar-600: #475569;
 }
 
-* {
-  margin: 0;
-  padding: 0;
+/* El reset de Tailwind (preflight) ya normaliza márgenes y paddings.
+   No agregar aquí un `* { margin: 0; padding: 0 }`: al ser CSS sin capa,
+   anula todas las utilidades p-*, m-*, px-*, py-*, etc. de Tailwind. */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 

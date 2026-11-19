@@ -70,21 +70,14 @@ export default function Layout({ children }) {
     localStorage.setItem('sidebar-collapsed', String(!sidebarOpen));
   }, [sidebarOpen]);
 
-  // Close sidebar on small screens by default
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 1024) {
-        setSidebarOpen(false);
-      }
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
+  // Close the mobile drawer when navigating
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
+
+  // En móvil el drawer siempre se abre expandido, aunque el sidebar
+  // estuviera colapsado en escritorio.
+  const expanded = sidebarOpen || mobileOpen;
 
   const handleLogout = () => {
     logout();
@@ -105,15 +98,15 @@ export default function Layout({ children }) {
 
       {/* Sidebar — 288px expanded / 80px collapsed */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-[#1E293B] text-white z-50 transition-all duration-300 ease-in-out
-          ${sidebarOpen ? 'w-72' : 'w-20'}
+        className={`fixed top-0 left-0 z-50 flex h-full flex-col bg-[#1E293B] text-white transition-all duration-300 ease-in-out
+          ${expanded ? 'w-72' : 'w-20'}
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0`}
         style={{ overflow: 'hidden' }}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between px-4 h-20 border-b border-sidebar-700">
-          {sidebarOpen ? (
+        <div className="flex h-20 flex-shrink-0 items-center justify-between border-b border-white/5 px-4">
+          {expanded ? (
             <NavLink to="/" className="flex items-center gap-3" onClick={() => setMobileOpen(false)}>
               <div className="w-9 h-9 bg-brand-500 rounded-lg flex items-center justify-center shadow-lg shadow-brand-500/30">
                 <Dumbbell className="w-5 h-5 text-white" />
@@ -136,17 +129,17 @@ export default function Layout({ children }) {
         </div>
 
         {/* Navigation */}
-        <nav className="mt-4 px-3 overflow-y-auto h-[calc(100vh-16rem)]">
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
           {menuSections.map((section, sIdx) => (
-            <div key={sIdx} className="mb-4">
-              {sidebarOpen && section.title && (
-                <div className="px-3 mb-2">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <div key={sIdx} className="mb-6 last:mb-0">
+              {expanded && section.title && (
+                <div className="mb-2 px-3">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                     {section.title}
                   </span>
                 </div>
               )}
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {section.items.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -155,18 +148,22 @@ export default function Layout({ children }) {
                       to={item.to}
                       onClick={() => setMobileOpen(false)}
                       className={({ isActive }) =>
-                        `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group
+                        `group flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 transition-colors duration-150
                           ${isActive
-                            ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20'
-                            : 'text-slate-300 hover:bg-sidebar-700 hover:text-white'
+                            ? 'bg-brand-500/15 font-medium text-white ring-1 ring-inset ring-brand-400/30'
+                            : 'text-slate-300 hover:bg-white/5 hover:text-white'
                           }
-                          ${!sidebarOpen ? 'justify-center' : ''}`
+                          ${!expanded ? 'justify-center' : ''}`
                       }
-                      title={!sidebarOpen ? item.label : undefined}
+                      title={!expanded ? item.label : undefined}
                     >
-                      <Icon className="w-5 h-5 flex-shrink-0" />
-                      {sidebarOpen && (
-                        <span className="text-sm font-medium">{item.label}</span>
+                      {({ isActive }) => (
+                        <>
+                          <Icon className={`h-5 w-5 flex-shrink-0 ${isActive ? 'text-brand-300' : 'text-slate-400 group-hover:text-slate-200'}`} />
+                          {expanded && (
+                            <span className="truncate text-sm">{item.label}</span>
+                          )}
+                        </>
                       )}
                     </NavLink>
                   );
@@ -176,56 +173,56 @@ export default function Layout({ children }) {
           ))}
         </nav>
 
-        {/* Sidebar toggle (bottom) */}
-        <div className="absolute bottom-0 left-0 right-0 border-t border-sidebar-700 bg-sidebar-800/50">
-          {sidebarOpen ? (
-            <div className="p-3">
-              <div className="flex items-center gap-3 mb-3 px-1">
-                <div className="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center text-sm font-bold shadow">
+        {/* Sidebar footer */}
+        <div className="flex-shrink-0 border-t border-white/5 bg-black/10 p-3">
+          {expanded ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 px-1">
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-brand-500 text-sm font-bold shadow">
                   {(user?.fullName || user?.username || 'U').charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-white truncate">
+                  <div className="truncate text-sm font-medium text-white">
                     {user?.fullName || user?.username || 'Usuario'}
                   </div>
-                  <div className="text-xs text-slate-400 truncate">
+                  <div className="truncate text-xs text-slate-400">
                     {user?.role || 'Admin'}
                   </div>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={handleLogout}
                   aria-label="Cerrar sesión"
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-danger-400 hover:text-danger-300 hover:bg-danger-500/10 rounded-lg transition-colors"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm text-danger-300 transition-colors hover:bg-danger-500/10 hover:text-danger-200"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="h-4 w-4" />
                   Salir
                 </button>
                 <button
                   onClick={() => setSidebarOpen(false)}
                   aria-label="Colapsar menú lateral"
-                  className="flex items-center justify-center p-2 text-slate-400 hover:text-white hover:bg-sidebar-700 rounded-lg transition-colors"
+                  className="hidden items-center justify-center rounded-lg p-2 text-slate-400 transition-colors hover:bg-white/5 hover:text-white lg:flex"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="h-4 w-4" />
                 </button>
               </div>
             </div>
           ) : (
-            <div className="p-3 flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center gap-2">
               <button
                 onClick={handleLogout}
                 aria-label="Cerrar sesión"
-                className="p-2 text-slate-400 hover:text-danger-400 hover:bg-danger-500/10 rounded-lg transition-colors"
+                className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-danger-500/10 hover:text-danger-300"
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="h-5 w-5" />
               </button>
               <button
                 onClick={() => setSidebarOpen(true)}
                 aria-label="Expandir menú lateral"
-                className="p-2 text-slate-400 hover:text-white hover:bg-sidebar-700 rounded-lg transition-colors"
+                className="hidden rounded-lg p-2 text-slate-400 transition-colors hover:bg-white/5 hover:text-white lg:flex"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="h-5 w-5" />
               </button>
             </div>
           )}
@@ -238,8 +235,8 @@ export default function Layout({ children }) {
           ${sidebarOpen ? 'lg:ml-72' : 'lg:ml-20'}`}
       >
         {/* Header — 80px tall */}
-        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between h-16 lg:h-20 px-3 lg:px-6">
+        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+          <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:h-20 lg:px-8">
             {/* Left: Breadcrumb */}
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <button
@@ -293,7 +290,7 @@ export default function Layout({ children }) {
         </header>
 
         {/* Page content */}
-        <div className="p-3 lg:p-6">
+        <div className="mx-auto w-full max-w-[1600px] p-4 sm:p-6 lg:p-8">
           {children}
         </div>
       </main>

@@ -65,6 +65,7 @@ export default function CrudPage({
   actions = [],
   toolbar,
   emptyText,
+  emptyIcon,
   modalSize = 'lg',
   afterCreate,
 }) {
@@ -341,11 +342,14 @@ export default function CrudPage({
         title={title}
         subtitle={subtitle}
         actions={
-          canCreate ? (
-            <Button icon={Plus} onClick={openCreate}>
-              {createLabel}
-            </Button>
-          ) : null
+          <>
+            {toolbar && toolbar({ items, reload, notify })}
+            {canCreate && (
+              <Button icon={Plus} onClick={openCreate} className="w-full sm:w-auto">
+                {createLabel}
+              </Button>
+            )}
+          </>
         }
       />
 
@@ -366,34 +370,31 @@ export default function CrudPage({
         </div>
       )}
 
-      {(searchParam || toolbar) && (
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-4">
-          {searchParam && (
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                setPage(1);
-                setSearch(searchInput.trim());
-              }}
-              className="flex items-center gap-2"
-            >
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="search"
-                  value={searchInput}
-                  onChange={(event) => setSearchInput(event.target.value)}
-                  placeholder={searchPlaceholder}
-                  aria-label={searchPlaceholder}
-                  className="w-full sm:w-64 rounded-lg border border-slate-300 bg-white pl-9 pr-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500"
-                />
-              </div>
-              <Button type="submit" variant="outline" size="sm">
-                Buscar
-              </Button>
-            </form>
-          )}
-          {toolbar && <div className="flex flex-wrap items-center gap-2">{toolbar({ items, reload, notify })}</div>}
+      {searchParam && (
+        <div className="mb-4">
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              setPage(1);
+              setSearch(searchInput.trim());
+            }}
+            className="flex items-center gap-2"
+          >
+            <div className="relative flex-1 sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="search"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder={searchPlaceholder}
+                aria-label={searchPlaceholder}
+                className="w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 py-2 text-sm text-slate-800 placeholder-slate-400 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500"
+              />
+            </div>
+            <Button type="submit" variant="outline" size="sm">
+              Buscar
+            </Button>
+          </form>
         </div>
       )}
 
@@ -409,6 +410,14 @@ export default function CrudPage({
         data={items}
         loading={loading}
         emptyText={emptyText || 'No hay registros disponibles'}
+        emptyIcon={emptyIcon}
+        emptyAction={
+          canCreate ? (
+            <Button icon={Plus} size="sm" onClick={openCreate} className="w-full sm:w-auto">
+              {createLabel}
+            </Button>
+          ) : null
+        }
       />
 
       {pagination && pagination.totalPages > 1 && (

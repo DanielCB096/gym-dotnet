@@ -1,12 +1,14 @@
 const PageHeader = ({ title, subtitle, actions, children }) => {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 lg:mb-6">
+    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
-        <h2 className="text-xl lg:text-2xl font-bold text-slate-800 tracking-tight truncate">{title}</h2>
-        {subtitle && <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>}
+        <h2 className="truncate text-2xl font-semibold tracking-tight text-slate-900">{title}</h2>
+        {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
         {children}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2 flex-shrink-0">{actions}</div>}
+      {actions && (
+        <div className="flex flex-shrink-0 flex-wrap items-center gap-2">{actions}</div>
+      )}
     </div>
   );
 };

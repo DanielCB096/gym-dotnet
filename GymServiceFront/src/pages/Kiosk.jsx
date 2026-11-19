@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Copy, Power, CheckCircle2 } from 'lucide-react';
+import { Copy, Power, CheckCircle2, Monitor } from 'lucide-react';
 import api from '../services/api';
 import CrudPage from '../components/CrudPage';
 import Badge from '../components/ui/Badge';
@@ -33,6 +33,7 @@ export default function Kiosk() {
         endpoint="/kiosk/devices"
         createLabel="Registrar kiosco"
         emptyText="No hay dispositivos registrados"
+        emptyIcon={Monitor}
         canEdit={false}
         canDelete={false}
         createPath="/kiosk/device/register"
