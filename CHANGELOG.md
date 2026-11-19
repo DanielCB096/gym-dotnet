@@ -9,8 +9,11 @@
 ### Correcciones posteriores a la migración (2026-11-19)
 - **Bug:** `VerifyTotpCode` decodificaba el secreto (Base64 URL-safe sin padding) con `Convert.FromBase64String`, que lanzaba excepción; MFA nunca verificaba. Se normaliza el padding antes de decodificar.
 - **Mejora:** el alta de socios registra `CREATED_BY` con el usuario autenticado (antes `-1`).
+- **Mejora:** auditoría unificada: `CurrentUser` (AsyncLocal) se fija al validar la sesión y todas las `Session` usan el usuario real para `CREATED_BY`/`LAST_UPDATED_BY`.
 - **Mejora:** `GET /api/kiosk/equipment/unavailable` exige token de dispositivo (`X-Device-Token` o `deviceToken`).
+- **Mejora:** nuevo `GET /api/finance/transactions` (paginado y filtrable por `accountId`).
 - **Mejora:** `VerifyMfa` migra de forma transparente secreto legacy (Base64) a AES-256 y códigos de respaldo en texto plano a SHA-256.
+- **Pruebas:** proyecto `GymService.Tests` (xUnit) con 9 tests de hashing/tokens/OTP, `CurrentUser` y el convertidor JSON.
 
 ### Migración al modelo de objetos Anxo (2026-11-19)
 - **Cambio:** El esquema pasó a estar definido por `GymService/Models/_ModelGym.xml` y las entidades generadas (`Models/Generated/GYM_*.cs`). Las PK ya no son `IDENTITY`: las asigna Anxo con secuencias (`ANXO_SEQUENCES`).

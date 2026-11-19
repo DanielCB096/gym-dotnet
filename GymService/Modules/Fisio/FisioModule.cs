@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using AxLogger;
@@ -60,7 +60,7 @@ namespace GymService.Modules.Fisio
                     return false;
                 }
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 long newPackageId = _tools.GenerateUniqueID(GYM_FISIO_PACKAGES.DatabaseMappingObject, 1).GetInt64UniqueId();
 
                 session.InsertObjectWithID(new GYM_FISIO_PACKAGES
@@ -113,7 +113,7 @@ namespace GymService.Modules.Fisio
                 var appointmentDate = appointmentData.ContainsKey("appointmentDate") ? Convert.ToDateTime(appointmentData["appointmentDate"]) : DateTime.Now;
                 var notes = Convert.ToString(appointmentData.GetValueOrDefault("notes", "")) ?? "";
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 long newAppointmentId = _tools.GenerateUniqueID(GYM_FISIO_APPOINTMENTS.DatabaseMappingObject, 1).GetInt64UniqueId();
 
                 session.InsertObjectWithID(new GYM_FISIO_APPOINTMENTS
@@ -157,7 +157,7 @@ namespace GymService.Modules.Fisio
 
             try
             {
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.DeleteObject(new GYM_FISIO_PACKAGES { ID = packageId });
 
                 if (!session.TryExecute().IsError)

@@ -62,6 +62,9 @@ namespace GymService.Tools
                     return false;
                 }
 
+                // Usuario de la petición para la auditoría de las sesiones de Anxo.
+                CurrentUser.Id = GetUserId(userData!);
+
                 return true;
             }
             catch (Exception ex)

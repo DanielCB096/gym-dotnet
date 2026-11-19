@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using AxLogger;
@@ -8,7 +8,7 @@ using AxObjectOrientedDatabase;
 namespace GymService.Modules.Billing
 {
     /// <summary>
-    /// Billing module: facturación y gestión de facturas.
+    /// Billing module: facturaciÃ³n y gestiÃ³n de facturas.
     /// </summary>
     public class BillingModule
     {
@@ -56,7 +56,7 @@ namespace GymService.Modules.Billing
                     invoiceNumber = "INV-" + DateTime.Now.ToString("yyyyMMddHHmmss");
                 }
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.InsertObject(new GYM_INVOICES
                 {
                     MEMBER_ID = memberId,
@@ -99,7 +99,7 @@ namespace GymService.Modules.Billing
 
             try
             {
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.UpdateObjectChanges(new GYM_INVOICES
                 {
                     ID = invoiceId,
@@ -137,7 +137,7 @@ namespace GymService.Modules.Billing
 
             try
             {
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.DeleteObject(new GYM_INVOICES { ID = invoiceId });
 
                 if (!session.TryExecute().IsError)

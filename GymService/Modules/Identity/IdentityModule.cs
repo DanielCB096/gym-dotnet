@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
@@ -21,7 +21,7 @@ namespace GymService.Modules.Identity
     {
         private const string SubModule = "IDENTITY_MODULE";
 
-        // Formato de contraseñas: pbkdf2-sha256$<iteraciones>$<salBase64>$<hashBase64>
+        // Formato de contraseÃ±as: pbkdf2-sha256$<iteraciones>$<salBase64>$<hashBase64>
         private const string Pbkdf2PasswordPrefix = "pbkdf2-sha256$";
         private const int Pbkdf2Iterations = 210_000;
         private const int Pbkdf2SaltSize = 16;
@@ -33,7 +33,7 @@ namespace GymService.Modules.Identity
         // Prefijo de los secretos MFA cifrados con AES-256.
         private const string MfaEncryptedPrefix = "enc:";
 
-        // Prefijo de los códigos de respaldo hasheados con SHA-256 (hexadecimal).
+        // Prefijo de los cÃ³digos de respaldo hasheados con SHA-256 (hexadecimal).
         private const string BackupCodeHashPrefix = "sha256:";
 
         private DatabaseTools _tools;
@@ -80,7 +80,7 @@ namespace GymService.Modules.Identity
                 if (result == null || result.Rows.Count == 0)
                 {
                     response["success"] = false;
-                    response["message"] = "Usuario o contraseña inválidos";
+                    response["message"] = "Usuario o contraseÃ±a invÃ¡lidos";
                     return false;
                 }
 
@@ -98,11 +98,11 @@ namespace GymService.Modules.Identity
                     return false;
                 }
 
-                // Verify password (PBKDF2-SHA256, con migración transparente del formato antiguo)
+                // Verify password (PBKDF2-SHA256, con migraciÃ³n transparente del formato antiguo)
                 if (!VerifyPassword(password, storedHash, userId))
                 {
                     response["success"] = false;
-                    response["message"] = "Usuario o contraseña inválidos";
+                    response["message"] = "Usuario o contraseÃ±a invÃ¡lidos";
                     return false;
                 }
 
@@ -122,7 +122,7 @@ namespace GymService.Modules.Identity
                 var expiresAt = DateTime.Now.AddHours(lifetimeHours);
 
                 // Store session
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.InsertObject(new GYM_SESSIONS
                 {
                     USER_ID = userId,
@@ -142,7 +142,7 @@ namespace GymService.Modules.Identity
 
                 if (session.TryExecute().IsError)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al guardar la sesión de usuario");
+                    Logger.AddErrorSubModule(SubModule, "Error al guardar la sesiÃ³n de usuario");
                     response["success"] = false;
                     response["message"] = "Error interno del servidor";
                     return false;
@@ -222,7 +222,7 @@ namespace GymService.Modules.Identity
             {
                 var tokenHash = SecurityValidation.Sha256Hash(token);
 
-                // El token no es la PK: se resuelve el ID de la sesión antes de actualizar el objeto.
+                // El token no es la PK: se resuelve el ID de la sesiÃ³n antes de actualizar el objeto.
                 var result = _tools.ExecuteQueryResultSet(
                     "SELECT id FROM gym_sessions WHERE token_hash = ?",
                     tokenHash
@@ -233,7 +233,7 @@ namespace GymService.Modules.Identity
 
                 var sessionId = Convert.ToInt64(GetRowValue(result.Rows[0], result, "id"));
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.UpdateObjectChanges(new GYM_SESSIONS
                 {
                     ID = sessionId,
@@ -263,9 +263,9 @@ namespace GymService.Modules.Identity
                 var cipher = CreateMfaCipher();
                 if (cipher == null)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Authentication:MfaEncryptionKey no está configurada; no se puede cifrar el secreto MFA");
+                    Logger.AddErrorSubModule(SubModule, "Authentication:MfaEncryptionKey no estÃ¡ configurada; no se puede cifrar el secreto MFA");
                     response["success"] = false;
-                    response["message"] = "La configuración de cifrado de MFA no está disponible";
+                    response["message"] = "La configuraciÃ³n de cifrado de MFA no estÃ¡ disponible";
                     return false;
                 }
 
@@ -290,7 +290,7 @@ namespace GymService.Modules.Identity
                 var encryptedSecret = MfaEncryptedPrefix + cipher.EncryptAsBASE64(secret);
                 var hashedBackupCodes = backupCodes.Select(HashBackupCode);
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.UpdateObjectChanges(new GYM_USERS
                 {
                     ID = userId,
@@ -300,7 +300,7 @@ namespace GymService.Modules.Identity
 
                 if (session.TryExecute().IsError)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al guardar la configuración MFA");
+                    Logger.AddErrorSubModule(SubModule, "Error al guardar la configuraciÃ³n MFA");
                     response["success"] = false;
                     response["message"] = "Error interno del servidor";
                     return false;
@@ -309,7 +309,7 @@ namespace GymService.Modules.Identity
                 response["success"] = true;
                 response["totpUri"] = totpUri;
                 response["backupCodes"] = backupCodes;
-                response["message"] = "Escanea el código QR en tu app de autenticación";
+                response["message"] = "Escanea el cÃ³digo QR en tu app de autenticaciÃ³n";
 
                 return true;
             }
@@ -331,13 +331,13 @@ namespace GymService.Modules.Identity
 
             try
             {
-                // El secreto TOTP está cifrado: se necesita la clave de configuración.
+                // El secreto TOTP estÃ¡ cifrado: se necesita la clave de configuraciÃ³n.
                 var cipher = CreateMfaCipher();
                 if (cipher == null)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Authentication:MfaEncryptionKey no está configurada; no se puede verificar MFA");
+                    Logger.AddErrorSubModule(SubModule, "Authentication:MfaEncryptionKey no estÃ¡ configurada; no se puede verificar MFA");
                     response["success"] = false;
-                    response["message"] = "La configuración de cifrado de MFA no está disponible";
+                    response["message"] = "La configuraciÃ³n de cifrado de MFA no estÃ¡ disponible";
                     return false;
                 }
 
@@ -375,7 +375,7 @@ namespace GymService.Modules.Identity
                 {
                     Logger.AddErrorSubModule(SubModule, $"Error al descifrar el secreto MFA: {ex.Message}");
                     response["success"] = false;
-                    response["message"] = "No se pudo descifrar la configuración MFA";
+                    response["message"] = "No se pudo descifrar la configuraciÃ³n MFA";
                     return false;
                 }
 
@@ -421,7 +421,7 @@ namespace GymService.Modules.Identity
                 }
 
                 response["success"] = false;
-                response["message"] = "Código inválido";
+                response["message"] = "CÃ³digo invÃ¡lido";
                 return false;
             }
             catch (Exception ex)
@@ -446,7 +446,7 @@ namespace GymService.Modules.Identity
                 var otpHash = SecurityValidation.Sha256Hash(otpCode);
                 var expiryMinutes = int.Parse(_configuration["Authentication:OtpExpiryMinutes"] ?? "10");
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.InsertObject(new GYM_OTP_CODES
                 {
                     EMAIL = email,
@@ -458,7 +458,7 @@ namespace GymService.Modules.Identity
 
                 if (session.TryExecute().IsError)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al generar código OTP");
+                    Logger.AddErrorSubModule(SubModule, "Error al generar cÃ³digo OTP");
                     response["success"] = false;
                     response["message"] = "Error interno del servidor";
                     return false;
@@ -468,7 +468,7 @@ namespace GymService.Modules.Identity
                 Logger.AddInfo($"OTP code generated for {email}: {otpCode}");
 
                 response["success"] = true;
-                response["message"] = "Código OTP enviado por correo";
+                response["message"] = "CÃ³digo OTP enviado por correo";
 
                 return true;
             }
@@ -502,7 +502,7 @@ namespace GymService.Modules.Identity
                 if (result == null || result.Rows.Count == 0)
                 {
                     response["success"] = false;
-                    response["message"] = "Código inválido o expirado";
+                    response["message"] = "CÃ³digo invÃ¡lido o expirado";
                     return false;
                 }
 
@@ -512,13 +512,13 @@ namespace GymService.Modules.Identity
                 if (storedHash != otpHash)
                 {
                     response["success"] = false;
-                    response["message"] = "Código inválido";
+                    response["message"] = "CÃ³digo invÃ¡lido";
                     return false;
                 }
 
                 // Mark as used
                 var otpId = Convert.ToInt64(GetRowValue(row, result, "id"));
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.UpdateObjectChanges(new GYM_OTP_CODES
                 {
                     ID = otpId,
@@ -550,16 +550,16 @@ namespace GymService.Modules.Identity
                 // Hash password
                 var passwordHash = HashPassword(password);
 
-                // Solo puede existir un usuario dueño.
+                // Solo puede existir un usuario dueÃ±o.
                 long existingOwners = _tools.ExecuteQueryObjectCount(
                     "SELECT COUNT(*) FROM gym_users WHERE is_owner = 1"
                 );
 
                 if (existingOwners > 0)
                 {
-                    Logger.AddWarningSubModule(SubModule, "Intento de crear un segundo usuario dueño");
+                    Logger.AddWarningSubModule(SubModule, "Intento de crear un segundo usuario dueÃ±o");
                     response["success"] = false;
-                    response["message"] = "Ya existe un usuario dueño";
+                    response["message"] = "Ya existe un usuario dueÃ±o";
                     return false;
                 }
 
@@ -574,24 +574,24 @@ namespace GymService.Modules.Identity
                     IS_OWNER = true
                 };
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.InsertObject(usuario);
 
                 if (session.TryExecute().IsError)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al crear usuario dueño");
+                    Logger.AddErrorSubModule(SubModule, "Error al crear usuario dueÃ±o");
                     response["success"] = false;
                     response["message"] = "Error interno del servidor";
                     return false;
                 }
 
-                Logger.AddInfoSubModule(SubModule, $"Usuario dueño creado con ID {usuario.ID}");
+                Logger.AddInfoSubModule(SubModule, $"Usuario dueÃ±o creado con ID {usuario.ID}");
 
                 // Seed default permissions
                 SeedDefaultPermissions();
 
                 response["success"] = true;
-                response["message"] = "Usuario dueño creado exitosamente";
+                response["message"] = "Usuario dueÃ±o creado exitosamente";
                 return true;
             }
             catch (Exception ex)
@@ -629,17 +629,17 @@ namespace GymService.Modules.Identity
                 ("fisio.manage", "Gestionar fisioterapia", "fisio"),
                 ("maintenance.view", "Ver mantenimiento", "maintenance"),
                 ("maintenance.manage", "Gestionar mantenimiento", "maintenance"),
-                ("billing.view", "Ver facturación", "billing"),
+                ("billing.view", "Ver facturaciÃ³n", "billing"),
                 ("billing.create", "Crear facturas", "billing"),
                 ("finance.view", "Ver finanzas", "finance"),
-                ("finance.reconcile", "Conciliación bancaria", "finance"),
+                ("finance.reconcile", "ConciliaciÃ³n bancaria", "finance"),
                 ("reports.view", "Ver reportes", "reports"),
                 ("staff.view", "Ver personal", "staff"),
                 ("staff.manage", "Gestionar personal", "staff"),
-                ("admin.settings", "Configuración", "admin")
+                ("admin.settings", "ConfiguraciÃ³n", "admin")
             };
 
-            // Inserta en una sola transacción los permisos que aún no existen.
+            // Inserta en una sola transacciÃ³n los permisos que aÃºn no existen.
             var newPermissions = new List<GYM_PERMISSIONS>();
 
             foreach (var (code, name, module) in permissions)
@@ -663,7 +663,7 @@ namespace GymService.Modules.Identity
 
             if (newPermissions.Count > 0)
             {
-                var permissionSession = _tools.CreateSession(SubModule);
+                var permissionSession = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 foreach (var permission in newPermissions)
                 {
                     permissionSession.InsertObject(permission);
@@ -680,7 +680,7 @@ namespace GymService.Modules.Identity
             var allPermsResult = _tools.ExecuteQueryResultSet("SELECT id FROM gym_permissions");
             if (allPermsResult != null && allPermsResult.Rows.Count > 0)
             {
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 foreach (var row in allPermsResult.Rows)
                 {
                     var permId = Convert.ToInt64(GetRowValue(row, allPermsResult, "id"));
@@ -768,7 +768,7 @@ namespace GymService.Modules.Identity
                     if (!VerifyLegacySha256Password(password, hash))
                         return false;
 
-                    // Migración transparente: re-hashear con PBKDF2 y actualizar la fila.
+                    // MigraciÃ³n transparente: re-hashear con PBKDF2 y actualizar la fila.
                     TryRehashPassword(userId, password);
                     return true;
                 }
@@ -838,7 +838,7 @@ namespace GymService.Modules.Identity
             {
                 var newHash = HashPassword(password);
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.UpdateObjectChanges(new GYM_USERS
                 {
                     ID = userId,
@@ -847,13 +847,13 @@ namespace GymService.Modules.Identity
 
                 var rc = session.TryExecute();
                 if (rc.IsError)
-                    Logger.AddWarningSubModule(SubModule, "No se pudo migrar el hash de contraseña a PBKDF2");
+                    Logger.AddWarningSubModule(SubModule, "No se pudo migrar el hash de contraseÃ±a a PBKDF2");
                 else
-                    Logger.AddInfoSubModule(SubModule, "Hash de contraseña migrado a PBKDF2");
+                    Logger.AddInfoSubModule(SubModule, "Hash de contraseÃ±a migrado a PBKDF2");
             }
             catch (Exception ex)
             {
-                Logger.AddWarningSubModule(SubModule, $"Error al migrar el hash de contraseña: {ex.Message}");
+                Logger.AddWarningSubModule(SubModule, $"Error al migrar el hash de contraseÃ±a: {ex.Message}");
             }
         }
 
@@ -875,7 +875,7 @@ namespace GymService.Modules.Identity
 
                 if (ownersResult != null && ownersResult.Rows.Count > 0)
                 {
-                    var session = _tools.CreateSession(SubModule);
+                    var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                     foreach (var row in ownersResult.Rows)
                     {
                         session.UpdateObjectChanges(new GYM_USERS
@@ -887,7 +887,7 @@ namespace GymService.Modules.Identity
 
                     if (session.TryExecute().IsError)
                     {
-                        Logger.AddErrorSubModule(SubModule, "Error al resetear contraseña del dueño");
+                        Logger.AddErrorSubModule(SubModule, "Error al resetear contraseÃ±a del dueÃ±o");
                         response["success"] = false;
                         response["message"] = "Error interno del servidor";
                         return false;
@@ -895,7 +895,7 @@ namespace GymService.Modules.Identity
                 }
 
                 response["success"] = true;
-                response["message"] = "Contraseña del administrador actualizada";
+                response["message"] = "ContraseÃ±a del administrador actualizada";
                 return true;
             }
             catch (Exception ex)
@@ -976,7 +976,7 @@ namespace GymService.Modules.Identity
                 }
                 else if (FixedTimeEqualsStrings(entry, code))
                 {
-                    // Compatibilidad con códigos de respaldo antiguos en texto plano.
+                    // Compatibilidad con cÃ³digos de respaldo antiguos en texto plano.
                     return true;
                 }
             }
@@ -1049,7 +1049,7 @@ namespace GymService.Modules.Identity
                 var timeSpan = time - epoch;
                 var timeStep = (long)(timeSpan.TotalSeconds / 30);
 
-                // Allow window of ±1 step
+                // Allow window of Â±1 step
                 for (long offset = -1; offset <= 1; offset++)
                 {
                     var counter = timeStep + offset;

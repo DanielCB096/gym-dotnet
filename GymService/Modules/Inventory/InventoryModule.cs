@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using AxLogger;
@@ -59,7 +59,7 @@ namespace GymService.Modules.Inventory
                     return false;
                 }
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.InsertObject(new GYM_INVENTORY
                 {
                     PRODUCT_NAME = productName,
@@ -101,7 +101,7 @@ namespace GymService.Modules.Inventory
 
             try
             {
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.UpdateObjectChanges(new GYM_INVENTORY
                 {
                     ID = productId,
@@ -139,7 +139,7 @@ namespace GymService.Modules.Inventory
 
             try
             {
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.DeleteObject(new GYM_INVENTORY { ID = productId });
 
                 if (!session.TryExecute().IsError)

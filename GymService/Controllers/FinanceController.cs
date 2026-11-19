@@ -49,6 +49,20 @@ namespace GymService.Controllers
             return success ? Ok(response) : BadRequest(response);
         }
 
+        [HttpGet]
+        [Route("api/finance/transactions")]
+        public ActionResult<Dictionary<string, object>> GetTransactions([FromQuery] long? accountId = null, [FromQuery] int page = 1, [FromQuery] int limit = 50)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Finance == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Finance.GetTransactions(out var response, accountId, page, limit);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
         [HttpDelete]
         [Route("api/finance/accounts/{accountId}")]
         public ActionResult<Dictionary<string, object>> DeleteBankAccount(long accountId)

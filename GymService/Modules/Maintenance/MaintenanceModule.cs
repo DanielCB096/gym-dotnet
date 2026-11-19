@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using AxLogger;
@@ -53,11 +53,11 @@ namespace GymService.Modules.Maintenance
                 if (string.IsNullOrEmpty(description))
                 {
                     response["success"] = false;
-                    response["message"] = "La descripción es requerida";
+                    response["message"] = "La descripciÃ³n es requerida";
                     return false;
                 }
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 long newTicketId = _tools.GenerateUniqueID(GYM_MAINTENANCE_TICKETS.DatabaseMappingObject, 1).GetInt64UniqueId();
 
                 // GYM_MAINTENANCE_TICKETS no expone columnas ASSIGNED_TO ni CREATED_DATE.
@@ -102,7 +102,7 @@ namespace GymService.Modules.Maintenance
 
             try
             {
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.UpdateObjectChanges(new GYM_MAINTENANCE_TICKETS { ID = ticketId, STATUS = status });
 
                 if (!session.TryExecute().IsError)
@@ -136,7 +136,7 @@ namespace GymService.Modules.Maintenance
 
             try
             {
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.DeleteObject(new GYM_MAINTENANCE_TICKETS { ID = ticketId });
 
                 if (!session.TryExecute().IsError)

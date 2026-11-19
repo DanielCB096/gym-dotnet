@@ -57,7 +57,7 @@ namespace GymService.Modules.Kiosk
                     IS_ACTIVE = true
                 };
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.InsertObject(device);
 
                 if (session.TryExecute().IsError)
@@ -217,7 +217,7 @@ namespace GymService.Modules.Kiosk
                     IS_ACTIVE = false
                 };
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.UpdateObjectChanges(device);
 
                 if (session.TryExecute().IsError)

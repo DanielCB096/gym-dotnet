@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using AxLogger;
@@ -8,7 +8,7 @@ using AxObjectOrientedDatabase;
 namespace GymService.Modules.Members
 {
     /// <summary>
-    /// Members module: CRUD de socios, membresías, congelaciones y pagos.
+    /// Members module: CRUD de socios, membresÃ­as, congelaciones y pagos.
     /// </summary>
     public class MembersModule
     {
@@ -162,7 +162,7 @@ namespace GymService.Modules.Members
                     }
                     else
                     {
-                        Logger.AddWarningSubModule(SubModule, $"Plan '{membershipType}' no encontrado, membresía no creada");
+                        Logger.AddWarningSubModule(SubModule, $"Plan '{membershipType}' no encontrado, membresÃ­a no creada");
                     }
                 }
 
@@ -276,7 +276,7 @@ namespace GymService.Modules.Members
 
             try
             {
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.UpdateObjectChanges(new GYM_MEMBERSHIPS
                 {
                     ID = membershipId,
@@ -287,14 +287,14 @@ namespace GymService.Modules.Members
 
                 if (session.TryExecute().IsError)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al congelar la membresía");
+                    Logger.AddErrorSubModule(SubModule, "Error al congelar la membresÃ­a");
                     response["success"] = false;
-                    response["message"] = "Error al congelar la membresía";
+                    response["message"] = "Error al congelar la membresÃ­a";
                     return false;
                 }
 
                 response["success"] = true;
-                response["message"] = "Membresía congelada exitosamente";
+                response["message"] = "MembresÃ­a congelada exitosamente";
                 return true;
             }
             catch (Exception ex)
@@ -315,7 +315,7 @@ namespace GymService.Modules.Members
 
             try
             {
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.UpdateObjectChanges(new GYM_MEMBERSHIPS
                 {
                     ID = membershipId,
@@ -326,14 +326,14 @@ namespace GymService.Modules.Members
 
                 if (session.TryExecute().IsError)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al reanudar la membresía");
+                    Logger.AddErrorSubModule(SubModule, "Error al reanudar la membresÃ­a");
                     response["success"] = false;
-                    response["message"] = "Error al reanudar la membresía";
+                    response["message"] = "Error al reanudar la membresÃ­a";
                     return false;
                 }
 
                 response["success"] = true;
-                response["message"] = "Membresía reanudada exitosamente";
+                response["message"] = "MembresÃ­a reanudada exitosamente";
                 return true;
             }
             catch (Exception ex)

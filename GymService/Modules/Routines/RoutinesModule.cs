@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using AxLogger;
@@ -58,7 +58,7 @@ namespace GymService.Modules.Routines
                     return false;
                 }
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 long newRoutineId = _tools.GenerateUniqueID(GYM_ROUTINE_PLANS.DatabaseMappingObject, 1).GetInt64UniqueId();
 
                 session.InsertObjectWithID(new GYM_ROUTINE_PLANS
@@ -107,7 +107,7 @@ namespace GymService.Modules.Routines
                 var difficulty = Convert.ToString(routineData.GetValueOrDefault("difficulty", "beginner")) ?? "beginner";
                 var durationMinutes = routineData.ContainsKey("durationMinutes") ? Convert.ToInt32(routineData["durationMinutes"]) : 45;
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.UpdateObjectChanges(new GYM_ROUTINE_PLANS
                 {
                     ID = routineId,
@@ -148,7 +148,7 @@ namespace GymService.Modules.Routines
 
             try
             {
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.DeleteObject(new GYM_ROUTINE_PLANS { ID = routineId });
 
                 if (!session.TryExecute().IsError)

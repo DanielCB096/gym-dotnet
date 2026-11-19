@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using AxLogger;
@@ -67,7 +67,7 @@ namespace GymService.Modules.Staff
                     IS_ACTIVE = true
                 };
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.InsertObject(newStaff);
 
                 if (!session.TryExecute().IsError)
@@ -113,7 +113,7 @@ namespace GymService.Modules.Staff
                     DEPARTMENT = string.IsNullOrWhiteSpace(department) ? null : department
                 };
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.UpdateObjectChanges(staff);
 
                 if (!session.TryExecute().IsError)
@@ -149,7 +149,7 @@ namespace GymService.Modules.Staff
             {
                 var staff = new GYM_STAFF { ID = staffId };
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.DeleteObject(staff);
 
                 if (!session.TryExecute().IsError)

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using AxLogger;
@@ -66,7 +66,7 @@ namespace GymService.Modules.Reports
                     IS_ACTIVE = true
                 };
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.InsertObject(report);
 
                 if (!session.TryExecute().IsError)
@@ -102,7 +102,7 @@ namespace GymService.Modules.Reports
             {
                 var report = new GYM_SCHEDULED_REPORTS { ID = reportId };
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.DeleteObject(report);
 
                 if (!session.TryExecute().IsError)

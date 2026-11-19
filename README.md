@@ -185,6 +185,16 @@ cd C:\proyectos\gimnasio-dotnet\GymService
 dotnet build
 ```
 
+## Pruebas
+
+```powershell
+cd C:\proyectos\gimnasio-dotnet
+dotnet test GymService.Tests\GymService.Tests.csproj
+```
+
+Cubren hashing de tokens/OTP, el contexto de auditoría (`CurrentUser`) y el convertidor
+JSON que convierte `Dictionary<string, object>` a tipos CLR primitivos.
+
 ## Ejecución (modo consola)
 
 ```powershell

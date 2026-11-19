@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using AxLogger;
@@ -9,7 +9,7 @@ using GymService.Tools;
 namespace GymService.Modules.Access
 {
     /// <summary>
-    /// Access module: generación y validación de códigos OTP para acceso al gimnasio.
+    /// Access module: generaciÃ³n y validaciÃ³n de cÃ³digos OTP para acceso al gimnasio.
     /// </summary>
     public class AccessModule
     {
@@ -52,7 +52,7 @@ namespace GymService.Modules.Access
                 var hmacKey = SecurityValidation.GenerateToken(32);
                 var expiresAt = DateTime.Now.AddMinutes(10);
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.InsertObject(new GYM_ACCESS_CODES
                 {
                     MEMBER_ID = memberId,
@@ -65,16 +65,16 @@ namespace GymService.Modules.Access
 
                 if (session.TryExecute().IsError)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al generar código de acceso");
+                    Logger.AddErrorSubModule(SubModule, "Error al generar cÃ³digo de acceso");
                     response["success"] = false;
-                    response["message"] = "Error al generar código de acceso";
+                    response["message"] = "Error al generar cÃ³digo de acceso";
                     return false;
                 }
 
                 response["success"] = true;
                 response["code"] = code;
                 response["expiresIn"] = 600;
-                response["message"] = "Código generado exitosamente";
+                response["message"] = "CÃ³digo generado exitosamente";
                 return true;
             }
             catch (Exception ex)
@@ -108,7 +108,7 @@ namespace GymService.Modules.Access
                 if (result == null || result.Rows.Count == 0)
                 {
                     response["success"] = false;
-                    response["message"] = "Código inválido o expirado";
+                    response["message"] = "CÃ³digo invÃ¡lido o expirado";
                     return false;
                 }
 
@@ -119,7 +119,7 @@ namespace GymService.Modules.Access
 
                 // Mark as used and log the access in a single transaction.
                 // Nota: con objetos no se puede condicionar el UPDATE a USED = 0, se conserva el flujo actual.
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.UpdateObjectChanges(new GYM_ACCESS_CODES
                 {
                     ID = accessCodeId,
@@ -137,7 +137,7 @@ namespace GymService.Modules.Access
 
                 if (session.TryExecute().IsError)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al validar código de acceso");
+                    Logger.AddErrorSubModule(SubModule, "Error al validar cÃ³digo de acceso");
                     response["success"] = false;
                     response["message"] = "Error al procesar el acceso";
                     return false;
@@ -270,7 +270,7 @@ namespace GymService.Modules.Access
                     cutoffDate
                 );
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 bool hasOperations = false;
 
                 if (codesResult != null && codesResult.Rows.Count > 0)
@@ -300,7 +300,7 @@ namespace GymService.Modules.Access
                 }
 
                 response["success"] = true;
-                response["message"] = $"Registros mayores a {daysOld} días eliminados";
+                response["message"] = $"Registros mayores a {daysOld} dÃ­as eliminados";
                 return true;
             }
             catch (Exception ex)

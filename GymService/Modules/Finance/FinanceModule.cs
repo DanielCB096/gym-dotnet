@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using AxLogger;
@@ -54,11 +54,11 @@ namespace GymService.Modules.Finance
                 if (string.IsNullOrEmpty(bankName) || string.IsNullOrEmpty(accountNumber))
                 {
                     response["success"] = false;
-                    response["message"] = "El nombre del banco y número de cuenta son requeridos";
+                    response["message"] = "El nombre del banco y nÃºmero de cuenta son requeridos";
                     return false;
                 }
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.InsertObject(new GYM_BANK_ACCOUNTS
                 {
                     BANK_NAME = bankName,
@@ -104,7 +104,7 @@ namespace GymService.Modules.Finance
                 var description = Convert.ToString(transactionData.GetValueOrDefault("description", "")) ?? "";
                 var transactionType = Convert.ToString(transactionData.GetValueOrDefault("transactionType", "deposit")) ?? "deposit";
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.InsertObject(new GYM_BANK_TRANSACTIONS
                 {
                     ACCOUNT_ID = accountId,
@@ -117,12 +117,12 @@ namespace GymService.Modules.Finance
                 if (!session.TryExecute().IsError)
                 {
                     response["success"] = true;
-                    response["message"] = "Transacción registrada correctamente";
+                    response["message"] = "TransacciÃ³n registrada correctamente";
                 }
                 else
                 {
                     response["success"] = false;
-                    response["message"] = "Error al registrar la transacción";
+                    response["message"] = "Error al registrar la transacciÃ³n";
                 }
 
                 return (bool)response["success"];
@@ -145,7 +145,7 @@ namespace GymService.Modules.Finance
 
             try
             {
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.DeleteObject(new GYM_BANK_ACCOUNTS { ID = accountId });
 
                 if (!session.TryExecute().IsError)
@@ -207,6 +207,84 @@ namespace GymService.Modules.Finance
             catch (Exception ex)
             {
                 Logger.AddErrorSubModule(SubModule, $"Error en GetBankAccounts: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+        /// <summary>
+        /// Get bank transactions, optionally filtered by account.
+        /// </summary>
+        public bool GetTransactions(out Dictionary<string, object> response, long? accountId = null, int page = 1, int limit = 50)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                if (page < 1) page = 1;
+                if (limit < 1 || limit > 500) limit = 50;
+                int offset = (page - 1) * limit;
+
+                var whereParts = new List<string>();
+                var parameters = new List<object>();
+
+                if (accountId.HasValue)
+                {
+                    whereParts.Add("t.account_id = ?");
+                    parameters.Add(accountId.Value);
+                }
+
+                string whereClause = whereParts.Count > 0 ? "WHERE " + string.Join(" AND ", whereParts) : "";
+
+                long totalCount = _tools.ExecuteQueryObjectCount(
+                    $"SELECT COUNT(*) FROM gym_bank_transactions t {whereClause}",
+                    parameters.ToArray()
+                );
+
+                var sql = "SELECT t.*, a.bank_name FROM gym_bank_transactions t " +
+                          "LEFT JOIN gym_bank_accounts a ON a.id = t.account_id " +
+                          $"{whereClause} ORDER BY t.transaction_date DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
+                var queryParameters = new List<object>(parameters) { offset, limit };
+                var result = _tools.ExecuteQueryResultSet(sql, queryParameters.ToArray());
+
+                var transactions = new List<Dictionary<string, object>>();
+                if (result != null && result.Rows.Count > 0)
+                {
+                    foreach (Row row in result.Rows)
+                    {
+                        transactions.Add(new Dictionary<string, object>
+                        {
+                            ["id"] = Convert.ToInt64(GetRowValue(row, result, "id")),
+                            ["accountId"] = Convert.ToInt64(GetRowValue(row, result, "account_id")),
+                            ["bankName"] = Convert.ToString(GetRowValue(row, result, "bank_name")) ?? "",
+                            ["transactionType"] = Convert.ToString(GetRowValue(row, result, "transaction_type")) ?? "",
+                            ["amount"] = Convert.ToDecimal(GetRowValue(row, result, "amount")),
+                            ["description"] = Convert.ToString(GetRowValue(row, result, "description")) ?? "",
+                            ["transactionDate"] = GetRowValue(row, result, "transaction_date") != null ? Convert.ToDateTime(GetRowValue(row, result, "transaction_date")) : (DateTime?)null,
+                            ["reconciled"] = Convert.ToBoolean(GetRowValue(row, result, "reconciled"))
+                        });
+                    }
+                }
+
+                int totalPages = limit > 0 ? (int)((totalCount + limit - 1) / limit) : 0;
+
+                response["success"] = true;
+                response["data"] = transactions;
+                response["pagination"] = new Dictionary<string, object>
+                {
+                    ["page"] = page,
+                    ["limit"] = limit,
+                    ["totalCount"] = totalCount,
+                    ["totalPages"] = totalPages,
+                    ["hasNext"] = page < totalPages,
+                    ["hasPrev"] = page > 1
+                };
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en GetTransactions: {ex.Message}");
                 response["success"] = false;
                 response["message"] = "Error interno del servidor";
                 return false;

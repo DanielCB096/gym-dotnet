@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using AxLogger;
@@ -58,7 +58,7 @@ namespace GymService.Modules.Classes
                     return false;
                 }
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 long newClassTypeId = _tools.GenerateUniqueID(GYM_CLASS_TYPES.DatabaseMappingObject, 1).GetInt64UniqueId();
 
                 session.InsertObjectWithID(new GYM_CLASS_TYPES
@@ -107,7 +107,7 @@ namespace GymService.Modules.Classes
                 var durationMinutes = classData.ContainsKey("durationMinutes") ? Convert.ToInt32(classData["durationMinutes"]) : 60;
                 var maxParticipants = classData.ContainsKey("maxParticipants") ? Convert.ToInt32(classData["maxParticipants"]) : 30;
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.UpdateObjectChanges(new GYM_CLASS_TYPES
                 {
                     ID = classTypeId,
@@ -148,7 +148,7 @@ namespace GymService.Modules.Classes
 
             try
             {
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.DeleteObject(new GYM_CLASS_TYPES { ID = classTypeId });
 
                 if (!session.TryExecute().IsError)
