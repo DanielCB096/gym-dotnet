@@ -9,7 +9,12 @@ namespace GymService.Controllers
     {
         [HttpGet]
         [Route("api/inventory")]
-        public ActionResult<Dictionary<string, object>> GetProducts([FromQuery] string? query = null, [FromQuery] int page = 1, [FromQuery] int limit = 50)
+        public ActionResult<Dictionary<string, object>> GetProducts(
+            [FromQuery] string? query = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int limit = 50,
+            [FromQuery] bool lowStock = false,
+            [FromQuery] bool includeInactive = false)
         {
             if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
                 return Unauthorized(new { success = false, message = errorMessage });
@@ -17,7 +22,8 @@ namespace GymService.Controllers
             if (DataCenter.BusinessProcess.Inventory == null)
                 return BadRequest(new { success = false, message = "Servicio no disponible" });
 
-            var success = DataCenter.BusinessProcess.Inventory.GetProducts(out var response, query, page, limit);
+            var success = DataCenter.BusinessProcess.Inventory.GetProducts(
+                out var response, query, page, limit, lowStock, includeInactive);
             return success ? Ok(response) : BadRequest(response);
         }
 
@@ -32,6 +38,20 @@ namespace GymService.Controllers
                 return BadRequest(new { success = false, message = "Servicio no disponible" });
 
             var success = DataCenter.BusinessProcess.Inventory.CreateProduct(productData, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPut]
+        [Route("api/inventory/{productId}")]
+        public ActionResult<Dictionary<string, object>> UpdateProduct(long productId, [FromBody] Dictionary<string, object> productData)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Inventory == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Inventory.UpdateProduct(productId, productData, out var response);
             return success ? Ok(response) : BadRequest(response);
         }
 

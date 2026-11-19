@@ -6,6 +6,14 @@
 
 ## Backend (.NET)
 
+### Inventario y mantenimiento completos (2026-11-19)
+- **Inventario:** productos con SKU, categoría, costo, stock y mínimo; búsqueda por nombre/categoría/SKU, filtro de stock bajo, ajuste de stock, edición de datos, activación/desactivación y borrado protegido si hay ventas.
+- **Mantenimiento:** CRUD de equipos (categoría, ubicación, estado, compra y garantía) y tickets con prioridad, estados `open`/`in_progress`/`resolved`/`cancelled`, resolución con usuario y fecha, y bloqueo de tickets duplicados abiertos.
+- **Sincronización:** al abrir un ticket el equipo pasa a `maintenance`; al resolver/cancelar el último ticket vuelve a `operational`. Equipos con historial no se eliminan.
+- **API:** `/api/inventory` (GET/POST/PUT/DELETE y `PUT /{id}/stock`), `/api/maintenance/equipment` y `/api/maintenance/tickets` con permisos `inventory.*` / `maintenance.*`.
+- **UI:** Inventario con filtro de stock bajo, edición y estado; Mantenimiento con pestañas “Equipos” y “Tickets”, filtros por equipo/estado/prioridad y acciones de iniciar, resolver, cancelar y eliminar.
+- **Pruebas:** 67 (unitarias + integración) con flujos de equipos/tickets y de productos/stock.
+
 ### Fisioterapia completa (2026-11-19)
 - **Backend:** paquetes (generales o por socio) con sesiones, vigencia, precio y estado; citas con validación de socio activo, paquete vigente y sesiones disponibles; consumo de sesión al completar y liberación al cancelar/deshacer.
 - **Reglas:** un paquete general queda asignado al socio en su primera cita; un paquete agotado o inactivo no permite agendar; las citas completadas no se editan, cancelan ni eliminan; un paquete con historial no se elimina (se desactiva).

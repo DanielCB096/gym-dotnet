@@ -6,6 +6,7 @@ import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import Select from '../components/ui/Select';
 import { formatCurrency } from '../utils/format';
 
 export default function Inventory() {
@@ -13,6 +14,7 @@ export default function Inventory() {
   const [stockValue, setStockValue] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [lowStockOnly, setLowStockOnly] = useState(false);
 
   const openStock = (product, reload) => {
     setStockTarget({ product, reload });
@@ -39,9 +41,10 @@ export default function Inventory() {
     setSaving(true);
     setError('');
     try {
-      await api.put(`/inventory/${stockTarget.product.id}/stock`, { stock: newStock });
+      const response = await api.put(`/inventory/${stockTarget.product.id}/stock`, { stock: newStock });
       stockTarget.reload();
       setStockTarget(null);
+      return response.data?.message;
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo actualizar el stock.');
     } finally {
@@ -49,21 +52,58 @@ export default function Inventory() {
     }
   };
 
+  const createFields = [
+    { name: 'productName', label: 'Nombre del producto', required: true },
+    { name: 'sku', label: 'SKU', placeholder: 'Código interno (opcional)' },
+    { name: 'category', label: 'Categoría', placeholder: 'Ej. Suplementos' },
+    { name: 'description', label: 'Descripción', type: 'textarea', full: true, rows: 2 },
+    { name: 'price', label: 'Precio de venta', type: 'number', min: 0, step: '0.01', defaultValue: 0 },
+    { name: 'cost', label: 'Costo', type: 'number', min: 0, step: '0.01', placeholder: 'Opcional' },
+    { name: 'stock', label: 'Stock inicial', type: 'number', min: 0, defaultValue: 0 },
+    { name: 'minStock', label: 'Stock mínimo', type: 'number', min: 0, defaultValue: 5 },
+  ];
+
   return (
     <>
       <CrudPage
         title="Inventario"
         subtitle="Productos disponibles para la venta en recepción"
         endpoint="/inventory"
+        extraParams={{ includeInactive: true, lowStock: lowStockOnly || undefined }}
         createLabel="Nuevo producto"
         emptyText="No hay productos registrados"
         searchParam="query"
-        searchPlaceholder="Buscar por nombre o categoría"
-        canEdit={false}
+        searchPlaceholder="Buscar por nombre, categoría o SKU"
+        toolbar={({ reload }) => (
+          <div className="flex items-end gap-2">
+            <Select
+              label="Existencias"
+              value={lowStockOnly ? 'low' : ''}
+              onChange={(event) => setLowStockOnly(event.target.value === 'low')}
+              options={[{ value: 'low', label: 'Solo stock bajo' }]}
+              placeholder="Todos"
+            />
+            <Button variant="outline" onClick={reload}>Actualizar</Button>
+          </div>
+        )}
         columns={[
-          { key: 'productName', label: 'Producto' },
-          { key: 'category', label: 'Categoría' },
+          {
+            key: 'productName',
+            label: 'Producto',
+            render: (row) => (
+              <div>
+                <p className="font-medium text-slate-800">{row.productName}</p>
+                <p className="text-xs text-slate-400">{row.sku || row.category || '—'}</p>
+              </div>
+            ),
+          },
+          { key: 'category', label: 'Categoría', render: (row) => row.category || '—' },
           { key: 'price', label: 'Precio', render: (row) => formatCurrency(row.price) },
+          {
+            key: 'cost',
+            label: 'Costo',
+            render: (row) => (row.cost != null ? formatCurrency(row.cost) : '—'),
+          },
           {
             key: 'stock',
             label: 'Stock',
@@ -76,15 +116,35 @@ export default function Inventory() {
               );
             },
           },
-          { key: 'minStock', label: 'Stock mínimo' },
+          { key: 'minStock', label: 'Mínimo' },
+          {
+            key: 'isActive',
+            label: 'Estado',
+            render: (row) => (
+              <Badge variant={row.isActive ? 'success' : 'neutral'} dot>
+                {row.isActive ? 'Activo' : 'Inactivo'}
+              </Badge>
+            ),
+          },
         ]}
-        fields={[
-          { name: 'productName', label: 'Nombre del producto', required: true },
-          { name: 'category', label: 'Categoría', placeholder: 'Ej. Suplementos' },
-          { name: 'price', label: 'Precio', type: 'number', min: 0, step: '0.01', defaultValue: 0 },
-          { name: 'stock', label: 'Stock inicial', type: 'number', min: 0, defaultValue: 0 },
-          { name: 'minStock', label: 'Stock mínimo', type: 'number', min: 0, defaultValue: 5 },
+        fields={createFields}
+        createFields={createFields}
+        editFields={[
+          ...createFields.filter((field) => field.name !== 'stock'),
+          {
+            name: 'isActive',
+            label: 'Estado',
+            type: 'select',
+            options: [
+              { value: 'true', label: 'Activo' },
+              { value: 'false', label: 'Inactivo' },
+            ],
+          },
         ]}
+        mapItemToForm={(item, initial) => ({
+          ...initial,
+          isActive: item.isActive ? 'true' : 'false',
+        })}
         actions={[
           {
             label: 'Ajustar stock',

@@ -337,6 +337,20 @@ namespace GymService.Services
                 ["PUT"] = "maintenance.manage",
                 ["DELETE"] = "maintenance.manage"
             },
+            ["/api/maintenance/equipment"] = new Dictionary<string, string>
+            {
+                ["GET"] = "maintenance.view",
+                ["POST"] = "maintenance.manage",
+                ["PUT"] = "maintenance.manage",
+                ["DELETE"] = "maintenance.manage"
+            },
+            ["/api/maintenance/tickets"] = new Dictionary<string, string>
+            {
+                ["GET"] = "maintenance.view",
+                ["POST"] = "maintenance.manage",
+                ["PUT"] = "maintenance.manage",
+                ["DELETE"] = "maintenance.manage"
+            },
             // Billing
             ["/api/billing"] = new Dictionary<string, string>
             {

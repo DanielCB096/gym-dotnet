@@ -38,7 +38,7 @@ namespace GymService.Modules.Inventory
         }
 
         /// <summary>
-        /// Create a new product
+        /// Crea un producto del inventario.
         /// </summary>
         public bool CreateProduct(Dictionary<string, object> productData, out Dictionary<string, object> response)
         {
@@ -48,40 +48,64 @@ namespace GymService.Modules.Inventory
             {
                 var productName = Convert.ToString(productData.GetValueOrDefault("productName", "")) ?? "";
                 var category = Convert.ToString(productData.GetValueOrDefault("category", "")) ?? "";
+                var description = Convert.ToString(productData.GetValueOrDefault("description", "")) ?? "";
+                var sku = Convert.ToString(productData.GetValueOrDefault("sku", "")) ?? "";
                 var price = productData.ContainsKey("price") ? Convert.ToDecimal(productData["price"]) : 0m;
                 var stock = productData.ContainsKey("stock") ? Convert.ToInt32(productData["stock"]) : 0;
                 var minStock = productData.ContainsKey("minStock") ? Convert.ToInt32(productData["minStock"]) : 5;
+                decimal? cost = productData.ContainsKey("cost") && Convert.ToString(productData["cost"]) != ""
+                    ? Convert.ToDecimal(productData["cost"])
+                    : (decimal?)null;
 
-                if (string.IsNullOrEmpty(productName))
+                if (string.IsNullOrWhiteSpace(productName))
                 {
                     response["success"] = false;
                     response["message"] = "El nombre del producto es requerido";
                     return false;
                 }
 
-                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
-                session.InsertObject(new GYM_INVENTORY
+                if (price < 0 || (cost.HasValue && cost.Value < 0))
                 {
-                    PRODUCT_NAME = productName,
-                    CATEGORY = category,
+                    response["success"] = false;
+                    response["message"] = "El precio y el costo no pueden ser negativos";
+                    return false;
+                }
+
+                if (stock < 0 || minStock < 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "El stock y el mínimo no pueden ser negativos";
+                    return false;
+                }
+
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                long productId = _tools.GenerateUniqueID(GYM_INVENTORY.DatabaseMappingObject, 1).GetInt64UniqueId();
+
+                session.InsertObjectWithID(new GYM_INVENTORY
+                {
+                    ID = productId,
+                    PRODUCT_NAME = productName.Trim(),
+                    DESCRIPTION = description.Trim(),
+                    SKU = sku.Trim(),
+                    CATEGORY = category.Trim(),
                     PRICE = price,
+                    COST = cost,
                     STOCK_QUANTITY = stock,
                     MIN_STOCK = minStock,
                     IS_ACTIVE = true
                 });
 
-                if (!session.TryExecute().IsError)
-                {
-                    response["success"] = true;
-                    response["message"] = "Producto creado correctamente";
-                }
-                else
+                if (session.TryExecute().IsError)
                 {
                     response["success"] = false;
                     response["message"] = "Error al crear el producto";
+                    return false;
                 }
 
-                return (bool)response["success"];
+                response["success"] = true;
+                response["productId"] = productId;
+                response["message"] = "Producto creado correctamente";
+                return true;
             }
             catch (Exception ex)
             {
@@ -93,7 +117,116 @@ namespace GymService.Modules.Inventory
         }
 
         /// <summary>
-        /// Update product stock
+        /// Actualiza los datos del producto (el stock se ajusta aparte).
+        /// </summary>
+        public bool UpdateProduct(long productId, Dictionary<string, object> productData, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var current = GetProductState(productId);
+                if (current == null)
+                {
+                    response["success"] = false;
+                    response["message"] = "El producto no existe";
+                    return false;
+                }
+
+                string productName = productData.ContainsKey("productName")
+                    ? Convert.ToString(productData["productName"]) ?? ""
+                    : current.Value.Name;
+
+                if (string.IsNullOrWhiteSpace(productName))
+                {
+                    response["success"] = false;
+                    response["message"] = "El nombre del producto es requerido";
+                    return false;
+                }
+
+                string category = productData.ContainsKey("category")
+                    ? Convert.ToString(productData["category"]) ?? ""
+                    : current.Value.Category;
+
+                string description = productData.ContainsKey("description")
+                    ? Convert.ToString(productData["description"]) ?? ""
+                    : current.Value.Description;
+
+                string sku = productData.ContainsKey("sku")
+                    ? Convert.ToString(productData["sku"]) ?? ""
+                    : current.Value.Sku;
+
+                decimal price = productData.ContainsKey("price")
+                    ? Convert.ToDecimal(productData["price"])
+                    : current.Value.Price;
+
+                decimal? cost = current.Value.Cost;
+                if (productData.ContainsKey("cost"))
+                {
+                    var rawCost = Convert.ToString(productData["cost"]);
+                    cost = string.IsNullOrWhiteSpace(rawCost) ? (decimal?)null : Convert.ToDecimal(rawCost);
+                }
+
+                int minStock = productData.ContainsKey("minStock")
+                    ? Convert.ToInt32(productData["minStock"])
+                    : current.Value.MinStock;
+
+                bool isActive = productData.ContainsKey("isActive")
+                    ? Convert.ToBoolean(productData["isActive"])
+                    : current.Value.IsActive;
+
+                if (price < 0 || (cost.HasValue && cost.Value < 0))
+                {
+                    response["success"] = false;
+                    response["message"] = "El precio y el costo no pueden ser negativos";
+                    return false;
+                }
+
+                if (minStock < 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "El stock mínimo no puede ser negativo";
+                    return false;
+                }
+
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+
+                session.UpdateObjectChanges(new GYM_INVENTORY
+                {
+                    ID = productId,
+                    PRODUCT_NAME = productName.Trim(),
+                    DESCRIPTION = description.Trim(),
+                    SKU = sku.Trim(),
+                    CATEGORY = category.Trim(),
+                    PRICE = price,
+                    COST = cost,
+                    STOCK_QUANTITY = current.Value.Stock,
+                    MIN_STOCK = minStock,
+                    IS_ACTIVE = isActive
+                });
+
+                if (session.TryExecute().IsError)
+                {
+                    response["success"] = false;
+                    response["message"] = "Error al actualizar el producto";
+                    return false;
+                }
+
+                response["success"] = true;
+                response["message"] = "Producto actualizado correctamente";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en UpdateProduct: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Ajusta el stock de un producto.
         /// </summary>
         public bool UpdateStock(long productId, int newStock, out Dictionary<string, object> response)
         {
@@ -101,6 +234,20 @@ namespace GymService.Modules.Inventory
 
             try
             {
+                if (newStock < 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "El stock no puede ser negativo";
+                    return false;
+                }
+
+                if (GetProductState(productId) == null)
+                {
+                    response["success"] = false;
+                    response["message"] = "El producto no existe";
+                    return false;
+                }
+
                 var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.UpdateObjectChanges(new GYM_INVENTORY
                 {
@@ -108,18 +255,16 @@ namespace GymService.Modules.Inventory
                     STOCK_QUANTITY = newStock
                 });
 
-                if (!session.TryExecute().IsError)
-                {
-                    response["success"] = true;
-                    response["message"] = "Stock actualizado correctamente";
-                }
-                else
+                if (session.TryExecute().IsError)
                 {
                     response["success"] = false;
                     response["message"] = "Error al actualizar el stock";
+                    return false;
                 }
 
-                return (bool)response["success"];
+                response["success"] = true;
+                response["message"] = "Stock actualizado correctamente";
+                return true;
             }
             catch (Exception ex)
             {
@@ -131,7 +276,7 @@ namespace GymService.Modules.Inventory
         }
 
         /// <summary>
-        /// Delete a product
+        /// Elimina un producto sin ventas asociadas.
         /// </summary>
         public bool DeleteProduct(long productId, out Dictionary<string, object> response)
         {
@@ -139,21 +284,36 @@ namespace GymService.Modules.Inventory
 
             try
             {
+                if (GetProductState(productId) == null)
+                {
+                    response["success"] = false;
+                    response["message"] = "El producto no existe";
+                    return false;
+                }
+
+                long saleItems = _tools.ExecuteQueryObjectCount(
+                    "SELECT COUNT(*) FROM GYM_SALE_ITEMS WHERE PRODUCT_ID = ?", productId);
+
+                if (saleItems > 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "El producto tiene ventas asociadas; no se puede eliminar para no perder el historial. Desactívalo en su lugar.";
+                    return false;
+                }
+
                 var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.DeleteObject(new GYM_INVENTORY { ID = productId });
 
-                if (!session.TryExecute().IsError)
-                {
-                    response["success"] = true;
-                    response["message"] = "Producto eliminado correctamente";
-                }
-                else
+                if (session.TryExecute().IsError)
                 {
                     response["success"] = false;
                     response["message"] = "Error al eliminar el producto";
+                    return false;
                 }
 
-                return (bool)response["success"];
+                response["success"] = true;
+                response["message"] = "Producto eliminado correctamente";
+                return true;
             }
             catch (Exception ex)
             {
@@ -165,38 +325,48 @@ namespace GymService.Modules.Inventory
         }
 
         /// <summary>
-        /// Get active products in inventory with optional search and pagination
+        /// Lista productos del inventario con búsqueda, filtro de stock bajo e inactivos.
         /// </summary>
-        public bool GetProducts(out Dictionary<string, object> response, string? query = null, int page = 1, int limit = 50)
+        public bool GetProducts(
+            out Dictionary<string, object> response,
+            string? query = null,
+            int page = 1,
+            int limit = 50,
+            bool lowStockOnly = false,
+            bool includeInactive = false)
         {
             response = new Dictionary<string, object>();
 
             try
             {
-                // Clamp pagination values
                 if (page < 1) page = 1;
                 if (limit < 1 || limit > 500) limit = 50;
                 int offset = (page - 1) * limit;
 
-                var whereParts = new List<string> { "is_active = 1" };
+                var whereParts = new List<string>();
                 var parameters = new List<object>();
 
-                if (!string.IsNullOrEmpty(query))
+                if (!includeInactive)
+                    whereParts.Add("is_active = 1");
+
+                if (!string.IsNullOrWhiteSpace(query))
                 {
-                    whereParts.Add("(product_name LIKE ? OR category LIKE ?)");
+                    whereParts.Add("(product_name LIKE ? OR category LIKE ? OR sku LIKE ?)");
+                    parameters.Add("%" + query + "%");
                     parameters.Add("%" + query + "%");
                     parameters.Add("%" + query + "%");
                 }
 
-                string whereClause = "WHERE " + string.Join(" AND ", whereParts);
+                if (lowStockOnly)
+                    whereParts.Add("stock_quantity <= min_stock");
 
-                // Count total for pagination metadata
+                string whereClause = whereParts.Count > 0 ? "WHERE " + string.Join(" AND ", whereParts) : "";
+
                 long totalCount = _tools.ExecuteQueryObjectCount(
                     $"SELECT COUNT(*) FROM gym_inventory {whereClause}",
                     parameters.ToArray()
                 );
 
-                // Main query with pagination
                 parameters.Add(offset);
                 parameters.Add(limit);
 
@@ -205,18 +375,24 @@ namespace GymService.Modules.Inventory
                 var result = _tools.ExecuteQueryResultSet(sql, parameters.ToArray());
 
                 var products = new List<Dictionary<string, object>>();
-                if (result != null && result.Rows.Count > 0)
+                if (result != null)
                 {
                     foreach (Row row in result.Rows)
                     {
+                        int stock = Convert.ToInt32(GetRowValue(row, result, "stock_quantity"));
+
                         products.Add(new Dictionary<string, object>
                         {
                             ["id"] = Convert.ToInt64(GetRowValue(row, result, "id")),
                             ["productName"] = Convert.ToString(GetRowValue(row, result, "product_name")) ?? "",
+                            ["description"] = Convert.ToString(GetRowValue(row, result, "description")) ?? "",
+                            ["sku"] = Convert.ToString(GetRowValue(row, result, "sku")) ?? "",
                             ["category"] = Convert.ToString(GetRowValue(row, result, "category")) ?? "",
                             ["price"] = Convert.ToDecimal(GetRowValue(row, result, "price")),
-                            ["stock"] = Convert.ToInt32(GetRowValue(row, result, "stock_quantity")),
-                            ["minStock"] = Convert.ToInt32(GetRowValue(row, result, "min_stock"))
+                            ["cost"] = GetRowValue(row, result, "cost") != null ? Convert.ToDecimal(GetRowValue(row, result, "cost")) : (decimal?)null,
+                            ["stock"] = stock,
+                            ["minStock"] = Convert.ToInt32(GetRowValue(row, result, "min_stock")),
+                            ["isActive"] = GetRowValue(row, result, "is_active") != null && Convert.ToBoolean(GetRowValue(row, result, "is_active"))
                         });
                     }
                 }
@@ -243,6 +419,29 @@ namespace GymService.Modules.Inventory
                 response["message"] = "Error interno del servidor";
                 return false;
             }
+        }
+
+        private (string Name, string Description, string Sku, string Category, decimal Price, decimal? Cost, int Stock, int MinStock, bool IsActive)? GetProductState(long productId)
+        {
+            var result = _tools.ExecuteQueryResultSet(
+                "SELECT * FROM gym_inventory WHERE id = ?", productId);
+
+            if (result == null || result.Rows.Count == 0)
+                return null;
+
+            var row = result.Rows[0];
+
+            return (
+                Convert.ToString(GetRowValue(row, result, "product_name")) ?? "",
+                Convert.ToString(GetRowValue(row, result, "description")) ?? "",
+                Convert.ToString(GetRowValue(row, result, "sku")) ?? "",
+                Convert.ToString(GetRowValue(row, result, "category")) ?? "",
+                Convert.ToDecimal(GetRowValue(row, result, "price")),
+                GetRowValue(row, result, "cost") != null ? Convert.ToDecimal(GetRowValue(row, result, "cost")) : (decimal?)null,
+                Convert.ToInt32(GetRowValue(row, result, "stock_quantity")),
+                Convert.ToInt32(GetRowValue(row, result, "min_stock")),
+                Convert.ToBoolean(GetRowValue(row, result, "is_active"))
+            );
         }
     }
 }
