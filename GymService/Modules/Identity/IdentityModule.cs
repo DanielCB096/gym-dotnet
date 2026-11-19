@@ -665,6 +665,44 @@ namespace GymService.Modules.Identity
         }
 
         /// <summary>
+        /// Reset password of the owner user (temporary admin endpoint)
+        /// </summary>
+        public bool ResetOwnerPassword(string newPassword, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var passwordHash = HashPassword(newPassword);
+
+                var session = _tools.CreateSession(SubModule);
+                session.ExecuteTransaction(
+                    "UPDATE gym_users SET password_hash = ? WHERE is_owner = 1",
+                    passwordHash
+                );
+
+                if (session.TryExecute().IsError)
+                {
+                    Logger.AddErrorSubModule(SubModule, "Error al resetear contraseña del dueño");
+                    response["success"] = false;
+                    response["message"] = "Error interno del servidor";
+                    return false;
+                }
+
+                response["success"] = true;
+                response["message"] = "Contraseña del administrador actualizada";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en ResetOwnerPassword: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Get user email
         /// </summary>
         private string GetUserEmail(long userId)

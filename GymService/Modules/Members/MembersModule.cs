@@ -99,7 +99,7 @@ namespace GymService.Modules.Members
                             ["email"] = Convert.ToString(GetRowValue(row, result, "email")) ?? "",
                             ["phone"] = Convert.ToString(GetRowValue(row, result, "phone")) ?? "",
                             ["status"] = Convert.ToString(GetRowValue(row, result, "status")) ?? "active",
-                            ["membershipType"] = Convert.ToString(GetRowValue(row, result, "plan_name")) ?? "",
+                            ["membershipType"] = Convert.ToString(GetRowValue(row, result, "membership_type")) ?? "",
                             ["membershipEnd"] = GetRowValue(row, result, "end_date") != null ? Convert.ToDateTime(GetRowValue(row, result, "end_date")) : (DateTime?)null
                         });
                     }
@@ -158,8 +158,12 @@ namespace GymService.Modules.Members
                     return false;
                 }
 
-                // Get the newly created member ID
-                var lastResult = _tools.ExecuteQueryResultSet("SELECT SCOPE_IDENTITY() AS id");
+                // Get the newly created member ID. SCOPE_IDENTITY() no sirve aquí porque la consulta
+                // se ejecuta en otra conexión; se busca la fila recién insertada por sus datos.
+                var lastResult = _tools.ExecuteQueryResultSet(
+                    "SELECT ISNULL(MAX(id), 0) AS id FROM gym_members WHERE first_name = ? AND last_name = ? AND ISNULL(email, '') = ?",
+                    firstName, lastName, email ?? ""
+                );
                 var memberId = lastResult != null && lastResult.Rows.Count > 0
                     ? Convert.ToInt64(lastResult.Rows[0].GetObject(0))
                     : 0;

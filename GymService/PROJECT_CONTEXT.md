@@ -944,3 +944,22 @@ if (!session.TryExecute().IsError)
   - `SalesModule.CreateSale()` ahora recorre los items como `IEnumerable<object?>`.
 - **Validación:** frontend `npm run build` OK y sin warnings nuevos; backend `dotnet build -t:Compile` con 0 errores.
   - Se validó el esquema real con una transacción SQL de prueba (venta + items + membresía) y `ROLLBACK`.
+
+### Sesión 19: Correcciones críticas de arranque y de IDs
+- **El arranque ya no borra la base:** `DatabaseService.CreateOrUpdateTable()` hacía `DROP TABLE` de cada
+  tabla existente en cada arranque. Se reemplazó por `CreateTableIfMissing()`; si el esquema existe, se
+  conserva. Las foreign keys solo se recrean en una base nueva.
+  - Esto provocó una pérdida real de datos al reiniciar con el build nuevo; se recreó el usuario dueño
+    con contraseña temporal y se sembraron de nuevo los 3 planes.
+- **`SCOPE_IDENTITY()` entre conexiones:** `MembersModule.CreateMember()` y `SalesModule.CreateSale()`
+  ejecutaban la consulta en otra conexión y siempre recibían 0. Ahora buscan la fila insertada por
+  `MAX(id)` usando los datos del socio o el `sale_number` único.
+- **`membershipType` vacío:** la consulta devolvía `membership_type`, pero el módulo leía `plan_name`.
+- **Prueba funcional (instancia en `:5001`):** planes, producto de inventario, socio con membresía de
+  30 días y venta con items. Todo verificado y luego eliminado.
+- **Pendiente operativo:** `GymService.exe` (PID 7276) sigue con el build anterior porque esta sesión no
+  puede terminarlo; el usuario debe reiniciarlo para aplicar los cambios.
+- **Contraseña temporal del admin:** se comunicó fuera del repositorio; cambiarla en el primer inicio.
+- **Recuperación de acceso:** `POST /api/auth/reset-admin-password` resetea la contraseña del dueño.
+  Solo acepta peticiones desde la misma máquina (loopback); si se expone la API, sigue siendo un
+  endpoint sensible y debe deshabilitarse en producción.

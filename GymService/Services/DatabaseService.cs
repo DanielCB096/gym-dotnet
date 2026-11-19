@@ -34,19 +34,32 @@ namespace GymService.Services
 
             var dba = _dbManager.DatabaseAdministrator;
 
-            // Create tables first (without foreign keys)
+            // Si el esquema ya existe, no se recrean las tablas: hacerlo borraba todos los datos
+            // (usuarios, socios, ventas, etc.) en cada arranque del servicio.
+            bool schemaExists = dba.ExistTable("gym_users");
+
+            // Create tables first (without foreign keys). Only missing tables are created.
             int tableCount = 0;
+            int createdCount = 0;
             foreach (var tableDef in ModelGym.TableDefinitions)
             {
                 var dbTable = ConvertToDatabaseTable(tableDef);
-                CreateOrUpdateTable(dba, dbTable);
+                if (CreateTableIfMissing(dba, dbTable))
+                    createdCount++;
                 tableCount++;
-                Logger.AddInfo($"  Tabla '{tableDef.TableName}' creada/actualizada");
+                Logger.AddInfo($"  Tabla '{tableDef.TableName}' verificada");
             }
 
-            Logger.AddInfo($"Se procesaron {tableCount} tablas");
+            Logger.AddInfo($"Se procesaron {tableCount} tablas ({createdCount} creadas)");
 
-            // Add foreign keys after all tables exist
+            if (schemaExists && createdCount == 0)
+            {
+                Logger.AddInfo("Esquema existente: se conservan las tablas y los datos; no se recrean foreign keys");
+                Logger.AddInfo("Esquema de base de datos verificado correctamente");
+                return;
+            }
+
+            // Add foreign keys only when the schema is fresh (no data to protect).
             int fkCount = 0;
             foreach (var fkDef in ModelGym.ForeignKeyDefinitions)
             {
@@ -59,19 +72,21 @@ namespace GymService.Services
         }
 
         /// <summary>
-        /// Create or recreate a table using DatabaseAdministrator
+        /// Create a table only when it does not exist. Existing tables and their data are kept.
+        /// Returns true when the table was created.
         /// </summary>
-        private void CreateOrUpdateTable(DatabaseAdministrator dba, DatabaseTable table)
+        private bool CreateTableIfMissing(DatabaseAdministrator dba, DatabaseTable table)
         {
             try
             {
                 if (dba.ExistTable(table.TableName))
                 {
-                    Logger.AddDebugSubModule("DatabaseService", $"Tabla '{table.TableName}' ya existe, recreando...");
-                    dba.DropTable(table.TableName);
+                    Logger.AddDebugSubModule("DatabaseService", $"Tabla '{table.TableName}' ya existe, se conserva");
+                    return false;
                 }
 
                 dba.CreateTable(table);
+                return true;
             }
             catch (Exception ex)
             {

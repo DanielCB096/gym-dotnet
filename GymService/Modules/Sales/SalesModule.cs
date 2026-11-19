@@ -79,8 +79,11 @@ namespace GymService.Modules.Sales
                     return false;
                 }
 
-                // Get the newly created sale ID
-                var lastResult = _tools.ExecuteQueryResultSet("SELECT SCOPE_IDENTITY() AS id");
+                // Get the newly created sale ID. SCOPE_IDENTITY() no sirve aquí porque la consulta
+                // se ejecuta en otra conexión; sale_number es único, así que se busca por él.
+                var lastResult = _tools.ExecuteQueryResultSet(
+                    "SELECT ISNULL(MAX(id), 0) AS id FROM gym_sales WHERE sale_number = ?", saleNumber
+                );
                 var saleId = lastResult != null && lastResult.Rows.Count > 0
                     ? Convert.ToInt64(lastResult.Rows[0].GetObject(0))
                     : 0;

@@ -127,6 +127,29 @@ namespace GymService.Controllers
         }
 
         [HttpPost]
+        [Route("api/auth/reset-admin-password")]
+        public ActionResult<Dictionary<string, object>> ResetAdminPassword([FromBody] Dictionary<string, string> request)
+        {
+            // Endpoint de recuperación: solo se permite desde la misma máquina.
+            var remote = HttpContext.Connection.RemoteIpAddress;
+            if (remote != null && !System.Net.IPAddress.IsLoopback(remote))
+                return NotFound(new { success = false, message = "No disponible" });
+
+            var newPassword = request.GetValueOrDefault("password", "");
+
+            if (string.IsNullOrEmpty(newPassword))
+            {
+                return BadRequest(new { success = false, message = "Password requerido" });
+            }
+
+            if (DataCenter.BusinessProcess.Identity == null)
+                return BadRequest(new { returnCode = "ERROR", errorMessage = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Identity.ResetOwnerPassword(newPassword, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPost]
         [Route("api/auth/bootstrap")]
         public ActionResult<Dictionary<string, object>> BootstrapOwner([FromBody] Dictionary<string, string> request)
         {

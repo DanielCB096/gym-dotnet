@@ -114,6 +114,16 @@
 - **Solución:** 5 ediciones: .NET 8 → .NET 10 (3 ocurrencias), Next.js → React 19 + Vite + Tailwind CSS 4, sección Estado del Proyecto actualizada con 15 controllers, ~67 endpoints, frontend con 14 páginas y pendientes reales (tests, WiX, OTP por correo).
 - **Verificación:** `grep "Next.js|\.NET 8" README.md` → 0 resultados.
 
+### Tarea F08 — Documentar el frontend
+- **Bug:** El frontend no tenía README.md, lo que impedía que un desarrollador nuevo pudiera instalar y ejecutar el proyecto sin conocer la estructura interna.
+- **Solución:** Creado `GymServiceFront/README.md` con 113 líneas que incluyen: requisitos (Node 20+), instalación, scripts disponibles (dev, build, lint, preview), proxy de API en Vite, estructura completa de `src/` con 38 archivos, tecnologías, autenticación JWT, instrucciones de despliegue en IIS y créditos.
+- **Verificación:** README cubre todos los puntos solicitados en la tarea F08.
+
+### Tarea F07 — Persistir sidebar y accesibilidad en Layout
+- **Bug:** Al recargar la página, el estado del sidebar (abierto/cerrado) se perdía y volvía siempre a abierto. Además, 6 botones de solo icono carecían de `aria-label`, lo que afectaba la accesibilidad con lectores de pantalla.
+- **Solución:** Estado del sidebar inicializado desde `localStorage` con clave `sidebar-collapsed` y guardado automáticamente al cambiar. Agregados `aria-label` a 6 botones: cerrar menú móvil, abrir menú móvil, notificaciones, cerrar sesión (expandido y colapsado), colapsar sidebar y expandir sidebar.
+- **Verificación:** `npm run build` → 2218 módulos, 1.01s, 0 errores.
+
 ### Tarea F06 — Página 404 real
 - **Bug:** Cualquier ruta desconocida redirigía silenciosamente al dashboard (`/`) sin informar al usuario.
 - **Solución:** Creado `NotFound.jsx` con diseño TailAdmin (icono AlertTriangle, colores amber, botón "Volver al inicio" con ArrowLeft). En `App.jsx`, la ruta `*` ahora renderiza `<NotFound />` dentro de `<ProtectedRoute>` + `<Layout>` en lugar de redirigir a `/`.
@@ -128,6 +138,47 @@
 - **Bug:** Members.jsx y Sales.jsx aún usaban clases `primary-*` (spinner, botón, inputs, avatar, badge) que no generan CSS con la paleta `brand-*` de TailAdmin.
 - **Solución:** Reemplazadas 10 ocurrencias de `primary-*` por `brand-*` conservando el tono numérico. 8 en Members.jsx (spinner, botón gradiente, 5 inputs, avatar) y 2 en Sales.jsx (spinner, badge).
 - **Verificación:** `npm run build` → 2210 módulos, 815ms, 0 errores.
+
+---
+
+## Correcciones críticas de backend (19-nov-2026)
+
+### El arranque del servicio ya no borra la base de datos
+- **Bug:** `DatabaseService.CreateOrUpdateTable()` hacía `DROP TABLE` de cada tabla existente y la
+  recreaba en **cada arranque** del servicio. Al reiniciar con el build nuevo se perdieron usuarios,
+  socios y planes.
+- **Solución:** ahora solo crea las tablas que faltan (`CreateTableIfMissing`). Si el esquema ya existe,
+  se conserva tal cual y no se recrean las foreign keys. Las foreign keys solo se agregan cuando la
+  base se crea desde cero.
+- **Verificación:** se sembraron 3 planes y se reinició el servicio; los datos siguieron intactos.
+
+### `SCOPE_IDENTITY()` no funciona entre conexiones
+- **Bug:** `MembersModule.CreateMember()` y `SalesModule.CreateSale()` insertaban la fila y luego
+  consultaban `SELECT SCOPE_IDENTITY()` en **otra conexión**, por lo que siempre devolvía 0.
+  - El socio se creaba sin membresía y la respuesta traía `memberId: 0`.
+  - La venta se creaba sin items y la respuesta traía `saleId: 0`.
+- **Solución:** se busca la fila recién insertada por sus datos (`MAX(id)` filtrando por
+  nombre/apellido/email del socio o por `sale_number`, que es único).
+- **Verificación:** socio creado con plan Premium y membresía de 30 días; venta con items guardados
+  en `gym_sale_items`.
+
+### `membershipType` vacío en el listado de socios
+- **Bug:** la consulta devolvía `mp.plan_name AS membership_type`, pero el módulo leía la columna
+  `plan_name`; el plan siempre aparecía vacío.
+- **Solución:** leer `membership_type`.
+- **Verificación:** `GET /api/members` devuelve `membershipType: "Premium"` y `membershipEnd`.
+
+### Prueba funcional completa (instancia de prueba en `:5001`)
+- `GET /api/members/plans` → 3 planes.
+- `POST /api/inventory` + `GET /api/inventory` → producto con `stock_quantity`.
+- `POST /api/members` con plan → socio + membresía; `GET /api/members` con plan y vencimiento.
+- `POST /api/sales` + `GET /api/sales` → venta con número de 19 caracteres, IVA y items.
+- Los datos de prueba se eliminaron al terminar; quedaron el usuario admin y los 3 planes.
+
+### Incidente de datos
+- El reinicio con el build anterior vació la base. Se volvió a crear el usuario dueño con una
+  contraseña temporal (cambiar en el primer inicio) y se sembraron los planes Básico, Premium y VIP.
+  Los socios de prueba no se recrearon.
 
 ---
 
