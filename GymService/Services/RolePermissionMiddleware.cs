@@ -315,9 +315,19 @@ namespace GymService.Services
                 ["PUT"] = "fisio.manage",
                 ["DELETE"] = "fisio.manage"
             },
-            ["/api/fisio/sessions"] = new Dictionary<string, string>
+            ["/api/fisio/packages"] = new Dictionary<string, string>
             {
-                ["POST"] = "fisio.manage"
+                ["GET"] = "fisio.view",
+                ["POST"] = "fisio.manage",
+                ["PUT"] = "fisio.manage",
+                ["DELETE"] = "fisio.manage"
+            },
+            ["/api/fisio/appointments"] = new Dictionary<string, string>
+            {
+                ["GET"] = "fisio.view",
+                ["POST"] = "fisio.manage",
+                ["PUT"] = "fisio.manage",
+                ["DELETE"] = "fisio.manage"
             },
             // Maintenance
             ["/api/maintenance"] = new Dictionary<string, string>

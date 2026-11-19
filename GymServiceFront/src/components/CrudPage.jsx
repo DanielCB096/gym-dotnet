@@ -69,10 +69,14 @@ export default function CrudPage({
   modalSize = 'lg',
   hideHeader = false,
   afterCreate,
+  extraParams,
 }) {
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
-  const listParams = searchParam && search ? { [searchParam]: search } : {};
+  const listParams = {
+    ...(extraParams || {}),
+    ...(searchParam && search ? { [searchParam]: search } : {}),
+  };
   const {
     items,
     loading,

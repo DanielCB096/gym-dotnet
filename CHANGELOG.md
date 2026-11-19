@@ -6,6 +6,13 @@
 
 ## Backend (.NET)
 
+### Fisioterapia completa (2026-11-19)
+- **Backend:** paquetes (generales o por socio) con sesiones, vigencia, precio y estado; citas con validación de socio activo, paquete vigente y sesiones disponibles; consumo de sesión al completar y liberación al cancelar/deshacer.
+- **Reglas:** un paquete general queda asignado al socio en su primera cita; un paquete agotado o inactivo no permite agendar; las citas completadas no se editan, cancelan ni eliminan; un paquete con historial no se elimina (se desactiva).
+- **API:** `/api/fisio/packages` (GET/POST/PUT/DELETE) y `/api/fisio/appointments` (GET/POST/PUT/DELETE, `PUT /{id}/status`) con permisos `fisio.view` / `fisio.manage`.
+- **UI:** página de Fisioterapia con pestañas “Paquetes” y “Citas”: ocupación de sesiones, vigencia, filtros por socio/estado/fechas, agendar, reprogramar, completar, no asistió, cancelar y eliminar.
+- **Pruebas:** 65 (unitarias + integración), incluyendo consumo/agotado, asignación de paquete general, reprogramación y protección del historial.
+
 ### Rutinas completas (2026-11-19)
 - **Modelo:** nueva tabla puente `GYM_ROUTINE_PLAN_EXERCISES` (plan, ejercicio, día, orden, series, reps y notas) con FK a planes y ejercicios; el generador Anxo produce `GYM_ROUTINE_PLAN_EXERCISES.cs`.
 - **Backend:** CRUD de ejercicios, composición de planes por días, asignación de rutina a socios (desactiva la anterior), registro y borrado de entrenamientos y captura de medidas corporales.
