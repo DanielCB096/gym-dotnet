@@ -6,6 +6,14 @@
 
 ## Backend (.NET)
 
+### Asignación y renovación de membresía (2026-11-19)
+- **API:** `POST /api/members/{id}/membership` asigna, activa o renueva la membresía con plan, fecha de inicio, cobro manual (`cash`/`card`/`transfer`) o cortesía sin cobro.
+- **Reglas portadas del proyecto original:** renovación desde `max(hoy, vencimiento)` para no perder días; membresía congelada no se renueva; sin cobro explícito y auditado; el pago se registra en la misma transacción; una sola membresía activa por socio.
+- **UI:** acción “Membresía” en la lista de socios con plan, inicio, forma de pago, importe, renovación automática y vencimiento estimado; estados “Sin membresía/Vencida/Congelada/Activa”.
+- **Acceso:** límite diario de entradas por plan (`MAX_DAILY_ENTRIES`) aplicado al generar y validar códigos; los intentos denegados se registran.
+- **Reglas documentadas:** `docs/reglas-negocio.md` y `AGENTS.md` adaptan las reglas de `C:\proyectos\gimnasio` a este proyecto .NET.
+- **Pruebas:** 99 automatizadas; smoke HTTP de asignación, renovación, cortesía, congelamiento y límite diario.
+
 ### Membresías y control de acceso (2026-11-19)
 - **Estado del socio:** la lista devuelve `membershipStatus` (`active`/`frozen`/`expired`/`none`) y `hasActiveMembership`; el panel muestra “Sin membresía” o “Vencida” en lugar de “Activo” cuando no hay una membresía vigente. El estado de la cuenta (`status`) se mantiene separado.
 - **Accesos:** no se genera código para socios sin membresía activa, con membresía congelada/vencida o cuentas inactivas; la validación vuelve a comprobar la membresía al usar el código y registra el intento denegado en la bitácora.

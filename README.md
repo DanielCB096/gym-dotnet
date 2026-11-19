@@ -335,6 +335,14 @@ Actualizar = ejecutar de nuevo `install.ps1` con el ZIP nuevo (detiene, reemplaz
 - [ ] `GET /health` responde `healthy`.
 - [ ] Alta del owner y prueba de login/panel.
 
+## Reglas de negocio
+
+Las reglas de membresías, renovaciones y control de acceso se documentan en
+[`docs/reglas-negocio.md`](docs/reglas-negocio.md), portadas del proyecto original
+(`C:\proyectos\gimnasio`). Incluyen: sin acceso sin membresía vigente, sin periodo
+de gracia, renovación desde el vencimiento actual, congeladas sin acceso, cortesías
+auditadas, cobro manual y límite diario de entradas por plan.
+
 ## Roles
 
 | Rol | Descripción |

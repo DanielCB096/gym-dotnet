@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import { CreditCard } from 'lucide-react';
 import api from '../services/api';
 import CrudPage from '../components/CrudPage';
+import MembershipModal from '../components/MembershipModal';
 import Badge from '../components/ui/Badge';
 import { formatCurrency, formatDate } from '../utils/format';
 
@@ -14,6 +16,7 @@ const membershipStatusInfo = {
 export default function Members() {
   const [plans, setPlans] = useState([]);
   const [plansError, setPlansError] = useState('');
+  const [membershipTarget, setMembershipTarget] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -52,7 +55,8 @@ export default function Members() {
       };
 
   return (
-    <CrudPage
+    <>
+      <CrudPage
       title="Miembros"
       subtitle="Socios del gimnasio y su membresía actual"
       endpoint="/members"
@@ -109,6 +113,27 @@ export default function Members() {
         { name: 'phone', label: 'Teléfono', type: 'tel', placeholder: '555-1234' },
         planField,
       ]}
+      actions={[
+        {
+          label: 'Membresía',
+          icon: CreditCard,
+          onClick: (row, { reload, notify }) => setMembershipTarget({ member: row, reload, notify }),
+        },
+      ]}
     />
+
+      {membershipTarget && (
+        <MembershipModal
+          key={membershipTarget.member.id}
+          target={membershipTarget}
+          plans={plans}
+          onClose={() => setMembershipTarget(null)}
+          onSaved={(message) => {
+            membershipTarget.notify('success', message);
+            membershipTarget.reload();
+          }}
+        />
+      )}
+    </>
   );
 }

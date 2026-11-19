@@ -430,6 +430,188 @@ namespace GymService.Modules.Members
         }
 
         /// <summary>
+        /// Asigna, activa o renueva la membresía de un socio.
+        /// Regla: una renovación extiende desde max(hoy, vencimiento actual)
+        /// para no perder días ya pagados. No se permite sobre una congelada.
+        /// </summary>
+        public bool AssignMembership(long memberId, Dictionary<string, object> data, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var memberStatus = GetMemberStatus(memberId);
+                if (memberStatus == null)
+                {
+                    response["success"] = false;
+                    response["message"] = "El socio no existe";
+                    return false;
+                }
+
+                if (!string.Equals(memberStatus, "active", StringComparison.OrdinalIgnoreCase))
+                {
+                    response["success"] = false;
+                    response["message"] = "El socio está inactivo";
+                    return false;
+                }
+
+                long planId = data.ContainsKey("planId") ? Convert.ToInt64(data["planId"]) : 0L;
+                var plan = planId > 0 ? GetPlanState(planId) : null;
+
+                if (plan == null || !plan.Value.IsActive)
+                {
+                    response["success"] = false;
+                    response["message"] = "El plan de membresía no existe o está inactivo";
+                    return false;
+                }
+
+                var latest = GetLatestMembershipState(memberId);
+
+                if (latest != null && string.Equals(latest.Value.Status, "frozen", StringComparison.OrdinalIgnoreCase))
+                {
+                    response["success"] = false;
+                    response["message"] = "Reanuda la membresía congelada antes de renovarla";
+                    return false;
+                }
+
+                bool noCharge = data.ContainsKey("noCharge") && Convert.ToBoolean(data["noCharge"]);
+                string paymentMethod = (Convert.ToString(data.GetValueOrDefault("paymentMethod", "")) ?? "").Trim().ToLowerInvariant();
+
+                if (!noCharge)
+                {
+                    if (paymentMethod == "none" || paymentMethod == "courtesy")
+                    {
+                        noCharge = true;
+                        paymentMethod = "";
+                    }
+                    else if (paymentMethod != "cash" && paymentMethod != "card" && paymentMethod != "transfer")
+                    {
+                        response["success"] = false;
+                        response["message"] = "Método de pago no válido. Usa cash, card o transfer";
+                        return false;
+                    }
+                }
+
+                decimal amount = data.ContainsKey("amount") && Convert.ToString(data["amount"]) != ""
+                    ? Convert.ToDecimal(data["amount"])
+                    : plan.Value.Price;
+
+                if (!noCharge && amount <= 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "El importe del cobro debe ser mayor a cero";
+                    return false;
+                }
+
+                bool autoRenew = data.ContainsKey("autoRenew") && Convert.ToBoolean(data["autoRenew"]);
+                DateTime today = DateTime.Now.Date;
+
+                DateTime requestedStart = data.ContainsKey("startDate") &&
+                    DateTime.TryParse(Convert.ToString(data["startDate"]), out var parsedStart)
+                    ? parsedStart.Date
+                    : today;
+
+                DateTime startDate;
+                DateTime endDate;
+                long? membershipId;
+
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+
+                if (latest != null && string.Equals(latest.Value.Status, "active", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Renovación anticipada: conserva el periodo pagado y suma el nuevo.
+                    startDate = latest.Value.EndDate.Date > requestedStart
+                        ? latest.Value.EndDate.Date
+                        : requestedStart;
+
+                    endDate = startDate.AddDays(plan.Value.DurationDays);
+                    membershipId = latest.Value.Id;
+
+                    session.UpdateObjectChanges(new GYM_MEMBERSHIPS
+                    {
+                        ID = latest.Value.Id,
+                        MEMBER_ID = memberId,
+                        PLAN_ID = planId,
+                        START_DATE = latest.Value.StartDate.Date,
+                        END_DATE = endDate,
+                        STATUS = "active",
+                        AUTO_RENEW = autoRenew,
+                        FREEZE_START = null,
+                        FREEZE_END = null
+                    });
+                }
+                else
+                {
+                    startDate = requestedStart < today ? today : requestedStart;
+                    endDate = startDate.AddDays(plan.Value.DurationDays);
+                    membershipId = _tools.GenerateUniqueID(GYM_MEMBERSHIPS.DatabaseMappingObject, 1).GetInt64UniqueId();
+
+                    session.InsertObjectWithID(new GYM_MEMBERSHIPS
+                    {
+                        ID = membershipId.Value,
+                        MEMBER_ID = memberId,
+                        PLAN_ID = planId,
+                        START_DATE = startDate,
+                        END_DATE = endDate,
+                        STATUS = "active",
+                        AUTO_RENEW = autoRenew
+                    });
+                }
+
+                if (!noCharge)
+                {
+                    session.InsertObject(new GYM_PAYMENTS
+                    {
+                        MEMBER_ID = memberId,
+                        MEMBERSHIP_ID = membershipId,
+                        AMOUNT = amount,
+                        CURRENCY = plan.Value.Currency,
+                        PAYMENT_METHOD = paymentMethod,
+                        PAYMENT_DATE = DateTime.Now,
+                        REFERENCE = Convert.ToString(data.GetValueOrDefault("reference", "")) ?? "",
+                        NOTES = (Convert.ToString(data.GetValueOrDefault("notes", "")) ?? "").Trim()
+                    });
+                }
+
+                // La activación de la membresía también activa la cuenta del socio.
+                session.UpdateObjectChanges(new GYM_MEMBERS { ID = memberId, STATUS = "active" });
+
+                if (session.TryExecute().IsError)
+                {
+                    Logger.AddErrorSubModule(SubModule, "Error al asignar/renovar la membresía");
+                    response["success"] = false;
+                    response["message"] = "Error al asignar la membresía";
+                    return false;
+                }
+
+                Logger.AddInfoSubModule(SubModule,
+                    $"Membresía {membershipId} de socio {memberId}: plan '{plan.Value.Name}', {startDate:yyyy-MM-dd} a {endDate:yyyy-MM-dd}, " +
+                    (noCharge ? "sin cobro (cortesía)" : $"cobro {paymentMethod} por {amount:0.00} {plan.Value.Currency}"));
+
+                response["success"] = true;
+                response["membershipId"] = membershipId;
+                response["planId"] = planId;
+                response["planName"] = plan.Value.Name;
+                response["startDate"] = startDate;
+                response["endDate"] = endDate;
+                response["status"] = "active";
+                response["noCharge"] = noCharge;
+                response["amount"] = amount;
+                response["message"] = latest != null && string.Equals(latest.Value.Status, "active", StringComparison.OrdinalIgnoreCase)
+                    ? "Membresía renovada correctamente"
+                    : "Membresía asignada correctamente";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en AssignMembership: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Crea los planes de membresía base en instalaciones nuevas.
         /// </summary>
         public void EnsureDefaultPlans()
@@ -479,6 +661,60 @@ namespace GymService.Modules.Members
             {
                 Logger.AddWarningSubModule(SubModule, $"Error en EnsureDefaultPlans: {ex.Message}");
             }
+        }
+
+        private string? GetMemberStatus(long memberId)
+        {
+            var result = _tools.ExecuteQueryResultSet(
+                "SELECT STATUS FROM GYM_MEMBERS WHERE ID = ?", memberId);
+
+            if (result == null || result.Rows.Count == 0)
+                return null;
+
+            return Convert.ToString(GetRowValue(result.Rows[0], result, "status")) ?? "";
+        }
+
+        private (long Id, string Name, decimal Price, string Currency, int DurationDays, bool IsActive)? GetPlanState(long planId)
+        {
+            var result = _tools.ExecuteQueryResultSet(
+                "SELECT * FROM GYM_MEMBERSHIP_PLANS WHERE ID = ?", planId);
+
+            if (result == null || result.Rows.Count == 0)
+                return null;
+
+            var row = result.Rows[0];
+
+            return (
+                Convert.ToInt64(GetRowValue(row, result, "id")),
+                Convert.ToString(GetRowValue(row, result, "plan_name")) ?? "",
+                Convert.ToDecimal(GetRowValue(row, result, "price")),
+                Convert.ToString(GetRowValue(row, result, "currency")) ?? "MXN",
+                Convert.ToInt32(GetRowValue(row, result, "duration_days")),
+                Convert.ToBoolean(GetRowValue(row, result, "is_active"))
+            );
+        }
+
+        private (long Id, long PlanId, DateTime StartDate, DateTime EndDate, string Status)? GetLatestMembershipState(long memberId)
+        {
+            var result = _tools.ExecuteQueryResultSet(@"
+                SELECT TOP 1 ID, PLAN_ID, START_DATE, END_DATE, STATUS
+                FROM GYM_MEMBERSHIPS
+                WHERE MEMBER_ID = ?
+                ORDER BY CASE WHEN STATUS = 'active' THEN 0 WHEN STATUS = 'frozen' THEN 1 ELSE 2 END,
+                         END_DATE DESC, ID DESC", memberId);
+
+            if (result == null || result.Rows.Count == 0)
+                return null;
+
+            var row = result.Rows[0];
+
+            return (
+                Convert.ToInt64(GetRowValue(row, result, "id")),
+                Convert.ToInt64(GetRowValue(row, result, "plan_id")),
+                Convert.ToDateTime(GetRowValue(row, result, "start_date")),
+                Convert.ToDateTime(GetRowValue(row, result, "end_date")),
+                Convert.ToString(GetRowValue(row, result, "status")) ?? ""
+            );
         }
     }
 }

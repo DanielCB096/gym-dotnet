@@ -86,6 +86,20 @@ namespace GymService.Controllers
         }
 
         [HttpPost]
+        [Route("api/members/{memberId}/membership")]
+        public ActionResult<Dictionary<string, object>> AssignMembership(long memberId, [FromBody] Dictionary<string, object> membershipData)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Members == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Members.AssignMembership(memberId, membershipData, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPost]
         [Route("api/members/{memberId}/payments")]
         public ActionResult<Dictionary<string, object>> RecordPayment(long memberId, [FromBody] Dictionary<string, object> paymentData)
         {

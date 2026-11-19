@@ -52,7 +52,23 @@ public class AccessFlowTests
         Assert.Equal(0, Convert.ToInt32(_fx.Scalar("SELECT COUNT(*) FROM GYM_ACCESS_CODES WHERE MEMBER_ID = @m", ("@m", memberId))));
     }
 
-    private long CreateMember(bool withMembership)
+    [Fact]
+    public void Daily_Entry_Limit_Is_Enforced()
+    {
+        if (!_fx.Available) return;
+
+        EnsurePlan("UnaEntrada", 30, 1);
+        long memberId = CreateMember(withMembership: true, planName: "UnaEntrada");
+        var access = new AccessModule(_fx.Tools!);
+
+        Assert.True(access.GenerateAccessCode(memberId, out var generated));
+        Assert.True(access.ValidateAccessCode(Convert.ToString(generated["code"]) ?? "", "kiosk-test", out _));
+
+        Assert.False(access.GenerateAccessCode(memberId, out var limited));
+        Assert.Contains("entradas de hoy", limited.GetValueOrDefault("message")?.ToString() ?? "", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private long CreateMember(bool withMembership, string planName = "Mensual")
     {
         var members = new MembersModule(_fx.Tools!);
         string email = $"access_{Guid.NewGuid():N}@test.local";
@@ -62,13 +78,13 @@ public class AccessFlowTests
             ["firstName"] = "Acceso",
             ["lastName"] = "Prueba",
             ["email"] = email,
-            ["membershipType"] = withMembership ? "Mensual" : ""
+            ["membershipType"] = withMembership ? planName : ""
         }, out _));
 
         return Convert.ToInt64(_fx.Scalar("SELECT ID FROM GYM_MEMBERS WHERE EMAIL = @e", ("@e", email)));
     }
 
-    private void EnsurePlan(string name, int days)
+    private void EnsurePlan(string name, int days, int maxEntries = -1)
     {
         if (Convert.ToInt32(_fx.Scalar("SELECT COUNT(*) FROM GYM_MEMBERSHIP_PLANS WHERE PLAN_NAME = @n", ("@n", name))) > 0)
             return;
@@ -81,7 +97,7 @@ public class AccessFlowTests
             PRICE = 500m,
             CURRENCY = "MXN",
             DURATION_DAYS = days,
-            MAX_DAILY_ENTRIES = -1,
+            MAX_DAILY_ENTRIES = maxEntries,
             INCLUDES_CLASSES = true,
             INCLUDES_PREMIUM_CLASSES = false,
             IS_ACTIVE = true

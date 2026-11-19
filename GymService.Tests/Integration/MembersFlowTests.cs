@@ -152,6 +152,92 @@ public class MembersFlowTests
     }
 
     [Fact]
+    public void Assign_And_Renew_Membership_Extends_Period_And_Records_Payment()
+    {
+        if (!_fx.Available) return;
+
+        EnsurePlan("Mensual", 30);
+        var module = new MembersModule(_fx.Tools!);
+        long planId = Convert.ToInt64(_fx.Scalar("SELECT ID FROM GYM_MEMBERSHIP_PLANS WHERE PLAN_NAME = 'Mensual'"));
+        long memberId = CreateMemberWithoutPlan(module);
+        CurrentUser.Id = 1;
+
+        try
+        {
+            Assert.True(module.AssignMembership(memberId, new Dictionary<string, object>
+            {
+                ["planId"] = planId,
+                ["paymentMethod"] = "cash",
+                ["amount"] = 500m
+            }, out var assigned), assigned.GetValueOrDefault("message")?.ToString());
+
+            long membershipId = Convert.ToInt64(assigned["membershipId"]);
+            DateTime firstEnd = Convert.ToDateTime(assigned["endDate"]);
+            Assert.Equal("active", assigned["status"]);
+            Assert.Equal(firstEnd.Date, DateTime.Now.Date.AddDays(30));
+
+            Assert.Equal(1, Convert.ToInt32(_fx.Scalar(
+                "SELECT COUNT(*) FROM GYM_PAYMENTS WHERE MEMBER_ID = @m AND MEMBERSHIP_ID = @id AND PAYMENT_METHOD = 'cash'",
+                ("@m", memberId), ("@id", membershipId))));
+
+            // Renovación anticipada: extiende desde el vencimiento actual.
+            Assert.True(module.AssignMembership(memberId, new Dictionary<string, object>
+            {
+                ["planId"] = planId,
+                ["paymentMethod"] = "transfer",
+                ["amount"] = 500m
+            }, out var renewed), renewed.GetValueOrDefault("message")?.ToString());
+
+            DateTime secondEnd = Convert.ToDateTime(renewed["endDate"]);
+            Assert.Equal(firstEnd.Date.AddDays(30), secondEnd.Date);
+            Assert.Equal(membershipId, Convert.ToInt64(renewed["membershipId"]));
+            Assert.Equal(1, Convert.ToInt32(_fx.Scalar("SELECT COUNT(*) FROM GYM_MEMBERSHIPS WHERE MEMBER_ID = @m", ("@m", memberId))));
+            Assert.Equal(2, Convert.ToInt32(_fx.Scalar("SELECT COUNT(*) FROM GYM_PAYMENTS WHERE MEMBER_ID = @m", ("@m", memberId))));
+
+            // Cortesía: activa sin crear pago.
+            long courtesyMember = CreateMemberWithoutPlan(module);
+            Assert.True(module.AssignMembership(courtesyMember, new Dictionary<string, object>
+            {
+                ["planId"] = planId,
+                ["noCharge"] = true
+            }, out var courtesy), courtesy.GetValueOrDefault("message")?.ToString());
+
+            Assert.True(Convert.ToBoolean(courtesy["noCharge"]));
+            Assert.Equal(0, Convert.ToInt32(_fx.Scalar("SELECT COUNT(*) FROM GYM_PAYMENTS WHERE MEMBER_ID = @m", ("@m", courtesyMember))));
+
+            // Una membresía congelada no se renueva.
+            Assert.True(module.FreezeMembership(membershipId, DateTime.Now, DateTime.Now.AddDays(5), out _));
+            Assert.False(module.AssignMembership(memberId, new Dictionary<string, object>
+            {
+                ["planId"] = planId,
+                ["paymentMethod"] = "cash",
+                ["amount"] = 500m
+            }, out var frozen));
+
+            Assert.Contains("congelada", frozen.GetValueOrDefault("message")?.ToString() ?? "", StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            CurrentUser.Id = 0;
+        }
+    }
+
+    private long CreateMemberWithoutPlan(MembersModule module)
+    {
+        string email = $"assign_{Guid.NewGuid():N}@test.local";
+
+        Assert.True(module.CreateMember(new Dictionary<string, object>
+        {
+            ["firstName"] = "Membresía",
+            ["lastName"] = "Test",
+            ["email"] = email,
+            ["membershipType"] = ""
+        }, out _));
+
+        return Convert.ToInt64(_fx.Scalar("SELECT ID FROM GYM_MEMBERS WHERE EMAIL = @e", ("@e", email)));
+    }
+
+    [Fact]
     public void Freeze_And_Resume_Membership_Updates_Status()
     {
         if (!_fx.Available) return;

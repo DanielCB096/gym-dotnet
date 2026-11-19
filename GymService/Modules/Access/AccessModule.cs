@@ -78,6 +78,21 @@ namespace GymService.Modules.Access
                     return false;
                 }
 
+                int dailyLimit = GetMemberDailyLimit(memberId);
+                if (dailyLimit > 0)
+                {
+                    long entriesToday = _tools.ExecuteQueryObjectCount(
+                        "SELECT COUNT(*) FROM GYM_ACCESS_LOG WHERE MEMBER_ID = ? AND ACCESS_RESULT = 'granted' AND CAST(ACCESSED_AT AS DATE) = CAST(GETDATE() AS DATE)",
+                        memberId);
+
+                    if (entriesToday >= dailyLimit)
+                    {
+                        response["success"] = false;
+                        response["message"] = "El socio ya usó sus entradas de hoy";
+                        return false;
+                    }
+                }
+
                 var code = SecurityValidation.GenerateOtp(6);
                 var codeHash = SecurityValidation.Sha256Hash(code);
                 var hmacKey = SecurityValidation.GenerateToken(32);
@@ -130,13 +145,15 @@ namespace GymService.Modules.Access
 
                 var result = _tools.ExecuteQueryResultSet(@"
                     SELECT ac.id, ac.member_id, ac.used, m.first_name, m.last_name,
-                           m.status AS member_status, mem.status AS membership_status, mem.end_date AS membership_end
+                           m.status AS member_status, mem.status AS membership_status, mem.end_date AS membership_end,
+                           p.MAX_DAILY_ENTRIES
                     FROM gym_access_codes ac 
                     INNER JOIN gym_members m ON ac.member_id = m.id 
-                    OUTER APPLY (SELECT TOP 1 mem2.status, mem2.end_date
+                    OUTER APPLY (SELECT TOP 1 mem2.status, mem2.end_date, mem2.plan_id
                                  FROM gym_memberships mem2 WHERE mem2.member_id = m.id
                                  ORDER BY CASE WHEN mem2.status = 'active' THEN 0 WHEN mem2.status = 'frozen' THEN 1 ELSE 2 END,
                                           mem2.end_date DESC) mem
+                    LEFT JOIN GYM_MEMBERSHIP_PLANS p ON p.ID = mem.plan_id
                     WHERE ac.code_hash = ? AND ac.used = 0 AND ac.expires_at > GETDATE()",
                     codeHash
                 );
@@ -180,6 +197,36 @@ namespace GymService.Modules.Access
                         ? "La membresía del socio está congelada"
                         : "El socio no tiene una membresía activa";
                     return false;
+                }
+
+                // Límite diario de entradas configurado por plan (0 o negativo = sin límite).
+                int maxDailyEntries = GetRowValue(row, result, "max_daily_entries") != null
+                    ? Convert.ToInt32(GetRowValue(row, result, "max_daily_entries"))
+                    : 0;
+
+                if (maxDailyEntries > 0)
+                {
+                    long entriesToday = _tools.ExecuteQueryObjectCount(
+                        "SELECT COUNT(*) FROM GYM_ACCESS_LOG WHERE MEMBER_ID = ? AND ACCESS_RESULT = 'granted' AND CAST(ACCESSED_AT AS DATE) = CAST(GETDATE() AS DATE)",
+                        memberId);
+
+                    if (entriesToday >= maxDailyEntries)
+                    {
+                        var deniedSession = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                        deniedSession.InsertObject(new GYM_ACCESS_LOG
+                        {
+                            MEMBER_ID = memberId,
+                            ACCESS_TYPE = "code",
+                            ACCESS_RESULT = "denied",
+                            DEVICE_ID = deviceId,
+                            ACCESSED_AT = DateTime.Now
+                        });
+                        deniedSession.TryExecute();
+
+                        response["success"] = false;
+                        response["message"] = "El socio ya usó sus entradas de hoy";
+                        return false;
+                    }
                 }
 
                 // Mark as used and log the access in a single transaction.
@@ -400,6 +447,24 @@ namespace GymService.Modules.Access
                     ? Convert.ToDateTime(GetRowValue(row, result, "membership_end"))
                     : (DateTime?)null
             );
+        }
+
+        private int GetMemberDailyLimit(long memberId)
+        {
+            var result = _tools.ExecuteQueryResultSet(@"
+                SELECT TOP 1 p.MAX_DAILY_ENTRIES
+                FROM GYM_MEMBERSHIPS mem
+                INNER JOIN GYM_MEMBERSHIP_PLANS p ON p.ID = mem.PLAN_ID
+                WHERE mem.MEMBER_ID = ?
+                ORDER BY CASE WHEN mem.STATUS = 'active' THEN 0 WHEN mem.STATUS = 'frozen' THEN 1 ELSE 2 END,
+                         mem.END_DATE DESC", memberId);
+
+            if (result == null || result.Rows.Count == 0)
+                return 0;
+
+            return GetRowValue(result.Rows[0], result, "max_daily_entries") != null
+                ? Convert.ToInt32(GetRowValue(result.Rows[0], result, "max_daily_entries"))
+                : 0;
         }
     }
 }
