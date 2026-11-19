@@ -187,6 +187,7 @@ namespace GymService
                 var tools = dbManager.Tools;
                 DataCenter.BusinessProcess.Identity = new Modules.Identity.IdentityModule(tools, _configuration);
                 DataCenter.BusinessProcess.Members = new Modules.Members.MembersModule(tools);
+                DataCenter.BusinessProcess.Members.EnsureDefaultPlans();
                 DataCenter.BusinessProcess.Access = new Modules.Access.AccessModule(tools);
                 DataCenter.BusinessProcess.Sales = new Modules.Sales.SalesModule(tools);
                 DataCenter.BusinessProcess.Inventory = new Modules.Inventory.InventoryModule(tools);

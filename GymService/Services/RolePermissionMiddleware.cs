@@ -33,7 +33,10 @@ namespace GymService.Services
 
             // Skip health checks, Swagger, and auth endpoints
             if (path.StartsWith("/health") || path.StartsWith("/ready") || 
-                path.StartsWith("/swagger") || path.StartsWith("/api/auth"))
+                path.StartsWith("/swagger") || path.StartsWith("/api/auth") ||
+                path.StartsWith("/api/access/code/validate") ||
+                path.StartsWith("/api/kiosk/device/validate") ||
+                path.StartsWith("/api/kiosk/equipment/unavailable"))
             {
                 await _next(context);
                 return;
@@ -409,6 +412,51 @@ namespace GymService.Services
             ["/api/staff/push-subscriptions"] = new Dictionary<string, string>
             {
                 ["GET"] = "staff.view"
+            },
+            // Memberships (freeze/resume)
+            ["/api/memberships"] = new Dictionary<string, string>
+            {
+                ["POST"] = "members.edit"
+            },
+            // Access codes (rutas reales por debajo de /api/access)
+            ["/api/access"] = new Dictionary<string, string>
+            {
+                ["GET"] = "access.view",
+                ["POST"] = "access.view",
+                ["PUT"] = "access.override",
+                ["DELETE"] = "access.override"
+            },
+            // Kiosco (validate es público y se omite antes de este punto)
+            ["/api/kiosk"] = new Dictionary<string, string>
+            {
+                ["GET"] = "access.view",
+                ["POST"] = "access.override",
+                ["PUT"] = "access.override",
+                ["DELETE"] = "access.override"
+            },
+            // Importación de datos
+            ["/api/import"] = new Dictionary<string, string>
+            {
+                ["GET"] = "members.view",
+                ["POST"] = "members.create",
+                ["PUT"] = "members.edit",
+                ["DELETE"] = "members.delete"
+            },
+            ["/api/import/members"] = new Dictionary<string, string>
+            {
+                ["POST"] = "members.create"
+            },
+            ["/api/import/inventory"] = new Dictionary<string, string>
+            {
+                ["POST"] = "inventory.edit"
+            },
+            ["/api/import/templates/members"] = new Dictionary<string, string>
+            {
+                ["GET"] = "members.view"
+            },
+            ["/api/import/templates/inventory"] = new Dictionary<string, string>
+            {
+                ["GET"] = "inventory.view"
             }
         };
 
@@ -418,35 +466,33 @@ namespace GymService.Services
         /// </summary>
         public static string? GetRequiredPermission(string path, string method)
         {
-            // Try exact match first
-            if (RoutePermissions.TryGetValue(path, out var methods))
+            // La devolución de una venta tiene su propio permiso aunque la ruta
+            // incluya el ID: /api/sales/{id}/return.
+            if (path.StartsWith("/api/sales/", StringComparison.OrdinalIgnoreCase) &&
+                path.EndsWith("/return", StringComparison.OrdinalIgnoreCase))
             {
-                if (methods.TryGetValue(method, out var permission))
-                    return permission;
-                return null;
+                return method == "POST" ? "sales.return" : null;
             }
 
-            // Try prefix match for routes with IDs (e.g., /api/members/123)
+            // Se usa la ruta registrada más específica que sea prefijo del path.
+            // Así también quedan protegidas subrutas con nombre (accounts, invoices,
+            // templates, devices, etc.) y no solo las que terminan en un ID numérico.
+            Dictionary<string, string>? bestMethods = null;
+            string? bestRoute = null;
+
             foreach (var (route, routeMethods) in RoutePermissions)
             {
-                if (path.StartsWith(route, StringComparison.OrdinalIgnoreCase))
+                if (!path.StartsWith(route, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (bestRoute == null || route.Length > bestRoute.Length)
                 {
-                    // Check if the next segment is a numeric ID
-                    var remaining = path.Substring(route.Length);
-                    if (remaining.StartsWith("/") && remaining.TrimStart('/').Split('/')[0].All(char.IsDigit))
-                    {
-                        // This is a resource-specific route (e.g., /api/members/123)
-                        if (method == "GET")
-                            return routeMethods.GetValueOrDefault("GET");
-                        if (method == "PUT")
-                            return routeMethods.GetValueOrDefault("PUT");
-                        if (method == "DELETE")
-                            return routeMethods.GetValueOrDefault("DELETE");
-                    }
+                    bestRoute = route;
+                    bestMethods = routeMethods;
                 }
             }
 
-            return null;
+            return bestMethods?.GetValueOrDefault(method);
         }
     }
 }

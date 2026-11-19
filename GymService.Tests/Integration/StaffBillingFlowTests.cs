@@ -52,6 +52,16 @@ public class StaffBillingFlowTests
 
             long userId = Convert.ToInt64(userResponse["userId"]);
 
+            // El login del rol STAFF recibe permisos operativos por defecto,
+            // pero no permisos financieros ni de personal.
+            Assert.True(identity.Login(username, "Clave123!", "tests", "127.0.0.1", out var loginResponse));
+            var permissions = Assert.IsAssignableFrom<List<string>>(loginResponse["permissions"]);
+            Assert.Contains("members.view", permissions);
+            Assert.Contains("classes.manage", permissions);
+            Assert.DoesNotContain("finance.view", permissions);
+            Assert.DoesNotContain("billing.view", permissions);
+            Assert.DoesNotContain("staff.view", permissions);
+
             // Duplicados y rol inválido.
             Assert.False(identity.CreateUser(new Dictionary<string, object>
             {

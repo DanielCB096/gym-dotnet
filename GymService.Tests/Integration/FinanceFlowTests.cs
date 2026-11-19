@@ -54,11 +54,45 @@ public class FinanceFlowTests
             Assert.Equal("deposit", filteredData[0]["transactionType"]);
             Assert.Equal(250m, Convert.ToDecimal(filteredData[0]["amount"]));
 
+            // El saldo se actualiza con cada movimiento.
+            Assert.True(finance.CreateTransaction(new Dictionary<string, object>
+            {
+                ["accountId"] = accountId,
+                ["amount"] = 100m,
+                ["transactionType"] = "withdrawal",
+                ["description"] = "Retiro de prueba"
+            }, out _));
+
+            // No se permite sobregirar la cuenta.
+            Assert.False(finance.CreateTransaction(new Dictionary<string, object>
+            {
+                ["accountId"] = accountId,
+                ["amount"] = 999999m,
+                ["transactionType"] = "withdrawal"
+            }, out var overdraft));
+            Assert.Contains("Saldo insuficiente", overdraft.GetValueOrDefault("message")?.ToString() ?? "");
+
+            Assert.False(finance.CreateTransaction(new Dictionary<string, object>
+            {
+                ["accountId"] = accountId,
+                ["amount"] = -10m
+            }, out _));
+
+            Assert.False(finance.CreateTransaction(new Dictionary<string, object>
+            {
+                ["accountId"] = 999999,
+                ["amount"] = 10m
+            }, out _));
+
             Assert.True(finance.GetBankAccounts(out var accounts));
             var accountData = Assert.IsAssignableFrom<List<Dictionary<string, object>>>(accounts["data"]);
             var account = accountData.Single(row => Convert.ToInt64(row["id"]) == accountId);
-            Assert.Equal(1000m, Convert.ToDecimal(account["balance"]));
+            Assert.Equal(1150m, Convert.ToDecimal(account["balance"]));
             Assert.Equal("MXN", account["currency"]);
+
+            // Una cuenta con movimientos no se elimina.
+            Assert.False(finance.DeleteBankAccount(accountId, out var deleteAccount));
+            Assert.Contains("movimientos", deleteAccount.GetValueOrDefault("message")?.ToString() ?? "");
 
             Assert.Equal(1L, Convert.ToInt64(_fx.Scalar("SELECT CREATED_BY FROM GYM_BANK_TRANSACTIONS WHERE ACCOUNT_ID = @id", ("@id", accountId))));
         }

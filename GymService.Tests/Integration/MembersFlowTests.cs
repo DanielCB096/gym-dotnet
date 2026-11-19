@@ -59,6 +59,63 @@ public class MembersFlowTests
     }
 
     [Fact]
+    public void CreateMember_Rejects_Duplicate_Email_And_Unknown_Plan()
+    {
+        if (!_fx.Available) return;
+
+        EnsurePlan("Mensual", 30);
+
+        var module = new MembersModule(_fx.Tools!);
+        string email = $"duplicate_{Guid.NewGuid():N}@test.local";
+
+        CurrentUser.Id = 1;
+
+        try
+        {
+            Assert.True(module.CreateMember(new Dictionary<string, object>
+            {
+                ["firstName"] = "Original",
+                ["lastName"] = "Test",
+                ["email"] = email,
+                ["membershipType"] = "Mensual"
+            }, out _));
+
+            Assert.False(module.CreateMember(new Dictionary<string, object>
+            {
+                ["firstName"] = "Duplicado",
+                ["lastName"] = "Test",
+                ["email"] = email,
+                ["membershipType"] = "Mensual"
+            }, out var duplicate));
+
+            Assert.Contains("correo", duplicate.GetValueOrDefault("message")?.ToString() ?? "", StringComparison.OrdinalIgnoreCase);
+
+            Assert.False(module.CreateMember(new Dictionary<string, object>
+            {
+                ["firstName"] = "Plan",
+                ["lastName"] = "Inexistente",
+                ["email"] = $"plan_{Guid.NewGuid():N}@test.local",
+                ["membershipType"] = "PlanQueNoExiste"
+            }, out var unknownPlan));
+
+            Assert.Contains("plan", unknownPlan.GetValueOrDefault("message")?.ToString() ?? "", StringComparison.OrdinalIgnoreCase);
+
+            Assert.False(module.CreateMember(new Dictionary<string, object>
+            {
+                ["firstName"] = "",
+                ["lastName"] = "SinNombre",
+                ["email"] = $"noname_{Guid.NewGuid():N}@test.local"
+            }, out var noName));
+
+            Assert.Contains("nombre", noName.GetValueOrDefault("message")?.ToString() ?? "", StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            CurrentUser.Id = 0;
+        }
+    }
+
+    [Fact]
     public void Freeze_And_Resume_Membership_Updates_Status()
     {
         if (!_fx.Available) return;

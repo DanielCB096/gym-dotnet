@@ -6,6 +6,13 @@
 
 ## Backend (.NET)
 
+### Pruebas amplias y correcciones (2026-11-19)
+- **Socios:** se rechaza correo duplicado, nombre/apellido vacío y planes inexistentes; al arrancar se crean los planes base (Mensual/Trimestral/Anual) si la tabla está vacía.
+- **Permisos:** la resolución de rutas usa la coincidencia más específica, por lo que subrutas como `/api/finance/accounts`, `/api/billing/invoices`, `/api/reports/*`, `/api/import/*` o `/api/kiosk/*` ya no se saltan el RBAC. Los roles ADMIN/STAFF/CASHIER reciben los permisos por defecto de la matriz aunque la tabla `gym_role_permissions` solo tenga al owner.
+- **Finanzas:** cada movimiento actualiza el saldo de la cuenta, se rechazan montos negativos/cero, cuentas inexistentes y retiros sin saldo; no se eliminan cuentas con movimientos.
+- **Seguridad:** validación de códigos de acceso con rate limiting estricto.
+- **Pruebas:** 95 automatizadas (22 nuevas de permisos, socios y finanzas) y barrido HTTP completo sobre BD temporal: auth, socios, accesos, ventas, clases, rutinas, fisio, mantenimiento, facturación, personal, finanzas, reportes, kiosco e importación.
+
 ### Personal y facturación: correcciones y pruebas (2026-11-19)
 - **Personal:** alta de usuarios del sistema (usuario, correo, contraseña, rol ADMIN/STAFF/CASHIER) desde el módulo; el alta de empleado valida usuario existente/activo, evita vincular dos veces al mismo usuario, guarda fecha de alta y devuelve `staffId`.
 - **Personal (UI):** pestañas “Empleados” y “Usuarios”; alta de usuarios, selección de usuario disponible al crear empleado, estado activo/inactivo, fecha de alta y listado con rol/email.

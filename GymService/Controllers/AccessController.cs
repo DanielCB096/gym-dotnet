@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using GymService.Tools;
 
 namespace GymService.Controllers
@@ -25,6 +26,7 @@ namespace GymService.Controllers
 
         [HttpPost]
         [Route("api/access/code/validate")]
+        [EnableRateLimiting("strict")]
         public ActionResult<Dictionary<string, object>> ValidateAccessCode([FromBody] Dictionary<string, string> request)
         {
             if (DataCenter.BusinessProcess.Access == null)

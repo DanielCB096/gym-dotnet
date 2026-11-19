@@ -58,6 +58,23 @@ namespace GymService.Modules.Finance
                     return false;
                 }
 
+                if (balance < 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "El saldo inicial no puede ser negativo";
+                    return false;
+                }
+
+                long duplicateAccount = _tools.ExecuteQueryObjectCount(
+                    "SELECT COUNT(*) FROM GYM_BANK_ACCOUNTS WHERE ACCOUNT_NUMBER = ?", accountNumber);
+
+                if (duplicateAccount > 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "Ya existe una cuenta con ese número";
+                    return false;
+                }
+
                 var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.InsertObject(new GYM_BANK_ACCOUNTS
                 {
@@ -102,7 +119,40 @@ namespace GymService.Modules.Finance
                 var accountId = transactionData.ContainsKey("accountId") ? Convert.ToInt64(transactionData["accountId"]) : 0L;
                 var amount = transactionData.ContainsKey("amount") ? Convert.ToDecimal(transactionData["amount"]) : 0m;
                 var description = Convert.ToString(transactionData.GetValueOrDefault("description", "")) ?? "";
-                var transactionType = Convert.ToString(transactionData.GetValueOrDefault("transactionType", "deposit")) ?? "deposit";
+                var transactionType = (Convert.ToString(transactionData.GetValueOrDefault("transactionType", "deposit")) ?? "deposit").Trim().ToLowerInvariant();
+
+                var account = GetAccountState(accountId);
+                if (account == null)
+                {
+                    response["success"] = false;
+                    response["message"] = "La cuenta bancaria no existe";
+                    return false;
+                }
+
+                if (amount <= 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "El monto debe ser mayor a cero";
+                    return false;
+                }
+
+                if (transactionType != "deposit" && transactionType != "withdrawal")
+                {
+                    response["success"] = false;
+                    response["message"] = "Tipo de movimiento no válido";
+                    return false;
+                }
+
+                decimal newBalance = transactionType == "deposit"
+                    ? account.Value.Balance + amount
+                    : account.Value.Balance - amount;
+
+                if (newBalance < 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "Saldo insuficiente para el retiro";
+                    return false;
+                }
 
                 var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.InsertObject(new GYM_BANK_TRANSACTIONS
@@ -110,22 +160,27 @@ namespace GymService.Modules.Finance
                     ACCOUNT_ID = accountId,
                     TRANSACTION_TYPE = transactionType,
                     AMOUNT = amount,
-                    DESCRIPTION = description,
+                    DESCRIPTION = description.Trim(),
                     TRANSACTION_DATE = DateTime.Now
                 });
 
-                if (!session.TryExecute().IsError)
+                session.UpdateObjectChanges(new GYM_BANK_ACCOUNTS
                 {
-                    response["success"] = true;
-                    response["message"] = "Transacción registrada correctamente";
-                }
-                else
+                    ID = accountId,
+                    BALANCE = newBalance
+                });
+
+                if (session.TryExecute().IsError)
                 {
                     response["success"] = false;
                     response["message"] = "Error al registrar la transacción";
+                    return false;
                 }
 
-                return (bool)response["success"];
+                response["success"] = true;
+                response["balance"] = newBalance;
+                response["message"] = "Transacción registrada correctamente";
+                return true;
             }
             catch (Exception ex)
             {
@@ -145,6 +200,23 @@ namespace GymService.Modules.Finance
 
             try
             {
+                if (GetAccountState(accountId) == null)
+                {
+                    response["success"] = false;
+                    response["message"] = "La cuenta bancaria no existe";
+                    return false;
+                }
+
+                long transactions = _tools.ExecuteQueryObjectCount(
+                    "SELECT COUNT(*) FROM GYM_BANK_TRANSACTIONS WHERE ACCOUNT_ID = ?", accountId);
+
+                if (transactions > 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "La cuenta tiene movimientos; no se puede eliminar para conservar el historial";
+                    return false;
+                }
+
                 var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.DeleteObject(new GYM_BANK_ACCOUNTS { ID = accountId });
 
@@ -289,6 +361,23 @@ namespace GymService.Modules.Finance
                 response["message"] = "Error interno del servidor";
                 return false;
             }
+        }
+
+        private (decimal Balance, string Currency, bool IsActive)? GetAccountState(long accountId)
+        {
+            var result = _tools.ExecuteQueryResultSet(
+                "SELECT BALANCE, CURRENCY, IS_ACTIVE FROM GYM_BANK_ACCOUNTS WHERE ID = ?", accountId);
+
+            if (result == null || result.Rows.Count == 0)
+                return null;
+
+            var row = result.Rows[0];
+
+            return (
+                Convert.ToDecimal(GetRowValue(row, result, "balance")),
+                Convert.ToString(GetRowValue(row, result, "currency")) ?? "MXN",
+                Convert.ToBoolean(GetRowValue(row, result, "is_active"))
+            );
         }
     }
 }

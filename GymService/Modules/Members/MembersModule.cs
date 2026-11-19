@@ -138,12 +138,32 @@ namespace GymService.Modules.Members
 
             try
             {
-                var firstName = memberData.ContainsKey("firstName") ? Convert.ToString(memberData["firstName"]) : "";
-                var lastName = memberData.ContainsKey("lastName") ? Convert.ToString(memberData["lastName"]) : "";
-                var email = memberData.ContainsKey("email") ? Convert.ToString(memberData["email"]) : "";
-                var phone = memberData.ContainsKey("phone") ? Convert.ToString(memberData["phone"]) : "";
-                var membershipType = memberData.ContainsKey("membershipType") ? Convert.ToString(memberData["membershipType"]) : "monthly";
+                var firstName = (memberData.ContainsKey("firstName") ? Convert.ToString(memberData["firstName"]) : "")?.Trim() ?? "";
+                var lastName = (memberData.ContainsKey("lastName") ? Convert.ToString(memberData["lastName"]) : "")?.Trim() ?? "";
+                var email = (memberData.ContainsKey("email") ? Convert.ToString(memberData["email"]) : "")?.Trim() ?? "";
+                var phone = (memberData.ContainsKey("phone") ? Convert.ToString(memberData["phone"]) : "")?.Trim() ?? "";
+                var membershipType = (memberData.ContainsKey("membershipType") ? Convert.ToString(memberData["membershipType"]) : "")?.Trim() ?? "";
                 var createdBy = memberData.ContainsKey("createdBy") ? Convert.ToInt64(memberData["createdBy"]) : CurrentUser.ForAudit;
+
+                if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName))
+                {
+                    response["success"] = false;
+                    response["message"] = "El nombre y el apellido son requeridos";
+                    return false;
+                }
+
+                if (!string.IsNullOrWhiteSpace(email))
+                {
+                    long duplicateEmail = _tools.ExecuteQueryObjectCount(
+                        "SELECT COUNT(*) FROM GYM_MEMBERS WHERE EMAIL = ?", email);
+
+                    if (duplicateEmail > 0)
+                    {
+                        response["success"] = false;
+                        response["message"] = "Ya existe un socio con ese correo";
+                        return false;
+                    }
+                }
 
                 // Look up plan_id by membershipType (plan_name) before opening the transaction
                 long planId = 0;
@@ -162,7 +182,9 @@ namespace GymService.Modules.Members
                     }
                     else
                     {
-                        Logger.AddWarningSubModule(SubModule, $"Plan '{membershipType}' no encontrado, membresía no creada");
+                        response["success"] = false;
+                        response["message"] = "El plan de membresía no existe o está inactivo";
+                        return false;
                     }
                 }
 
@@ -383,6 +405,58 @@ namespace GymService.Modules.Members
                 response["success"] = false;
                 response["message"] = "Error interno del servidor";
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Crea los planes de membresía base en instalaciones nuevas.
+        /// </summary>
+        public void EnsureDefaultPlans()
+        {
+            try
+            {
+                long existing = _tools.ExecuteQueryObjectCount("SELECT COUNT(*) FROM GYM_MEMBERSHIP_PLANS");
+                if (existing > 0) return;
+
+                var defaults = new[]
+                {
+                    ("Mensual", "Acceso general por 30 días", 500m, 30, 1, true),
+                    ("Trimestral", "Acceso general por 90 días", 1350m, 90, 1, true),
+                    ("Anual", "Acceso general por 365 días", 4800m, 365, 1, true)
+                };
+
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+
+                foreach (var (name, description, price, days, maxEntries, includesClasses) in defaults)
+                {
+                    long planId = _tools.GenerateUniqueID(GYM_MEMBERSHIP_PLANS.DatabaseMappingObject, 1).GetInt64UniqueId();
+
+                    session.InsertObjectWithID(new GYM_MEMBERSHIP_PLANS
+                    {
+                        ID = planId,
+                        PLAN_NAME = name,
+                        DESCRIPTION = description,
+                        PRICE = price,
+                        CURRENCY = "MXN",
+                        DURATION_DAYS = days,
+                        MAX_DAILY_ENTRIES = maxEntries,
+                        INCLUDES_CLASSES = includesClasses,
+                        INCLUDES_PREMIUM_CLASSES = false,
+                        IS_ACTIVE = true
+                    });
+                }
+
+                if (session.TryExecute().IsError)
+                {
+                    Logger.AddWarningSubModule(SubModule, "No se pudieron crear los planes de membresía por defecto");
+                    return;
+                }
+
+                Logger.AddInfoSubModule(SubModule, "Planes de membresía por defecto creados");
+            }
+            catch (Exception ex)
+            {
+                Logger.AddWarningSubModule(SubModule, $"Error en EnsureDefaultPlans: {ex.Message}");
             }
         }
     }

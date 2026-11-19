@@ -902,6 +902,14 @@ namespace GymService.Modules.Identity
                 Logger.AddErrorSubModule(SubModule, $"Error en GetPermissions: {ex.Message}");
             }
 
+            // Si la tabla de permisos por rol aún no tiene configuración para el rol,
+            // se usan los permisos por defecto de la matriz de la aplicación.
+            if (permissions.Count == 0 &&
+                PermissionMatrix.RolePermissions.TryGetValue(role.Trim().ToUpperInvariant(), out var defaults))
+            {
+                permissions.AddRange(defaults);
+            }
+
             return permissions;
         }
 
