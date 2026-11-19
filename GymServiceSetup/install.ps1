@@ -23,6 +23,12 @@ function Assert-Admin {
     }
 }
 
+function Invoke-Sc {
+    param([string[]]$Arguments)
+    Start-Process -FilePath (Join-Path $env:SystemRoot 'System32\sc.exe') `
+        -ArgumentList $Arguments -Wait -WindowStyle Hidden -ErrorAction SilentlyContinue | Out-Null
+}
+
 if (-not $PrepareOnly) {
     Assert-Admin
 }
@@ -58,20 +64,39 @@ Write-Host ""
 $existing = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
 if ($existing -and -not $PrepareOnly) {
     Write-Host "Deteniendo servicio existente..." -ForegroundColor Yellow
-    try {
-        & $exeSource -stop | Out-Null
-    } catch {
-        Stop-Service -Name $serviceName -Force -ErrorAction SilentlyContinue
+
+    try { & $exeSource -stop | Out-Null } catch { }
+    Stop-Service -Name $serviceName -Force -ErrorAction SilentlyContinue
+
+    for ($i = 0; $i -lt 30; $i++) {
+        $current = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
+        if (-not $current -or $current.Status -eq 'Stopped') { break }
+        Start-Sleep -Seconds 1
     }
-    Start-Sleep -Seconds 2
+
+    $current = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
+    if ($current -and $current.Status -ne 'Stopped') {
+        $serviceProcessId = (Get-CimInstance Win32_Service -Filter "Name='$serviceName'" -ErrorAction SilentlyContinue).ProcessId
+        if ($serviceProcessId -gt 0) {
+            Stop-Process -Id $serviceProcessId -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 2
+        }
+    }
 
     Write-Host "Desinstalando servicio existente..." -ForegroundColor Yellow
     try { & $exeSource -uninstall | Out-Null } catch { }
     Start-Sleep -Seconds 2
 
-    if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
-        sc.exe delete $serviceName | Out-Null
-        Start-Sleep -Seconds 2
+    for ($i = 0; $i -lt 10; $i++) {
+        $current = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
+        if (-not $current) { break }
+        Invoke-Sc @('delete', $serviceName)
+        Start-Sleep -Seconds 1
+    }
+
+    $current = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
+    if ($current) {
+        throw "No se pudo detener/desregistrar el servicio '$serviceName'. Detén el servicio manualmente y vuelve a ejecutar el instalador."
     }
 }
 
@@ -168,8 +193,8 @@ if (-not (Get-Service -Name $serviceName -ErrorAction SilentlyContinue)) {
 }
 
 # Recuperación ante fallos.
-sc.exe failure $serviceName reset= 86400 actions= restart/60000/restart/120000/restart/180000 | Out-Null
-sc.exe description $serviceName "GymService - API y panel web para la gestion del gimnasio." | Out-Null
+Invoke-Sc @('failure', $serviceName, 'reset=', '86400', 'actions=', 'restart/60000/restart/120000/restart/180000')
+Invoke-Sc @('description', $serviceName, 'GymService - API y panel web para la gestion del gimnasio.')
 
 if ($OpenFirewall) {
     $ruleName = "GymService (TCP $Port)"
