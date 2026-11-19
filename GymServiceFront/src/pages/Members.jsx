@@ -10,6 +10,7 @@ import { formatCurrency, formatDate } from '../utils/format';
 const membershipStatusInfo = {
   active: { variant: 'success', label: 'Activo' },
   frozen: { variant: 'warning', label: 'Congelada' },
+  cancelled: { variant: 'danger', label: 'Cancelada' },
   expired: { variant: 'danger', label: 'Vencida' },
   none: { variant: 'warning', label: 'Sin membresía' },
 };

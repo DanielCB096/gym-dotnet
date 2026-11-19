@@ -104,6 +104,7 @@ export default function AccessLogs() {
       ),
     },
     { header: 'Dispositivo', accessor: 'deviceId' },
+    { header: 'Motivo', accessor: 'reason', render: (value) => value || '—' },
     { header: 'Fecha y hora', accessor: 'accessedAt', render: (value) => formatDateTime(value) },
   ];
 

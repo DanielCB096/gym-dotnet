@@ -13,6 +13,7 @@ const todayInput = () => new Date().toISOString().slice(0, 10);
 const membershipLabel = {
   active: { variant: 'success', label: 'Activa' },
   frozen: { variant: 'warning', label: 'Congelada' },
+  cancelled: { variant: 'danger', label: 'Cancelada' },
   expired: { variant: 'danger', label: 'Vencida' },
   none: { variant: 'neutral', label: 'Sin membresía' },
 };

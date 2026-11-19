@@ -6,6 +6,11 @@
 
 ## Backend (.NET)
 
+### Pruebas en vivo Fase 1 (2026-11-19)
+- **UI real:** creación/edición de plan, alta/edición de socio, renovación de cortesía, cancelación con motivo, historial/pagos/recibos, acceso manual y kiosco administrativo/PWA en `/kiosk-app/`.
+- **Correcciones encontradas:** una membresía cancelada se mostraba como “Vencida” (ahora “Cancelada”); la bitácora no mostraba el motivo del acceso manual (nueva columna “Motivo”).
+- **Hallazgo de entorno:** la validación de token/código del kiosco chocó con el rate limiting estricto al ejecutar varias pruebas concurrentes; no es un fallo funcional.
+
 ### Regla de pruebas en vivo (2026-11-19)
 - Se establece como obligatorio probar cada funcionalidad **en vivo** (API real y navegador cuando aplique) antes de darla por terminada. Documentado en `docs/pruebas-en-vivo.md`, `AGENTS.md` y `README.md`.
 - Motivo: las pruebas automatizadas no detectaron el bloqueo del popup del recibo ni el conflicto de `/kiosk` entre la PWA y la página administrativa; ambos se encontraron al probar en navegador.

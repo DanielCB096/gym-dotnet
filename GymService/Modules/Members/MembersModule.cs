@@ -104,6 +104,8 @@ namespace GymService.Modules.Members
                             membershipStatus = "none";
                         else if (string.Equals(rawMembershipStatus, "frozen", StringComparison.OrdinalIgnoreCase))
                             membershipStatus = "frozen";
+                        else if (string.Equals(rawMembershipStatus, "cancelled", StringComparison.OrdinalIgnoreCase))
+                            membershipStatus = "cancelled";
                         else if (string.Equals(rawMembershipStatus, "active", StringComparison.OrdinalIgnoreCase) &&
                                  membershipEnd.HasValue && membershipEnd.Value.Date >= DateTime.Now.Date)
                             membershipStatus = "active";
