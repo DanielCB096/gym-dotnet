@@ -6,6 +6,14 @@
 
 ## Backend (.NET)
 
+### Personal y facturación: correcciones y pruebas (2026-11-19)
+- **Personal:** alta de usuarios del sistema (usuario, correo, contraseña, rol ADMIN/STAFF/CASHIER) desde el módulo; el alta de empleado valida usuario existente/activo, evita vincular dos veces al mismo usuario, guarda fecha de alta y devuelve `staffId`.
+- **Personal (UI):** pestañas “Empleados” y “Usuarios”; alta de usuarios, selección de usuario disponible al crear empleado, estado activo/inactivo, fecha de alta y listado con rol/email.
+- **Facturación:** validación de socio, importe > 0, IVA dentro del importe, estados `pending`/`paid`/`cancelled`, número de factura único y generación automática. Listado con nombre del socio, IVA, subtotal y filtros por estado/búsqueda; no se eliminan facturas pagadas.
+- **Facturación (UI):** selección de socio por nombre, importe/IVA, filtro por estado, etiquetas corregidas (“Socio”, “Importe”, “No. de factura”) y búsqueda funcional.
+- **Textos:** se corrigieron cadenas con doble codificación UTF-8 (acentos y signos) en módulos, servicios y en el panel de clases.
+- **Pruebas:** 69 (unitarias + integración), con flujos de usuarios/empleados y validaciones/filtros de facturas.
+
 ### Despliegue y panel integrado (2026-11-19)
 - **Panel web servido por el servicio:** Kestrel publica `wwwroot` con fallback SPA; las rutas `/api`, `/swagger`, `/health` y archivos inexistentes conservan 404. El contenido se resuelve desde el directorio del ejecutable (`UseContentRoot`), necesario al correr como servicio Windows.
 - **Publicación:** `publish.ps1` compila el frontend, publica self-contained `win-x64`, copia el panel a `wwwroot`, genera `VERSION.txt` y un ZIP con instalador; nunca incluye `appsettings.json` con credenciales.

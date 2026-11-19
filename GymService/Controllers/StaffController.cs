@@ -9,7 +9,11 @@ namespace GymService.Controllers
     {
         [HttpGet]
         [Route("api/staff")]
-        public ActionResult<Dictionary<string, object>> GetStaff([FromQuery] string? query = null, [FromQuery] int page = 1, [FromQuery] int limit = 50)
+        public ActionResult<Dictionary<string, object>> GetStaff(
+            [FromQuery] string? query = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int limit = 50,
+            [FromQuery] bool includeInactive = false)
         {
             if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
                 return Unauthorized(new { success = false, message = errorMessage });
@@ -17,7 +21,7 @@ namespace GymService.Controllers
             if (DataCenter.BusinessProcess.Staff == null)
                 return BadRequest(new { success = false, message = "Servicio no disponible" });
 
-            var success = DataCenter.BusinessProcess.Staff.GetStaff(out var response, query, page, limit);
+            var success = DataCenter.BusinessProcess.Staff.GetStaff(out var response, query, page, limit, includeInactive);
             return success ? Ok(response) : BadRequest(response);
         }
 
@@ -32,6 +36,34 @@ namespace GymService.Controllers
                 return BadRequest(new { success = false, message = "Servicio no disponible" });
 
             var success = DataCenter.BusinessProcess.Staff.GetAvailableUsers(out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpGet]
+        [Route("api/staff/users/all")]
+        public ActionResult<Dictionary<string, object>> GetSystemUsers()
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Staff == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Staff.GetSystemUsers(out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPost]
+        [Route("api/staff/users")]
+        public ActionResult<Dictionary<string, object>> CreateUser([FromBody] Dictionary<string, object> userData)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userDataAuth, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Identity == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Identity.CreateUser(userData, out var response);
             return success ? Ok(response) : BadRequest(response);
         }
 

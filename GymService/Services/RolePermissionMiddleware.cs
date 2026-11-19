@@ -399,6 +399,11 @@ namespace GymService.Services
             },
             ["/api/staff/users"] = new Dictionary<string, string>
             {
+                ["GET"] = "staff.view",
+                ["POST"] = "staff.manage"
+            },
+            ["/api/staff/users/all"] = new Dictionary<string, string>
+            {
                 ["GET"] = "staff.view"
             },
             ["/api/staff/push-subscriptions"] = new Dictionary<string, string>

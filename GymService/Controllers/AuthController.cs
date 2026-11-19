@@ -54,7 +54,7 @@ namespace GymService.Controllers
             }
 
             response["success"] = true;
-            response["message"] = "SesiÃ³n cerrada";
+            response["message"] = "Sesión cerrada";
             return Ok(response);
         }
 
@@ -103,7 +103,7 @@ namespace GymService.Controllers
             if (string.IsNullOrEmpty(email))
             {
                 response["success"] = false;
-                response["message"] = "Correo electrÃ³nico requerido";
+                response["message"] = "Correo electrónico requerido";
                 return BadRequest(response);
             }
 
@@ -140,12 +140,12 @@ namespace GymService.Controllers
             if (string.IsNullOrWhiteSpace(expectedToken))
                 return NotFound(new { success = false, message = "No disponible" });
 
-            // Endpoint de recuperaciÃ³n: solo se permite desde la misma mÃ¡quina.
+            // Endpoint de recuperación: solo se permite desde la misma máquina.
             var remote = HttpContext.Connection.RemoteIpAddress;
             if (remote != null && !System.Net.IPAddress.IsLoopback(remote))
                 return NotFound(new { success = false, message = "No disponible" });
 
-            // AdemÃ¡s del loopback, se exige el token compartido en la cabecera.
+            // Además del loopback, se exige el token compartido en la cabecera.
             var providedToken = Request.Headers["X-Admin-Reset-Token"].ToString();
             if (!FixedTimeEquals(providedToken, expectedToken))
                 return NotFound(new { success = false, message = "No disponible" });

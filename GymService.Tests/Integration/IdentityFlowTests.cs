@@ -86,7 +86,7 @@ public class IdentityFlowTests
         string secret = match.Groups[1].Value;
         var codes = Assert.IsType<List<string>>(setup["backupCodes"]);
 
-        // Simular datos legacy: secreto Base64 plano y cÃ³digos en texto plano.
+        // Simular datos legacy: secreto Base64 plano y códigos en texto plano.
         _fx.Execute("UPDATE GYM_USERS SET MFA_SECRET_ENCRYPTED = @s, MFA_BACKUP_CODES = @c, MFA_ENABLED = 0 WHERE ID = @id",
             ("@s", Convert.ToBase64String(Encoding.UTF8.GetBytes(secret))),
             ("@c", string.Join(",", codes)),

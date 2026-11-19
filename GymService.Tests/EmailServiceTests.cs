@@ -48,7 +48,7 @@ public class EmailServiceTests
         }));
 
         Assert.False(service.TrySendOtp("socio@test.local", "123456", "login", out string error));
-        Assert.Contains("no estÃ¡ configurado", error);
+        Assert.Contains("no está configurado", error);
     }
 }
 

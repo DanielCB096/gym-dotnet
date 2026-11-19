@@ -8,7 +8,7 @@ using AxObjectOrientedDatabase;
 namespace GymService.Modules.Members
 {
     /// <summary>
-    /// Members module: CRUD de socios, membresÃ­as, congelaciones y pagos.
+    /// Members module: CRUD de socios, membresías, congelaciones y pagos.
     /// </summary>
     public class MembersModule
     {
@@ -162,7 +162,7 @@ namespace GymService.Modules.Members
                     }
                     else
                     {
-                        Logger.AddWarningSubModule(SubModule, $"Plan '{membershipType}' no encontrado, membresÃ­a no creada");
+                        Logger.AddWarningSubModule(SubModule, $"Plan '{membershipType}' no encontrado, membresía no creada");
                     }
                 }
 
@@ -287,14 +287,14 @@ namespace GymService.Modules.Members
 
                 if (session.TryExecute().IsError)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al congelar la membresÃ­a");
+                    Logger.AddErrorSubModule(SubModule, "Error al congelar la membresía");
                     response["success"] = false;
-                    response["message"] = "Error al congelar la membresÃ­a";
+                    response["message"] = "Error al congelar la membresía";
                     return false;
                 }
 
                 response["success"] = true;
-                response["message"] = "MembresÃ­a congelada exitosamente";
+                response["message"] = "Membresía congelada exitosamente";
                 return true;
             }
             catch (Exception ex)
@@ -326,14 +326,14 @@ namespace GymService.Modules.Members
 
                 if (session.TryExecute().IsError)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al reanudar la membresÃ­a");
+                    Logger.AddErrorSubModule(SubModule, "Error al reanudar la membresía");
                     response["success"] = false;
-                    response["message"] = "Error al reanudar la membresÃ­a";
+                    response["message"] = "Error al reanudar la membresía";
                     return false;
                 }
 
                 response["success"] = true;
-                response["message"] = "MembresÃ­a reanudada exitosamente";
+                response["message"] = "Membresía reanudada exitosamente";
                 return true;
             }
             catch (Exception ex)

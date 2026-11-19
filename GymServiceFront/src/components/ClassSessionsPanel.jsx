@@ -36,7 +36,7 @@ const reservationStatusVariant = {
 const reservationStatusLabel = {
   reserved: 'Confirmada',
   waitlist: 'En espera',
-  attended: 'AsistiÃ³',
+  attended: 'Asistió',
   cancelled: 'Cancelada',
 };
 
@@ -147,7 +147,7 @@ export default function ClassSessionsPanel() {
   const classTypeOptions = useMemo(
     () => classTypes.map((type) => ({
       value: type.id,
-      label: `${type.typeName} Â· ${type.durationMinutes} min Â· mÃ¡x. ${type.maxParticipants}`,
+      label: `${type.typeName} · ${type.durationMinutes} min · máx. ${type.maxParticipants}`,
     })),
     [classTypes],
   );
@@ -160,7 +160,7 @@ export default function ClassSessionsPanel() {
   const memberOptions = useMemo(
     () => members.map((member) => ({
       value: member.id,
-      label: `${member.firstName} ${member.lastName}${member.email ? ` Â· ${member.email}` : ''}`,
+      label: `${member.firstName} ${member.lastName}${member.email ? ` · ${member.email}` : ''}`,
     })),
     [members],
   );
@@ -223,16 +223,16 @@ export default function ClassSessionsPanel() {
 
       if (sessionModal.mode === 'edit') {
         await api.put(`/classes/sessions/${sessionModal.id}`, payload);
-        notify('success', 'SesiÃ³n actualizada correctamente.');
+        notify('success', 'Sesión actualizada correctamente.');
       } else {
         await api.post('/classes/sessions', payload);
-        notify('success', 'SesiÃ³n creada correctamente.');
+        notify('success', 'Sesión creada correctamente.');
       }
 
       setSessionModal(null);
       await loadSessions();
     } catch (err) {
-      setSessionError(errorMessage(err, 'No se pudo guardar la sesiÃ³n.'));
+      setSessionError(errorMessage(err, 'No se pudo guardar la sesión.'));
     } finally {
       setSavingSession(false);
     }
@@ -240,12 +240,12 @@ export default function ClassSessionsPanel() {
 
   const askCancelSession = (row) => {
     setConfirm({
-      title: 'Cancelar sesiÃ³n',
-      message: `Se cancelarÃ¡ la sesiÃ³n y sus reservas activas. Â¿Continuar?`,
+      title: 'Cancelar sesión',
+      message: `Se cancelará la sesión y sus reservas activas. ¿Continuar?`,
       variant: 'danger',
       action: async () => {
         const response = await api.post(`/classes/sessions/${row.id}/cancel`);
-        notify('success', response.data?.message || 'SesiÃ³n cancelada.');
+        notify('success', response.data?.message || 'Sesión cancelada.');
         await loadSessions();
       },
     });
@@ -253,12 +253,12 @@ export default function ClassSessionsPanel() {
 
   const askDeleteSession = (row) => {
     setConfirm({
-      title: 'Eliminar sesiÃ³n',
-      message: 'Solo se puede eliminar una sesiÃ³n sin reservas. Â¿Continuar?',
+      title: 'Eliminar sesión',
+      message: 'Solo se puede eliminar una sesión sin reservas. ¿Continuar?',
       variant: 'danger',
       action: async () => {
         await api.delete(`/classes/sessions/${row.id}`);
-        notify('success', 'SesiÃ³n eliminada.');
+        notify('success', 'Sesión eliminada.');
         await loadSessions();
       },
     });
@@ -308,7 +308,7 @@ export default function ClassSessionsPanel() {
   const cancelReservation = (reservation) => {
     setConfirm({
       title: 'Cancelar reserva',
-      message: 'Si hay lista de espera, el siguiente socio ocuparÃ¡ el lugar. Â¿Continuar?',
+      message: 'Si hay lista de espera, el siguiente socio ocupará el lugar. ¿Continuar?',
       variant: 'danger',
       action: async () => {
         const response = await api.delete(`/classes/reservations/${reservation.id}`);
@@ -334,7 +334,7 @@ export default function ClassSessionsPanel() {
       await confirm.action();
       setConfirm(null);
     } catch (err) {
-      notify('error', errorMessage(err, 'No se pudo completar la acciÃ³n.'));
+      notify('error', errorMessage(err, 'No se pudo completar la acción.'));
       setConfirm(null);
     } finally {
       setConfirmLoading(false);
@@ -353,14 +353,14 @@ export default function ClassSessionsPanel() {
       render: (value, row) => (
         <div>
           <p className="font-medium text-slate-800">{value}</p>
-          <p className="text-xs text-slate-400">{row.room || 'Sin salÃ³n'}</p>
+          <p className="text-xs text-slate-400">{row.room || 'Sin salón'}</p>
         </div>
       ),
     },
     {
       header: 'Instructor',
       accessor: 'instructorName',
-      render: (value) => value || 'â€”',
+      render: (value) => value || '—',
     },
     {
       header: 'Cupo',
@@ -436,7 +436,7 @@ export default function ClassSessionsPanel() {
           placeholder="Todas"
         />
         <Button icon={Plus} onClick={openCreate} className="sm:mb-0.5">
-          Nueva sesiÃ³n
+          Nueva sesión
         </Button>
       </div>
 
@@ -472,14 +472,14 @@ export default function ClassSessionsPanel() {
         loading={loading}
         emptyText="No hay sesiones en el rango seleccionado"
         emptyIcon={CalendarDays}
-        emptyAction={<Button icon={Plus} size="sm" onClick={openCreate}>Nueva sesiÃ³n</Button>}
+        emptyAction={<Button icon={Plus} size="sm" onClick={openCreate}>Nueva sesión</Button>}
       />
 
-      {/* Modal crear/editar sesiÃ³n */}
+      {/* Modal crear/editar sesión */}
       <Modal
         isOpen={!!sessionModal}
         onClose={() => setSessionModal(null)}
-        title={sessionModal?.mode === 'edit' ? 'Editar sesiÃ³n' : 'Nueva sesiÃ³n'}
+        title={sessionModal?.mode === 'edit' ? 'Editar sesión' : 'Nueva sesión'}
         size="lg"
       >
         <form onSubmit={saveSession} className="space-y-4">
@@ -500,7 +500,7 @@ export default function ClassSessionsPanel() {
               placeholder="Sin instructor"
             />
             <Input
-              label="SalÃ³n"
+              label="Salón"
               value={sessionForm.room || ''}
               onChange={(e) => setSessionForm({ ...sessionForm, room: e.target.value })}
               placeholder="Ej. Sala 1"
@@ -533,7 +533,7 @@ export default function ClassSessionsPanel() {
               Cancelar
             </Button>
             <Button type="submit" loading={savingSession}>
-              {sessionModal?.mode === 'edit' ? 'Guardar cambios' : 'Crear sesiÃ³n'}
+              {sessionModal?.mode === 'edit' ? 'Guardar cambios' : 'Crear sesión'}
             </Button>
           </div>
         </form>
@@ -543,7 +543,7 @@ export default function ClassSessionsPanel() {
       <Modal
         isOpen={!!reservationsFor}
         onClose={() => setReservationsFor(null)}
-        title={`Reservas Â· ${reservationsFor?.className || ''}`}
+        title={`Reservas · ${reservationsFor?.className || ''}`}
         size="xl"
       >
         {reservationsFor && (
@@ -551,9 +551,9 @@ export default function ClassSessionsPanel() {
             <div className="flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600">
               <CalendarDays className="h-4 w-4" />
               <span>{formatDateTime(reservationsFor.startTime)}</span>
-              <span className="text-slate-300">Â·</span>
-              <span>{reservationsFor.room || 'Sin salÃ³n'}</span>
-              <span className="text-slate-300">Â·</span>
+              <span className="text-slate-300">·</span>
+              <span>{reservationsFor.room || 'Sin salón'}</span>
+              <span className="text-slate-300">·</span>
               <span>
                 {reservationsFor.reserved}/{reservationsFor.capacity} lugares
               </span>
@@ -594,7 +594,7 @@ export default function ClassSessionsPanel() {
                   render: (value, row) => (
                     <div>
                       <p className="font-medium text-slate-800">{value || `Socio ${row.memberId}`}</p>
-                      <p className="text-xs text-slate-400">{row.email || 'â€”'}</p>
+                      <p className="text-xs text-slate-400">{row.email || '—'}</p>
                     </div>
                   ),
                 },
@@ -622,7 +622,7 @@ export default function ClassSessionsPanel() {
                   accessor: 'attended',
                   render: (value, row) => (
                     <Badge variant={value ? 'success' : 'neutral'}>
-                      {value ? 'AsistiÃ³' : 'Pendiente'}
+                      {value ? 'Asistió' : 'Pendiente'}
                     </Badge>
                   ),
                 },
@@ -654,7 +654,7 @@ export default function ClassSessionsPanel() {
               ]}
               data={reservations}
               loading={reservationsLoading}
-              emptyText="Esta sesiÃ³n no tiene reservas"
+              emptyText="Esta sesión no tiene reservas"
               emptyIcon={Users}
             />
           </div>
@@ -667,7 +667,7 @@ export default function ClassSessionsPanel() {
         onConfirm={runConfirm}
         loading={confirmLoading}
         title={confirm?.title || 'Confirmar'}
-        message={confirm?.message || 'Â¿Deseas continuar?'}
+        message={confirm?.message || '¿Deseas continuar?'}
         confirmLabel="Continuar"
         variant={confirm?.variant === 'danger' ? 'danger' : 'primary'}
       />

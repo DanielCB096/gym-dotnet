@@ -54,7 +54,7 @@ namespace GymService.Modules.Finance
                 if (string.IsNullOrEmpty(bankName) || string.IsNullOrEmpty(accountNumber))
                 {
                     response["success"] = false;
-                    response["message"] = "El nombre del banco y nÃºmero de cuenta son requeridos";
+                    response["message"] = "El nombre del banco y número de cuenta son requeridos";
                     return false;
                 }
 
@@ -117,12 +117,12 @@ namespace GymService.Modules.Finance
                 if (!session.TryExecute().IsError)
                 {
                     response["success"] = true;
-                    response["message"] = "TransacciÃ³n registrada correctamente";
+                    response["message"] = "Transacción registrada correctamente";
                 }
                 else
                 {
                     response["success"] = false;
-                    response["message"] = "Error al registrar la transacciÃ³n";
+                    response["message"] = "Error al registrar la transacción";
                 }
 
                 return (bool)response["success"];

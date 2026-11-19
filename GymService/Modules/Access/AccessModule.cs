@@ -9,7 +9,7 @@ using GymService.Tools;
 namespace GymService.Modules.Access
 {
     /// <summary>
-    /// Access module: generaciÃ³n y validaciÃ³n de cÃ³digos OTP para acceso al gimnasio.
+    /// Access module: generación y validación de códigos OTP para acceso al gimnasio.
     /// </summary>
     public class AccessModule
     {
@@ -65,16 +65,16 @@ namespace GymService.Modules.Access
 
                 if (session.TryExecute().IsError)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al generar cÃ³digo de acceso");
+                    Logger.AddErrorSubModule(SubModule, "Error al generar código de acceso");
                     response["success"] = false;
-                    response["message"] = "Error al generar cÃ³digo de acceso";
+                    response["message"] = "Error al generar código de acceso";
                     return false;
                 }
 
                 response["success"] = true;
                 response["code"] = code;
                 response["expiresIn"] = 600;
-                response["message"] = "CÃ³digo generado exitosamente";
+                response["message"] = "Código generado exitosamente";
                 return true;
             }
             catch (Exception ex)
@@ -108,7 +108,7 @@ namespace GymService.Modules.Access
                 if (result == null || result.Rows.Count == 0)
                 {
                     response["success"] = false;
-                    response["message"] = "CÃ³digo invÃ¡lido o expirado";
+                    response["message"] = "Código inválido o expirado";
                     return false;
                 }
 
@@ -137,7 +137,7 @@ namespace GymService.Modules.Access
 
                 if (session.TryExecute().IsError)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al validar cÃ³digo de acceso");
+                    Logger.AddErrorSubModule(SubModule, "Error al validar código de acceso");
                     response["success"] = false;
                     response["message"] = "Error al procesar el acceso";
                     return false;
@@ -300,7 +300,7 @@ namespace GymService.Modules.Access
                 }
 
                 response["success"] = true;
-                response["message"] = $"Registros mayores a {daysOld} dÃ­as eliminados";
+                response["message"] = $"Registros mayores a {daysOld} días eliminados";
                 return true;
             }
             catch (Exception ex)

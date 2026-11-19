@@ -47,41 +47,73 @@ namespace GymService.Modules.Staff
             try
             {
                 var userId = staffData.ContainsKey("userId") ? Convert.ToInt64(staffData["userId"]) : 0L;
-                var employeeName = Convert.ToString(staffData.GetValueOrDefault("employeeName", "")) ?? "";
-                var position = Convert.ToString(staffData.GetValueOrDefault("position", "")) ?? "";
-                var department = Convert.ToString(staffData.GetValueOrDefault("department", "")) ?? "";
+                var employeeName = (Convert.ToString(staffData.GetValueOrDefault("employeeName", "")) ?? "").Trim();
+                var position = (Convert.ToString(staffData.GetValueOrDefault("position", "")) ?? "").Trim();
+                var department = (Convert.ToString(staffData.GetValueOrDefault("department", "")) ?? "").Trim();
 
-                if (string.IsNullOrEmpty(employeeName))
+                if (string.IsNullOrWhiteSpace(employeeName))
                 {
                     response["success"] = false;
                     response["message"] = "El nombre del empleado es requerido";
                     return false;
                 }
 
-                var newStaff = new GYM_STAFF
+                if (userId <= 0 || !UserExists(userId))
                 {
+                    response["success"] = false;
+                    response["message"] = "El usuario del sistema no existe";
+                    return false;
+                }
+
+                if (!UserIsActive(userId))
+                {
+                    response["success"] = false;
+                    response["message"] = "El usuario del sistema está inactivo";
+                    return false;
+                }
+
+                long alreadyLinked = _tools.ExecuteQueryObjectCount(
+                    "SELECT COUNT(*) FROM GYM_STAFF WHERE USER_ID = ?", userId);
+
+                if (alreadyLinked > 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "Ese usuario ya está vinculado a un empleado";
+                    return false;
+                }
+
+                DateTime hireDate = DateTime.TryParse(
+                    Convert.ToString(staffData.GetValueOrDefault("hireDate", "")), out var parsedHire)
+                    ? parsedHire.Date
+                    : DateTime.Now.Date;
+
+                bool isActive = !staffData.ContainsKey("isActive") || Convert.ToBoolean(staffData["isActive"]);
+
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                long staffId = _tools.GenerateUniqueID(GYM_STAFF.DatabaseMappingObject, 1).GetInt64UniqueId();
+
+                session.InsertObjectWithID(new GYM_STAFF
+                {
+                    ID = staffId,
                     USER_ID = userId,
                     EMPLOYEE_NAME = employeeName,
                     POSITION = position,
                     DEPARTMENT = string.IsNullOrWhiteSpace(department) ? null : department,
-                    IS_ACTIVE = true
-                };
+                    HIRE_DATE = hireDate,
+                    IS_ACTIVE = isActive
+                });
 
-                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
-                session.InsertObject(newStaff);
-
-                if (!session.TryExecute().IsError)
-                {
-                    response["success"] = true;
-                    response["message"] = "Empleado creado correctamente";
-                }
-                else
+                if (session.TryExecute().IsError)
                 {
                     response["success"] = false;
                     response["message"] = "Error al crear el empleado";
+                    return false;
                 }
 
-                return (bool)response["success"];
+                response["success"] = true;
+                response["staffId"] = staffId;
+                response["message"] = "Empleado creado correctamente";
+                return true;
             }
             catch (Exception ex)
             {
@@ -101,33 +133,64 @@ namespace GymService.Modules.Staff
 
             try
             {
-                var employeeName = Convert.ToString(staffData.GetValueOrDefault("employeeName", "")) ?? "";
-                var position = Convert.ToString(staffData.GetValueOrDefault("position", "")) ?? "";
-                var department = Convert.ToString(staffData.GetValueOrDefault("department", "")) ?? "";
-
-                var staff = new GYM_STAFF
+                var current = GetStaffState(staffId);
+                if (current == null)
                 {
-                    ID = staffId,
-                    EMPLOYEE_NAME = employeeName,
-                    POSITION = position,
-                    DEPARTMENT = string.IsNullOrWhiteSpace(department) ? null : department
-                };
+                    response["success"] = false;
+                    response["message"] = "El empleado no existe";
+                    return false;
+                }
+
+                var employeeName = staffData.ContainsKey("employeeName")
+                    ? (Convert.ToString(staffData["employeeName"]) ?? "").Trim()
+                    : current.Value.Name;
+
+                if (string.IsNullOrWhiteSpace(employeeName))
+                {
+                    response["success"] = false;
+                    response["message"] = "El nombre del empleado es requerido";
+                    return false;
+                }
+
+                var position = staffData.ContainsKey("position")
+                    ? (Convert.ToString(staffData["position"]) ?? "").Trim()
+                    : current.Value.Position;
+
+                var department = staffData.ContainsKey("department")
+                    ? (Convert.ToString(staffData["department"]) ?? "").Trim()
+                    : current.Value.Department;
+
+                DateTime hireDate = staffData.ContainsKey("hireDate") &&
+                    DateTime.TryParse(Convert.ToString(staffData["hireDate"]), out var parsedHire)
+                    ? parsedHire.Date
+                    : current.Value.HireDate;
+
+                bool isActive = staffData.ContainsKey("isActive")
+                    ? Convert.ToBoolean(staffData["isActive"])
+                    : current.Value.IsActive;
 
                 var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
-                session.UpdateObjectChanges(staff);
-
-                if (!session.TryExecute().IsError)
+                session.UpdateObjectChanges(new GYM_STAFF
                 {
-                    response["success"] = true;
-                    response["message"] = "Empleado actualizado correctamente";
-                }
-                else
+                    ID = staffId,
+                    USER_ID = current.Value.UserId,
+                    EMPLOYEE_NAME = employeeName,
+                    POSITION = position,
+                    DEPARTMENT = string.IsNullOrWhiteSpace(department) ? null : department,
+                    HIRE_DATE = hireDate,
+                    IS_ACTIVE = isActive
+                });
+
+                if (session.TryExecute().IsError)
                 {
                     response["success"] = false;
                     response["message"] = "Error al actualizar el empleado";
+                    return false;
                 }
 
-                return (bool)response["success"];
+                response["success"] = true;
+                response["message"] = "Empleado actualizado correctamente";
+                return true;
             }
             catch (Exception ex)
             {
@@ -147,23 +210,26 @@ namespace GymService.Modules.Staff
 
             try
             {
-                var staff = new GYM_STAFF { ID = staffId };
+                if (GetStaffState(staffId) == null)
+                {
+                    response["success"] = false;
+                    response["message"] = "El empleado no existe";
+                    return false;
+                }
 
                 var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
-                session.DeleteObject(staff);
+                session.DeleteObject(new GYM_STAFF { ID = staffId });
 
-                if (!session.TryExecute().IsError)
-                {
-                    response["success"] = true;
-                    response["message"] = "Empleado eliminado correctamente";
-                }
-                else
+                if (session.TryExecute().IsError)
                 {
                     response["success"] = false;
                     response["message"] = "Error al eliminar el empleado";
+                    return false;
                 }
 
-                return (bool)response["success"];
+                response["success"] = true;
+                response["message"] = "Empleado eliminado correctamente";
+                return true;
             }
             catch (Exception ex)
             {
@@ -177,7 +243,7 @@ namespace GymService.Modules.Staff
         /// <summary>
         /// Get active staff members with optional search and pagination
         /// </summary>
-        public bool GetStaff(out Dictionary<string, object> response, string? query = null, int page = 1, int limit = 50)
+        public bool GetStaff(out Dictionary<string, object> response, string? query = null, int page = 1, int limit = 50, bool includeInactive = false)
         {
             response = new Dictionary<string, object>();
 
@@ -188,8 +254,11 @@ namespace GymService.Modules.Staff
                 if (limit < 1 || limit > 500) limit = 50;
                 int offset = (page - 1) * limit;
 
-                var whereParts = new List<string> { "s.is_active = 1" };
+                var whereParts = new List<string>();
                 var parameters = new List<object>();
+
+                if (!includeInactive)
+                    whereParts.Add("s.is_active = 1");
 
                 if (!string.IsNullOrEmpty(query))
                 {
@@ -199,7 +268,7 @@ namespace GymService.Modules.Staff
                     parameters.Add("%" + query + "%");
                 }
 
-                string whereClause = "WHERE " + string.Join(" AND ", whereParts);
+                string whereClause = whereParts.Count > 0 ? "WHERE " + string.Join(" AND ", whereParts) : "";
 
                 // Count total for pagination metadata
                 long totalCount = _tools.ExecuteQueryObjectCount(
@@ -223,12 +292,15 @@ namespace GymService.Modules.Staff
                         staff.Add(new Dictionary<string, object>
                         {
                             ["id"] = Convert.ToInt64(GetRowValue(row, result, "id")),
+                            ["userId"] = Convert.ToInt64(GetRowValue(row, result, "user_id")),
                             ["employeeName"] = Convert.ToString(GetRowValue(row, result, "employee_name")) ?? "",
                             ["username"] = Convert.ToString(GetRowValue(row, result, "username")) ?? "",
                             ["email"] = Convert.ToString(GetRowValue(row, result, "email")) ?? "",
                             ["role"] = Convert.ToString(GetRowValue(row, result, "role")) ?? "",
                             ["position"] = Convert.ToString(GetRowValue(row, result, "position")) ?? "",
-                            ["department"] = Convert.ToString(GetRowValue(row, result, "department")) ?? ""
+                            ["department"] = Convert.ToString(GetRowValue(row, result, "department")) ?? "",
+                            ["hireDate"] = GetRowValue(row, result, "hire_date") != null ? Convert.ToDateTime(GetRowValue(row, result, "hire_date")) : (DateTime?)null,
+                            ["isActive"] = GetRowValue(row, result, "is_active") != null && Convert.ToBoolean(GetRowValue(row, result, "is_active"))
                         });
                     }
                 }
@@ -345,7 +417,11 @@ namespace GymService.Modules.Staff
             try
             {
                 var result = _tools.ExecuteQueryResultSet(
-                    "SELECT id, username, email, role, full_name FROM gym_users WHERE is_active = 1 ORDER BY username"
+                    "SELECT u.id, u.username, u.email, u.role, u.full_name " +
+                    "FROM gym_users u " +
+                    "WHERE u.is_active = 1 " +
+                    "AND NOT EXISTS (SELECT 1 FROM gym_staff s WHERE s.user_id = u.id) " +
+                    "ORDER BY u.username"
                 );
 
                 var users = new List<Dictionary<string, object>>();
@@ -376,6 +452,95 @@ namespace GymService.Modules.Staff
                 response["message"] = "Error interno del servidor";
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Lista todos los usuarios del sistema y el empleado vinculado (si existe).
+        /// </summary>
+        public bool GetSystemUsers(out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var result = _tools.ExecuteQueryResultSet(
+                    "SELECT u.id, u.username, u.email, u.role, u.full_name, u.is_active, u.is_owner, " +
+                    "s.staff_id, s.employee_name " +
+                    "FROM gym_users u " +
+                    "OUTER APPLY (SELECT TOP 1 s2.id AS staff_id, s2.employee_name " +
+                    "             FROM gym_staff s2 WHERE s2.user_id = u.id " +
+                    "             ORDER BY s2.is_active DESC, s2.id ASC) s " +
+                    "ORDER BY u.username"
+                );
+
+                var users = new List<Dictionary<string, object>>();
+                if (result != null)
+                {
+                    foreach (Row row in result.Rows)
+                    {
+                        users.Add(new Dictionary<string, object>
+                        {
+                            ["id"] = Convert.ToInt64(GetRowValue(row, result, "id")),
+                            ["username"] = Convert.ToString(GetRowValue(row, result, "username")) ?? "",
+                            ["email"] = Convert.ToString(GetRowValue(row, result, "email")) ?? "",
+                            ["role"] = Convert.ToString(GetRowValue(row, result, "role")) ?? "",
+                            ["fullName"] = Convert.ToString(GetRowValue(row, result, "full_name")) ?? "",
+                            ["isActive"] = GetRowValue(row, result, "is_active") != null && Convert.ToBoolean(GetRowValue(row, result, "is_active")),
+                            ["isOwner"] = GetRowValue(row, result, "is_owner") != null && Convert.ToBoolean(GetRowValue(row, result, "is_owner")),
+                            ["staffId"] = GetRowValue(row, result, "staff_id") != null ? Convert.ToInt64(GetRowValue(row, result, "staff_id")) : (long?)null,
+                            ["employeeName"] = Convert.ToString(GetRowValue(row, result, "employee_name")) ?? ""
+                        });
+                    }
+                }
+
+                response["success"] = true;
+                response["data"] = users;
+                response["count"] = users.Count;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en GetSystemUsers: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        // =====================================================================
+        // Helpers
+        // =====================================================================
+
+        private bool UserExists(long userId)
+        {
+            return _tools.ExecuteQueryObjectCount(
+                "SELECT COUNT(*) FROM GYM_USERS WHERE ID = ?", userId) > 0;
+        }
+
+        private bool UserIsActive(long userId)
+        {
+            return _tools.ExecuteQueryObjectCount(
+                "SELECT COUNT(*) FROM GYM_USERS WHERE ID = ? AND IS_ACTIVE = 1", userId) > 0;
+        }
+
+        private (long UserId, string Name, string Position, string Department, DateTime HireDate, bool IsActive)? GetStaffState(long staffId)
+        {
+            var result = _tools.ExecuteQueryResultSet(
+                "SELECT * FROM GYM_STAFF WHERE ID = ?", staffId);
+
+            if (result == null || result.Rows.Count == 0)
+                return null;
+
+            var row = result.Rows[0];
+
+            return (
+                Convert.ToInt64(GetRowValue(row, result, "user_id")),
+                Convert.ToString(GetRowValue(row, result, "employee_name")) ?? "",
+                Convert.ToString(GetRowValue(row, result, "position")) ?? "",
+                Convert.ToString(GetRowValue(row, result, "department")) ?? "",
+                Convert.ToDateTime(GetRowValue(row, result, "hire_date")),
+                Convert.ToBoolean(GetRowValue(row, result, "is_active"))
+            );
         }
     }
 }

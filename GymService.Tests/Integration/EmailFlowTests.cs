@@ -63,9 +63,9 @@ public class EmailFlowTests
         string email = $"otp_{Guid.NewGuid():N}@test.local";
 
         Assert.False(identity.RequestOtpByEmail(email, "login", out var response));
-        Assert.Contains("no estÃ¡ configurado", response.GetValueOrDefault("message")?.ToString() ?? "");
+        Assert.Contains("no está configurado", response.GetValueOrDefault("message")?.ToString() ?? "");
 
-        // No debe quedar un OTP huÃ©rfano.
+        // No debe quedar un OTP huérfano.
         Assert.Equal(0, Convert.ToInt32(_fx.Scalar(
             "SELECT COUNT(*) FROM GYM_OTP_CODES WHERE EMAIL = @e", ("@e", email))));
     }

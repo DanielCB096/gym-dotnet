@@ -6,11 +6,11 @@ using Microsoft.Extensions.Configuration;
 namespace GymService.Services
 {
     /// <summary>
-    /// Tareas de mantenimiento de datos: limpieza de sesiones/OTP/cÃ³digos caducados,
-    /// retenciÃ³n de bitÃ¡cora y expiraciÃ³n de membresÃ­as.
+    /// Tareas de mantenimiento de datos: limpieza de sesiones/OTP/códigos caducados,
+    /// retención de bitácora y expiración de membresías.
     ///
-    /// Se ejecuta en una sola transacciÃ³n. Son operaciones masivas de mantenimiento,
-    /// por eso usan SQL parametrizado a travÃ©s de Session.ExecuteTransaction.
+    /// Se ejecuta en una sola transacción. Son operaciones masivas de mantenimiento,
+    /// por eso usan SQL parametrizado a través de Session.ExecuteTransaction.
     /// </summary>
     public class MaintenanceService
     {
@@ -48,17 +48,17 @@ namespace GymService.Services
                     "DELETE FROM GYM_OTP_CODES WHERE EXPIRES_AT < ? OR (USED = 1 AND CREATED_AT < ?)",
                     now, now.AddDays(-otpRetentionDays));
 
-                // CÃ³digos de acceso caducados que nunca se usaron.
+                // Códigos de acceso caducados que nunca se usaron.
                 session.ExecuteTransaction(
                     "DELETE FROM GYM_ACCESS_CODES WHERE EXPIRES_AT < ? AND USED = 0",
                     now);
 
-                // RetenciÃ³n de la bitÃ¡cora de accesos.
+                // Retención de la bitácora de accesos.
                 session.ExecuteTransaction(
                     "DELETE FROM GYM_ACCESS_LOG WHERE ACCESSED_AT < ?",
                     now.AddDays(-accessLogRetentionDays));
 
-                // MembresÃ­as vencidas.
+                // Membresías vencidas.
                 session.ExecuteTransaction(
                     "UPDATE GYM_MEMBERSHIPS SET STATUS = 'expired' WHERE STATUS = 'active' AND END_DATE < CAST(GETDATE() AS date)");
 

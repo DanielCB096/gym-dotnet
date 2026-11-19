@@ -96,7 +96,7 @@ namespace GymService.Modules.Sales
                     if (item.ProductId <= 0)
                     {
                         response["success"] = false;
-                        response["message"] = "Hay un producto invÃ¡lido en la venta.";
+                        response["message"] = "Hay un producto inválido en la venta.";
                         return false;
                     }
 
@@ -125,7 +125,7 @@ namespace GymService.Modules.Sales
                     if (!isActive)
                     {
                         response["success"] = false;
-                        response["message"] = $"El producto '{name}' estÃ¡ inactivo y no se puede vender.";
+                        response["message"] = $"El producto '{name}' está inactivo y no se puede vender.";
                         return false;
                     }
 
@@ -154,7 +154,7 @@ namespace GymService.Modules.Sales
                 }
 
                 // El ID se genera antes de insertar para poder enlazar cabecera, items e inventario
-                // dentro de una sola sesiÃ³n/transacciÃ³n.
+                // dentro de una sola sesión/transacción.
                 var seq = _tools.GenerateUniqueID(GYM_SALES.DatabaseMappingObject, 1);
                 var saleId = seq.GetInt64UniqueId();
 
@@ -194,7 +194,7 @@ namespace GymService.Modules.Sales
 
                 if (session.TryExecute().IsError)
                 {
-                    // Al ser una sola transacciÃ³n, Anxo revierte cabecera, items e inventario juntos.
+                    // Al ser una sola transacción, Anxo revierte cabecera, items e inventario juntos.
                     Logger.AddErrorSubModule(SubModule, "Error al guardar los items o al descontar el inventario");
                     response["success"] = false;
                     response["message"] = "No se pudo actualizar el inventario; la venta fue cancelada.";
@@ -217,7 +217,7 @@ namespace GymService.Modules.Sales
         }
 
         /// <summary>
-        /// Registra la devoluciÃ³n de una venta: repone el stock de los productos vendidos.
+        /// Registra la devolución de una venta: repone el stock de los productos vendidos.
         /// </summary>
         public bool ReturnSale(long saleId, out Dictionary<string, object> response)
         {
@@ -245,7 +245,7 @@ namespace GymService.Modules.Sales
 
                 var saleNumber = Convert.ToString(GetRowValue(sales.Rows[0], sales, "sale_number")) ?? saleId.ToString();
 
-                // Stock actual de cada producto vendido (se repone al registrar la devoluciÃ³n).
+                // Stock actual de cada producto vendido (se repone al registrar la devolución).
                 var items = _tools.ExecuteQueryResultSet(
                     "SELECT i.product_id, i.quantity, inv.stock_quantity FROM gym_sale_items i LEFT JOIN gym_inventory inv ON inv.id = i.product_id WHERE i.sale_id = ?",
                     saleId
@@ -289,14 +289,14 @@ namespace GymService.Modules.Sales
 
                 if (session.Count > 0 && session.TryExecute().IsError)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al registrar la devoluciÃ³n");
+                    Logger.AddErrorSubModule(SubModule, "Error al registrar la devolución");
                     response["success"] = false;
-                    response["message"] = "Error al registrar la devoluciÃ³n.";
+                    response["message"] = "Error al registrar la devolución.";
                     return false;
                 }
 
                 response["success"] = true;
-                response["message"] = $"DevoluciÃ³n registrada para la venta {saleNumber}. Inventario repuesto.";
+                response["message"] = $"Devolución registrada para la venta {saleNumber}. Inventario repuesto.";
                 return true;
             }
             catch (Exception ex)
@@ -421,7 +421,7 @@ namespace GymService.Modules.Sales
                     return false;
                 }
 
-                // Sus productos estÃ¡n descontados: reponerlos antes de borrar.
+                // Sus productos están descontados: reponerlos antes de borrar.
                 var items = _tools.ExecuteQueryResultSet(
                     "SELECT i.product_id, i.quantity, inv.stock_quantity FROM gym_sale_items i LEFT JOIN gym_inventory inv ON inv.id = i.product_id WHERE i.sale_id = ?",
                     saleId
@@ -455,7 +455,7 @@ namespace GymService.Modules.Sales
                     }
                 }
 
-                // Los items se borran antes que la cabecera para respetar la llave forÃ¡nea.
+                // Los items se borran antes que la cabecera para respetar la llave foránea.
                 session.DeleteMultipleObjects(new GYM_SALE_ITEMS { SALE_ID = saleId });
                 session.DeleteObject(new GYM_SALES { ID = saleId });
 

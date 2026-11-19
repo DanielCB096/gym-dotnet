@@ -30,7 +30,7 @@ namespace GymService.Services
             if (int.TryParse(_configuration["Maintenance:CleanupIntervalMinutes"], out int configured) && configured > 0)
                 intervalMinutes = configured;
 
-            // PequeÃ±a espera para no competir con el arranque del servicio.
+            // Pequeña espera para no competir con el arranque del servicio.
             try
             {
                 await Task.Delay(TimeSpan.FromSeconds(20), stoppingToken);

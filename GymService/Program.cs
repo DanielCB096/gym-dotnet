@@ -51,7 +51,7 @@ namespace GymService
                 NlsTools.LoadAssemblyMessages(DataCenter.NLS_ASSEMBLY_CODE, typeof(Program).Assembly);
 
                 Logger.AddInfo(AxNLS.Data(DataCenter.NLS_ASSEMBLY_CODE, 2001, "GymService iniciando..."));
-                Logger.AddInfo($"VersiÃ³n: {GetVersion()}");
+                Logger.AddInfo($"Versión: {GetVersion()}");
                 Logger.AddInfo($"Directorio base: {AppDomain.CurrentDomain.BaseDirectory}");
                 Logger.AddInfo($"Ruta de logs: {logPath}");
 
@@ -73,7 +73,7 @@ namespace GymService
                     // -daemon: no espera a Enter (util para CI/contenedores); termina al matar el proceso.
                     bool daemon = effectiveArgs.Any(a => a.ToLower().Trim().Replace("-", "") == "daemon");
 
-                    Logger.AddInfo("EjecuciÃ³n en modalidad de CONSOLA (auto-start)");
+                    Logger.AddInfo("Ejecución en modalidad de CONSOLA (auto-start)");
                     var serviceImpl = new ServiceImplementation(configuration);
                     var result = serviceImpl.Start();
 
@@ -87,7 +87,7 @@ namespace GymService
 
                     if (daemon)
                     {
-                        Logger.AddInfo("Modo daemon: el servicio queda en ejecuciÃ³n hasta que se detenga el proceso");
+                        Logger.AddInfo("Modo daemon: el servicio queda en ejecución hasta que se detenga el proceso");
                         new System.Threading.ManualResetEvent(false).WaitOne();
                     }
                     else

@@ -101,7 +101,7 @@ namespace GymService.Modules.Kiosk
                 if (result == null || result.Rows.Count == 0)
                 {
                     response["success"] = false;
-                    response["message"] = "Token de dispositivo invÃ¡lido";
+                    response["message"] = "Token de dispositivo inválido";
                     return false;
                 }
 

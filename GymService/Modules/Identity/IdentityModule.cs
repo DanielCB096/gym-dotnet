@@ -22,7 +22,7 @@ namespace GymService.Modules.Identity
     {
         private const string SubModule = "IDENTITY_MODULE";
 
-        // Formato de contraseÃ±as: pbkdf2-sha256$<iteraciones>$<salBase64>$<hashBase64>
+        // Formato de contraseñas: pbkdf2-sha256$<iteraciones>$<salBase64>$<hashBase64>
         private const string Pbkdf2PasswordPrefix = "pbkdf2-sha256$";
         private const int Pbkdf2Iterations = 210_000;
         private const int Pbkdf2SaltSize = 16;
@@ -34,8 +34,14 @@ namespace GymService.Modules.Identity
         // Prefijo de los secretos MFA cifrados con AES-256.
         private const string MfaEncryptedPrefix = "enc:";
 
-        // Prefijo de los cÃ³digos de respaldo hasheados con SHA-256 (hexadecimal).
+        // Prefijo de los códigos de respaldo hasheados con SHA-256 (hexadecimal).
         private const string BackupCodeHashPrefix = "sha256:";
+
+        // Roles que puede crear el módulo de personal.
+        private static readonly HashSet<string> StaffUserRoles = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "ADMIN", "STAFF", "CASHIER"
+        };
 
         private DatabaseTools _tools;
         private IConfiguration _configuration;
@@ -84,7 +90,7 @@ namespace GymService.Modules.Identity
                 if (result == null || result.Rows.Count == 0)
                 {
                     response["success"] = false;
-                    response["message"] = "Usuario o contraseÃ±a invÃ¡lidos";
+                    response["message"] = "Usuario o contraseña inválidos";
                     return false;
                 }
 
@@ -121,7 +127,7 @@ namespace GymService.Modules.Identity
                     return false;
                 }
 
-                // Verify password (PBKDF2-SHA256, con migraciÃ³n transparente del formato antiguo)
+                // Verify password (PBKDF2-SHA256, con migración transparente del formato antiguo)
                 if (!VerifyPassword(password, storedHash, userId))
                 {
                     int attempts = failedAttempts + 1;
@@ -192,7 +198,7 @@ namespace GymService.Modules.Identity
 
                 if (session.TryExecute().IsError)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al guardar la sesiÃ³n de usuario");
+                    Logger.AddErrorSubModule(SubModule, "Error al guardar la sesión de usuario");
                     response["success"] = false;
                     response["message"] = "Error interno del servidor";
                     return false;
@@ -272,7 +278,7 @@ namespace GymService.Modules.Identity
             {
                 var tokenHash = SecurityValidation.Sha256Hash(token);
 
-                // El token no es la PK: se resuelve el ID de la sesiÃ³n antes de actualizar el objeto.
+                // El token no es la PK: se resuelve el ID de la sesión antes de actualizar el objeto.
                 var result = _tools.ExecuteQueryResultSet(
                     "SELECT id FROM gym_sessions WHERE token_hash = ?",
                     tokenHash
@@ -313,9 +319,9 @@ namespace GymService.Modules.Identity
                 var cipher = CreateMfaCipher();
                 if (cipher == null)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Authentication:MfaEncryptionKey no estÃ¡ configurada; no se puede cifrar el secreto MFA");
+                    Logger.AddErrorSubModule(SubModule, "Authentication:MfaEncryptionKey no está configurada; no se puede cifrar el secreto MFA");
                     response["success"] = false;
-                    response["message"] = "La configuraciÃ³n de cifrado de MFA no estÃ¡ disponible";
+                    response["message"] = "La configuración de cifrado de MFA no está disponible";
                     return false;
                 }
 
@@ -350,7 +356,7 @@ namespace GymService.Modules.Identity
 
                 if (session.TryExecute().IsError)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al guardar la configuraciÃ³n MFA");
+                    Logger.AddErrorSubModule(SubModule, "Error al guardar la configuración MFA");
                     response["success"] = false;
                     response["message"] = "Error interno del servidor";
                     return false;
@@ -359,7 +365,7 @@ namespace GymService.Modules.Identity
                 response["success"] = true;
                 response["totpUri"] = totpUri;
                 response["backupCodes"] = backupCodes;
-                response["message"] = "Escanea el cÃ³digo QR en tu app de autenticaciÃ³n";
+                response["message"] = "Escanea el código QR en tu app de autenticación";
 
                 return true;
             }
@@ -381,13 +387,13 @@ namespace GymService.Modules.Identity
 
             try
             {
-                // El secreto TOTP estÃ¡ cifrado: se necesita la clave de configuraciÃ³n.
+                // El secreto TOTP está cifrado: se necesita la clave de configuración.
                 var cipher = CreateMfaCipher();
                 if (cipher == null)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Authentication:MfaEncryptionKey no estÃ¡ configurada; no se puede verificar MFA");
+                    Logger.AddErrorSubModule(SubModule, "Authentication:MfaEncryptionKey no está configurada; no se puede verificar MFA");
                     response["success"] = false;
-                    response["message"] = "La configuraciÃ³n de cifrado de MFA no estÃ¡ disponible";
+                    response["message"] = "La configuración de cifrado de MFA no está disponible";
                     return false;
                 }
 
@@ -425,7 +431,7 @@ namespace GymService.Modules.Identity
                 {
                     Logger.AddErrorSubModule(SubModule, $"Error al descifrar el secreto MFA: {ex.Message}");
                     response["success"] = false;
-                    response["message"] = "No se pudo descifrar la configuraciÃ³n MFA";
+                    response["message"] = "No se pudo descifrar la configuración MFA";
                     return false;
                 }
 
@@ -471,7 +477,7 @@ namespace GymService.Modules.Identity
                 }
 
                 response["success"] = false;
-                response["message"] = "CÃ³digo invÃ¡lido";
+                response["message"] = "Código inválido";
                 return false;
             }
             catch (Exception ex)
@@ -573,7 +579,7 @@ namespace GymService.Modules.Identity
                 if (result == null || result.Rows.Count == 0)
                 {
                     response["success"] = false;
-                    response["message"] = "CÃ³digo invÃ¡lido o expirado";
+                    response["message"] = "Código inválido o expirado";
                     return false;
                 }
 
@@ -583,7 +589,7 @@ namespace GymService.Modules.Identity
                 if (storedHash != otpHash)
                 {
                     response["success"] = false;
-                    response["message"] = "CÃ³digo invÃ¡lido";
+                    response["message"] = "Código inválido";
                     return false;
                 }
 
@@ -621,16 +627,16 @@ namespace GymService.Modules.Identity
                 // Hash password
                 var passwordHash = HashPassword(password);
 
-                // Solo puede existir un usuario dueÃ±o.
+                // Solo puede existir un usuario dueño.
                 long existingOwners = _tools.ExecuteQueryObjectCount(
                     "SELECT COUNT(*) FROM gym_users WHERE is_owner = 1"
                 );
 
                 if (existingOwners > 0)
                 {
-                    Logger.AddWarningSubModule(SubModule, "Intento de crear un segundo usuario dueÃ±o");
+                    Logger.AddWarningSubModule(SubModule, "Intento de crear un segundo usuario dueño");
                     response["success"] = false;
-                    response["message"] = "Ya existe un usuario dueÃ±o";
+                    response["message"] = "Ya existe un usuario dueño";
                     return false;
                 }
 
@@ -650,24 +656,120 @@ namespace GymService.Modules.Identity
 
                 if (session.TryExecute().IsError)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al crear usuario dueÃ±o");
+                    Logger.AddErrorSubModule(SubModule, "Error al crear usuario dueño");
                     response["success"] = false;
                     response["message"] = "Error interno del servidor";
                     return false;
                 }
 
-                Logger.AddInfoSubModule(SubModule, $"Usuario dueÃ±o creado con ID {usuario.ID}");
+                Logger.AddInfoSubModule(SubModule, $"Usuario dueño creado con ID {usuario.ID}");
 
                 // Seed default permissions
                 SeedDefaultPermissions();
 
                 response["success"] = true;
-                response["message"] = "Usuario dueÃ±o creado exitosamente";
+                response["message"] = "Usuario dueño creado exitosamente";
                 return true;
             }
             catch (Exception ex)
             {
                 Logger.AddErrorSubModule(SubModule, $"Error en BootstrapOwner: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Crea un usuario del sistema para vincularlo a un empleado.
+        /// </summary>
+        public bool CreateUser(Dictionary<string, object> userData, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                string username = (Convert.ToString(userData.GetValueOrDefault("username", "")) ?? "").Trim();
+                string email = (Convert.ToString(userData.GetValueOrDefault("email", "")) ?? "").Trim();
+                string password = Convert.ToString(userData.GetValueOrDefault("password", "")) ?? "";
+                string fullName = (Convert.ToString(userData.GetValueOrDefault("fullName", "")) ?? "").Trim();
+                string role = (Convert.ToString(userData.GetValueOrDefault("role", "STAFF")) ?? "STAFF").Trim().ToUpperInvariant();
+
+                if (string.IsNullOrWhiteSpace(username) || username.Length < 3)
+                {
+                    response["success"] = false;
+                    response["message"] = "El usuario debe tener al menos 3 caracteres";
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
+                {
+                    response["success"] = false;
+                    response["message"] = "El correo del usuario no es válido";
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(fullName))
+                {
+                    response["success"] = false;
+                    response["message"] = "El nombre completo es requerido";
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(password) || password.Length < 8)
+                {
+                    response["success"] = false;
+                    response["message"] = "La contraseña debe tener al menos 8 caracteres";
+                    return false;
+                }
+
+                if (!StaffUserRoles.Contains(role))
+                {
+                    response["success"] = false;
+                    response["message"] = "Rol no válido. Usa ADMIN, STAFF o CASHIER";
+                    return false;
+                }
+
+                long duplicate = _tools.ExecuteQueryObjectCount(
+                    "SELECT COUNT(*) FROM gym_users WHERE username = ? OR email = ?", username, email);
+
+                if (duplicate > 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "Ya existe un usuario con ese nombre de usuario o correo";
+                    return false;
+                }
+
+                var usuario = new GYM_USERS
+                {
+                    USERNAME = username,
+                    EMAIL = email,
+                    PASSWORD_HASH = HashPassword(password),
+                    ROLE = role,
+                    FULL_NAME = fullName,
+                    IS_ACTIVE = true,
+                    IS_OWNER = false
+                };
+
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                session.InsertObject(usuario);
+
+                if (session.TryExecute().IsError)
+                {
+                    Logger.AddErrorSubModule(SubModule, "Error al crear usuario del sistema");
+                    response["success"] = false;
+                    response["message"] = "Error al crear el usuario";
+                    return false;
+                }
+
+                response["success"] = true;
+                response["userId"] = usuario.ID;
+                response["message"] = "Usuario creado correctamente";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en CreateUser: {ex.Message}");
                 response["success"] = false;
                 response["message"] = "Error interno del servidor";
                 return false;
@@ -700,17 +802,17 @@ namespace GymService.Modules.Identity
                 ("fisio.manage", "Gestionar fisioterapia", "fisio"),
                 ("maintenance.view", "Ver mantenimiento", "maintenance"),
                 ("maintenance.manage", "Gestionar mantenimiento", "maintenance"),
-                ("billing.view", "Ver facturaciÃ³n", "billing"),
+                ("billing.view", "Ver facturación", "billing"),
                 ("billing.create", "Crear facturas", "billing"),
                 ("finance.view", "Ver finanzas", "finance"),
-                ("finance.reconcile", "ConciliaciÃ³n bancaria", "finance"),
+                ("finance.reconcile", "Conciliación bancaria", "finance"),
                 ("reports.view", "Ver reportes", "reports"),
                 ("staff.view", "Ver personal", "staff"),
                 ("staff.manage", "Gestionar personal", "staff"),
-                ("admin.settings", "ConfiguraciÃ³n", "admin")
+                ("admin.settings", "Configuración", "admin")
             };
 
-            // Inserta en una sola transacciÃ³n los permisos que aÃºn no existen.
+            // Inserta en una sola transacción los permisos que aún no existen.
             var newPermissions = new List<GYM_PERMISSIONS>();
 
             foreach (var (code, name, module) in permissions)
@@ -839,7 +941,7 @@ namespace GymService.Modules.Identity
                     if (!VerifyLegacySha256Password(password, hash))
                         return false;
 
-                    // MigraciÃ³n transparente: re-hashear con PBKDF2 y actualizar la fila.
+                    // Migración transparente: re-hashear con PBKDF2 y actualizar la fila.
                     TryRehashPassword(userId, password);
                     return true;
                 }
@@ -918,13 +1020,13 @@ namespace GymService.Modules.Identity
 
                 var rc = session.TryExecute();
                 if (rc.IsError)
-                    Logger.AddWarningSubModule(SubModule, "No se pudo migrar el hash de contraseÃ±a a PBKDF2");
+                    Logger.AddWarningSubModule(SubModule, "No se pudo migrar el hash de contraseña a PBKDF2");
                 else
-                    Logger.AddInfoSubModule(SubModule, "Hash de contraseÃ±a migrado a PBKDF2");
+                    Logger.AddInfoSubModule(SubModule, "Hash de contraseña migrado a PBKDF2");
             }
             catch (Exception ex)
             {
-                Logger.AddWarningSubModule(SubModule, $"Error al migrar el hash de contraseÃ±a: {ex.Message}");
+                Logger.AddWarningSubModule(SubModule, $"Error al migrar el hash de contraseña: {ex.Message}");
             }
         }
 
@@ -958,7 +1060,7 @@ namespace GymService.Modules.Identity
 
                     if (session.TryExecute().IsError)
                     {
-                        Logger.AddErrorSubModule(SubModule, "Error al resetear contraseÃ±a del dueÃ±o");
+                        Logger.AddErrorSubModule(SubModule, "Error al resetear contraseña del dueño");
                         response["success"] = false;
                         response["message"] = "Error interno del servidor";
                         return false;
@@ -966,7 +1068,7 @@ namespace GymService.Modules.Identity
                 }
 
                 response["success"] = true;
-                response["message"] = "ContraseÃ±a del administrador actualizada";
+                response["message"] = "Contraseña del administrador actualizada";
                 return true;
             }
             catch (Exception ex)
@@ -1047,7 +1149,7 @@ namespace GymService.Modules.Identity
                 }
                 else if (FixedTimeEqualsStrings(entry, code))
                 {
-                    // Compatibilidad con cÃ³digos de respaldo antiguos en texto plano.
+                    // Compatibilidad con códigos de respaldo antiguos en texto plano.
                     return true;
                 }
             }
@@ -1120,7 +1222,7 @@ namespace GymService.Modules.Identity
                 var timeSpan = time - epoch;
                 var timeStep = (long)(timeSpan.TotalSeconds / 30);
 
-                // Allow window of Â±1 step
+                // Allow window of ±1 step
                 for (long offset = -1; offset <= 1; offset++)
                 {
                     var counter = timeStep + offset;

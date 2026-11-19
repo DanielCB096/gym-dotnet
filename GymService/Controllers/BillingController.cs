@@ -9,7 +9,12 @@ namespace GymService.Controllers
     {
         [HttpGet]
         [Route("api/billing/invoices")]
-        public ActionResult<Dictionary<string, object>> GetInvoices([FromQuery] long? memberId = null, [FromQuery] int page = 1, [FromQuery] int limit = 50)
+        public ActionResult<Dictionary<string, object>> GetInvoices(
+            [FromQuery] long? memberId = null,
+            [FromQuery] string? status = null,
+            [FromQuery] string? query = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int limit = 50)
         {
             if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
                 return Unauthorized(new { success = false, message = errorMessage });
@@ -17,7 +22,7 @@ namespace GymService.Controllers
             if (DataCenter.BusinessProcess.Billing == null)
                 return BadRequest(new { success = false, message = "Servicio no disponible" });
 
-            var success = DataCenter.BusinessProcess.Billing.GetInvoices(out var response, memberId, page, limit);
+            var success = DataCenter.BusinessProcess.Billing.GetInvoices(out var response, memberId, status, query, page, limit);
             return success ? Ok(response) : BadRequest(response);
         }
 

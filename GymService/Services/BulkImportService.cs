@@ -49,7 +49,7 @@ namespace GymService.Services
         private const string SubModule = "BULK_IMPORT";
 
         /// <summary>
-        /// Filas por sesiÃ³n. Mantiene transacciones pequeÃ±as sin llegar a una por fila.
+        /// Filas por sesión. Mantiene transacciones pequeñas sin llegar a una por fila.
         /// </summary>
         private const int BatchSize = 200;
 
@@ -68,7 +68,7 @@ namespace GymService.Services
         }
 
         /// <summary>
-        /// Inserta el lote en una sola sesiÃ³n. Si la transacciÃ³n falla se reintenta
+        /// Inserta el lote en una sola sesión. Si la transacción falla se reintenta
         /// fila por fila para conservar el detalle de errores por fila.
         /// </summary>
         private void ExecuteBatch<T>(List<PendingImport<T>> batch, DatabaseTools tools, BulkImportResult result) where T : IDatabaseObject
@@ -197,7 +197,7 @@ namespace GymService.Services
                 {
                     RowNumber = rowNum,
                     RowData = $"ProductName='{productName}', Price='{priceText}'",
-                    ErrorMessage = "Precio no es un nÃºmero vÃ¡lido"
+                    ErrorMessage = "Precio no es un número válido"
                 });
                 return null;
             }
@@ -269,14 +269,14 @@ namespace GymService.Services
                 result.TotalRows = rows.Count;
                 if (rows.Count == 0)
                 {
-                    result.Message = "El archivo CSV estÃ¡ vacÃ­o";
+                    result.Message = "El archivo CSV está vacío";
                     result.Success = false;
                     return result;
                 }
 
                 if (DataCenter.BusinessProcess.Members == null)
                 {
-                    result.Message = "MÃ³dulo de miembros no disponible";
+                    result.Message = "Módulo de miembros no disponible";
                     result.Success = false;
                     return result;
                 }
@@ -328,7 +328,7 @@ namespace GymService.Services
                 ExecuteBatch(pending, tools, result);
 
                 result.Success = result.ErrorRows == 0;
-                result.Message = $"ImportaciÃ³n completada: {result.ImportedRows} importados, {result.ErrorRows} errores, {result.SkippedRows} omitidos";
+                result.Message = $"Importación completada: {result.ImportedRows} importados, {result.ErrorRows} errores, {result.SkippedRows} omitidos";
                 Logger.AddInfoSubModule(SubModule, result.Message);
             }
             catch (Exception ex)
@@ -357,7 +357,7 @@ namespace GymService.Services
 
                 if (rowsUsed.Count <= 1)
                 {
-                    result.Message = "El archivo Excel estÃ¡ vacÃ­o o solo tiene encabezados";
+                    result.Message = "El archivo Excel está vacío o solo tiene encabezados";
                     result.Success = false;
                     return result;
                 }
@@ -374,7 +374,7 @@ namespace GymService.Services
 
                 if (DataCenter.BusinessProcess.Members == null)
                 {
-                    result.Message = "MÃ³dulo de miembros no disponible";
+                    result.Message = "Módulo de miembros no disponible";
                     result.Success = false;
                     return result;
                 }
@@ -435,7 +435,7 @@ namespace GymService.Services
                 ExecuteBatch(pending, tools, result);
 
                 result.Success = result.ErrorRows == 0;
-                result.Message = $"ImportaciÃ³n completada: {result.ImportedRows} importados, {result.ErrorRows} errores, {result.SkippedRows} omitidos";
+                result.Message = $"Importación completada: {result.ImportedRows} importados, {result.ErrorRows} errores, {result.SkippedRows} omitidos";
                 Logger.AddInfoSubModule(SubModule, result.Message);
             }
             catch (Exception ex)
@@ -486,14 +486,14 @@ namespace GymService.Services
                 result.TotalRows = rows.Count;
                 if (rows.Count == 0)
                 {
-                    result.Message = "El archivo CSV estÃ¡ vacÃ­o";
+                    result.Message = "El archivo CSV está vacío";
                     result.Success = false;
                     return result;
                 }
 
                 if (DataCenter.BusinessProcess.Inventory == null)
                 {
-                    result.Message = "MÃ³dulo de inventario no disponible";
+                    result.Message = "Módulo de inventario no disponible";
                     result.Success = false;
                     return result;
                 }
@@ -545,7 +545,7 @@ namespace GymService.Services
                 ExecuteBatch(pending, tools, result);
 
                 result.Success = result.ErrorRows == 0;
-                result.Message = $"ImportaciÃ³n completada: {result.ImportedRows} importados, {result.ErrorRows} errores, {result.SkippedRows} omitidos";
+                result.Message = $"Importación completada: {result.ImportedRows} importados, {result.ErrorRows} errores, {result.SkippedRows} omitidos";
                 Logger.AddInfoSubModule(SubModule, result.Message);
             }
             catch (Exception ex)
@@ -574,7 +574,7 @@ namespace GymService.Services
 
                 if (rowsUsed.Count <= 1)
                 {
-                    result.Message = "El archivo Excel estÃ¡ vacÃ­o o solo tiene encabezados";
+                    result.Message = "El archivo Excel está vacío o solo tiene encabezados";
                     result.Success = false;
                     return result;
                 }
@@ -590,7 +590,7 @@ namespace GymService.Services
 
                 if (DataCenter.BusinessProcess.Inventory == null)
                 {
-                    result.Message = "MÃ³dulo de inventario no disponible";
+                    result.Message = "Módulo de inventario no disponible";
                     result.Success = false;
                     return result;
                 }
@@ -650,7 +650,7 @@ namespace GymService.Services
                 ExecuteBatch(pending, tools, result);
 
                 result.Success = result.ErrorRows == 0;
-                result.Message = $"ImportaciÃ³n completada: {result.ImportedRows} importados, {result.ErrorRows} errores, {result.SkippedRows} omitidos";
+                result.Message = $"Importación completada: {result.ImportedRows} importados, {result.ErrorRows} errores, {result.SkippedRows} omitidos";
                 Logger.AddInfoSubModule(SubModule, result.Message);
             }
             catch (Exception ex)
@@ -718,7 +718,7 @@ namespace GymService.Services
         {
             using var writer = new StringWriter();
             writer.WriteLine("ProductName,Description,SKU,Category,Price,Cost,StockQuantity,MinStock");
-            writer.WriteLine("ProteÃ­na Whey,ProteÃ­na de suero 1kg,PRO-001,Suplementos,850.00,600.00,50,10");
+            writer.WriteLine("Proteína Whey,Proteína de suero 1kg,PRO-001,Suplementos,850.00,600.00,50,10");
             writer.WriteLine("Shaker 500ml,Vaso mezclador,ACC-001,Accesorios,120.00,60.00,100,20");
             return Encoding.UTF8.GetBytes(writer.ToString());
         }
@@ -737,8 +737,8 @@ namespace GymService.Services
                 worksheet.Cell(1, i + 1).Value = headers[i];
             }
 
-            worksheet.Cell(2, 1).Value = "ProteÃ­na Whey";
-            worksheet.Cell(2, 2).Value = "ProteÃ­na de suero 1kg";
+            worksheet.Cell(2, 1).Value = "Proteína Whey";
+            worksheet.Cell(2, 2).Value = "Proteína de suero 1kg";
             worksheet.Cell(2, 3).Value = "PRO-001";
             worksheet.Cell(2, 4).Value = "Suplementos";
             worksheet.Cell(2, 5).Value = 850.00m;

@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 namespace GymService.Services
 {
     /// <summary>
-    /// EnvÃ­o de correo por SMTP (MailKit). La configuraciÃ³n vive en la secciÃ³n Email.
+    /// Envío de correo por SMTP (MailKit). La configuración vive en la sección Email.
     /// </summary>
     public class EmailService
     {
@@ -34,7 +34,7 @@ namespace GymService.Services
         }
 
         /// <summary>
-        /// EnvÃ­a el cÃ³digo OTP al destinatario. Devuelve false con el motivo en error.
+        /// Envía el código OTP al destinatario. Devuelve false con el motivo en error.
         /// </summary>
         public bool TrySendOtp(string to, string code, string purpose, out string error)
         {
@@ -42,7 +42,7 @@ namespace GymService.Services
 
             if (!IsConfigured)
             {
-                error = "El envÃ­o de correo no estÃ¡ configurado";
+                error = "El envío de correo no está configurado";
                 return false;
             }
 
@@ -57,7 +57,7 @@ namespace GymService.Services
                 var message = new MimeMessage();
                 message.From.Add(new MailboxAddress(fromName, fromAddress));
                 message.To.Add(MailboxAddress.Parse(to));
-                message.Subject = "CÃ³digo de verificaciÃ³n - Centro Fit";
+                message.Subject = "Código de verificación - Centro Fit";
                 message.Body = new TextPart("html") { Text = BuildOtpHtml(code, purpose) };
 
                 using var client = new SmtpClient();
@@ -70,7 +70,7 @@ namespace GymService.Services
                 client.Send(new SmtpSendRequest(message));
                 client.Disconnect(true);
 
-                Logger.AddInfoSubModule(SubModule, $"CÃ³digo OTP enviado a {MaskEmail(to)}");
+                Logger.AddInfoSubModule(SubModule, $"Código OTP enviado a {MaskEmail(to)}");
                 return true;
             }
             catch (Exception ex)
@@ -86,16 +86,16 @@ namespace GymService.Services
             int expiryMinutes = int.Parse(_configuration["Authentication:OtpExpiryMinutes"] ?? "10");
             string purposeText = purpose switch
             {
-                "login" => "iniciar sesiÃ³n",
-                "reset" => "restablecer tu contraseÃ±a",
+                "login" => "iniciar sesión",
+                "reset" => "restablecer tu contraseña",
                 _ => "verificar tu identidad"
             };
 
             return $@"<div style=""font-family:Arial,sans-serif;max-width:480px;margin:0 auto"">
   <h2 style=""color:#111"">Centro Fit</h2>
-  <p>Usa este cÃ³digo para {purposeText}:</p>
+  <p>Usa este código para {purposeText}:</p>
   <p style=""font-size:32px;letter-spacing:8px;font-weight:bold;background:#f3f4f6;padding:16px;text-align:center;border-radius:8px"">{code}</p>
-  <p>El cÃ³digo caduca en {expiryMinutes} minutos. Si no solicitaste este cÃ³digo, ignora este correo.</p>
+  <p>El código caduca en {expiryMinutes} minutos. Si no solicitaste este código, ignora este correo.</p>
 </div>";
         }
 

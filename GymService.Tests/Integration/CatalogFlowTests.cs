@@ -154,6 +154,10 @@ public class CatalogFlowTests
         Assert.True(module.UpdateInvoiceStatus(id, "paid", out _));
         Assert.Equal("paid", Convert.ToString(_fx.Scalar("SELECT STATUS FROM GYM_INVOICES WHERE ID = @id", ("@id", id))));
 
+        // Una factura pagada no se elimina: se conserva el historial.
+        Assert.False(module.DeleteInvoice(id, out _));
+
+        Assert.True(module.UpdateInvoiceStatus(id, "pending", out _));
         Assert.True(module.DeleteInvoice(id, out _));
         Assert.Equal(0, Convert.ToInt32(_fx.Scalar("SELECT COUNT(*) FROM GYM_INVOICES WHERE ID = @id", ("@id", id))));
     }

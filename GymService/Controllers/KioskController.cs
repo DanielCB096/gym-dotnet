@@ -53,7 +53,7 @@ namespace GymService.Controllers
             if (string.IsNullOrWhiteSpace(deviceToken) ||
                 !DataCenter.BusinessProcess.Kiosk.ValidateDeviceToken(deviceToken, out _))
             {
-                return Unauthorized(new { success = false, message = "Token de dispositivo invÃ¡lido" });
+                return Unauthorized(new { success = false, message = "Token de dispositivo inválido" });
             }
 
             var success = DataCenter.BusinessProcess.Kiosk.GetUnavailableEquipment(out var response);
