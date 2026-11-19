@@ -9,9 +9,9 @@ public class ModelGymTests
     private static readonly IReadOnlyList<MappingObject> Mappings = ModelGym.MappingObjects;
 
     [Fact]
-    public void Contains_All_35_Objects()
+    public void Contains_All_Objects()
     {
-        Assert.Equal(35, Mappings.Count);
+        Assert.Equal(36, Mappings.Count);
     }
 
     [Fact]

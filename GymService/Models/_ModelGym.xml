@@ -632,6 +632,44 @@
     </indexes>
 
   </object>
+  <object name="GYM_ROUTINE_PLAN_EXERCISES" table="gym_routine_plan_exercises" sequence="GYM_ROUTINE_PLAN_EXERCISES_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="PLAN_ID" column="plan_id" type="int64" flag="not_null" />
+    <attribute name="EXERCISE_ID" column="exercise_id" type="int64" flag="not_null" />
+    <attribute name="DAY_NUMBER" column="day_number" type="int32" flag="not_null" default="1" />
+    <attribute name="SORT_ORDER" column="sort_order" type="int32" flag="not_null" default="1" />
+    <attribute name="SETS" column="sets" type="int32" flag="null" />
+    <attribute name="REPS" column="reps" type="int32" flag="null" />
+    <attribute name="NOTES" column="notes" type="string" flag="null" stringlength="300" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_routine_plans">
+        <column local="plan_id" external="id" />
+      </reference>
+      <reference external_table="gym_exercises">
+        <column local="exercise_id" external="id" />
+      </reference>
+    </references>
+
+    <indexes>
+      <index name="IX_GYM_ROUTINE_PLAN_EXERCISES_PLAN_ID" type="NON_UNIQUE">
+        <attribute name="PLAN_ID" />
+      </index>
+      <index name="IX_GYM_ROUTINE_PLAN_EXERCISES_EXERCISE_ID" type="NON_UNIQUE">
+        <attribute name="EXERCISE_ID" />
+      </index>
+    </indexes>
+
+  </object>
 
   <object name="GYM_EXERCISES" table="gym_exercises" sequence="GYM_EXERCISES_SEQ">
 

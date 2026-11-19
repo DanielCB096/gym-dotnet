@@ -6,6 +6,15 @@
 
 ## Backend (.NET)
 
+### Rutinas completas (2026-11-19)
+- **Modelo:** nueva tabla puente `GYM_ROUTINE_PLAN_EXERCISES` (plan, ejercicio, día, orden, series, reps y notas) con FK a planes y ejercicios; el generador Anxo produce `GYM_ROUTINE_PLAN_EXERCISES.cs`.
+- **Backend:** CRUD de ejercicios, composición de planes por días, asignación de rutina a socios (desactiva la anterior), registro y borrado de entrenamientos y captura de medidas corporales.
+- **API:** `/api/routines/exercises`, `/api/routines/{planId}/exercises`, `/api/routines/plan-exercises/{id}`, `/api/routines/assignments`, `/api/routines/workouts` y `/api/routines/measurements` con permisos `routines.view` / `routines.manage`.
+- **Reglas:** no se puede borrar un ejercicio en uso; una rutina con ejercicios o asignaciones no se elimina para conservar el historial; borrar/actualizar un plan con referencias devuelve un mensaje claro.
+- **Esquema:** `InitializeSchema` ahora crea primero todas las tablas y después aplica índices y FK, evitando fallos por orden de dependencias.
+- **UI:** página de Rutinas con pestañas “Planes”, “Ejercicios”, “Asignaciones”, “Entrenamientos” y “Medidas”, con editor de ejercicios por plan (día, orden, series, reps y notas).
+- **Pruebas:** 64 (unitarias + integración), incluyendo el flujo completo plan → ejercicio → asignación → entrenamiento → medida.
+
 ### Clases y reservas (2026-11-19)
 - **Backend:** CRUD de sesiones de clase (tipo, instructor, salón, horario, estado), reservas con control de cupo, lista de espera con promoción automática al liberarse un lugar, asistencia y cancelación de sesión con sus reservas.
 - **API:** `/api/classes/sessions`, `/api/classes/sessions/{id}/reservations` y `/api/classes/reservations/{id}` con permisos `classes.view` / `classes.manage`.

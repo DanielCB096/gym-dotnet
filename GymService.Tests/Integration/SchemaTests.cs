@@ -17,8 +17,8 @@ public class SchemaTests
     {
         if (!_fx.Available) return;
 
-        Assert.Equal(35, Count("SELECT COUNT(*) FROM sys.tables WHERE name LIKE 'GYM[_]%'"));
-        Assert.Equal(26, Count("SELECT COUNT(*) FROM sys.foreign_keys WHERE parent_object_id IN (SELECT object_id FROM sys.tables WHERE name LIKE 'GYM[_]%')"));
+        Assert.Equal(36, Count("SELECT COUNT(*) FROM sys.tables WHERE name LIKE 'GYM[_]%'"));
+        Assert.Equal(28, Count("SELECT COUNT(*) FROM sys.foreign_keys WHERE parent_object_id IN (SELECT object_id FROM sys.tables WHERE name LIKE 'GYM[_]%')"));
         Assert.Equal(11, Count("SELECT COUNT(*) FROM sys.indexes WHERE name LIKE 'UX[_]GYM%'"));
     }
 

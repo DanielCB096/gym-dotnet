@@ -50,6 +50,7 @@ namespace AxDatabase
                                                                        GYM_CLASS_SESSIONS.DatabaseMappingObject,
                                                                        GYM_CLASS_RESERVATIONS.DatabaseMappingObject,
                                                                        GYM_ROUTINE_PLANS.DatabaseMappingObject,
+                                                                       GYM_ROUTINE_PLAN_EXERCISES.DatabaseMappingObject,
                                                                        GYM_EXERCISES.DatabaseMappingObject,
                                                                        GYM_ROUTINE_ASSIGNMENTS.DatabaseMappingObject,
                                                                        GYM_WORKOUTS.DatabaseMappingObject,

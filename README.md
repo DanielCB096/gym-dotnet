@@ -105,6 +105,7 @@ Tablas:
 - `gym_class_sessions` - Sesiones de clase
 - `gym_class_reservations` - Reservas
 - `gym_routine_plans` - Planes de rutina
+- `gym_routine_plan_exercises` - Ejercicios de cada plan (día, orden, series y reps)
 - `gym_exercises` - Ejercicios
 - `gym_routine_assignments` - Asignaciones
 - `gym_workouts` - Entrenamientos

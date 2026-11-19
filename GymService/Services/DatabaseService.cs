@@ -47,11 +47,16 @@ namespace GymService.Services
             int existing = 0;
             int differences = 0;
 
+            // Pasada 1: crear todas las tablas. Las FK se aplican despues para que
+            // las tablas referenciadas ya existan sin depender del orden del modelo.
+            var tables = new List<(DatabaseTable Table, bool IsNew)>();
+
             foreach (var mapping in ModelGym.MappingObjects)
             {
                 var modelTable = BuildDatabaseTable(mapping);
+                bool isNew = !dba.ExistTable(modelTable);
 
-                if (!dba.ExistTable(modelTable))
+                if (isNew)
                 {
                     dba.CreateTable(modelTable);
                     created++;
@@ -60,6 +65,16 @@ namespace GymService.Services
                 else
                 {
                     existing++;
+                }
+
+                tables.Add((modelTable, isNew));
+            }
+
+            // Pasada 2: columnas faltantes, validacion, indices y foreign keys.
+            foreach (var (modelTable, isNew) in tables)
+            {
+                if (!isNew)
+                {
                     EnsureMissingColumns(dba, modelTable);
                     differences += ValidateTable(dba, modelTable);
                 }

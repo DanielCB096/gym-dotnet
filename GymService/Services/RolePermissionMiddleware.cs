@@ -276,6 +276,37 @@ namespace GymService.Services
                 ["PUT"] = "routines.manage",
                 ["DELETE"] = "routines.manage"
             },
+            ["/api/routines/exercises"] = new Dictionary<string, string>
+            {
+                ["GET"] = "routines.view",
+                ["POST"] = "routines.manage",
+                ["PUT"] = "routines.manage",
+                ["DELETE"] = "routines.manage"
+            },
+            ["/api/routines/plan-exercises"] = new Dictionary<string, string>
+            {
+                ["GET"] = "routines.view",
+                ["PUT"] = "routines.manage",
+                ["DELETE"] = "routines.manage"
+            },
+            ["/api/routines/assignments"] = new Dictionary<string, string>
+            {
+                ["GET"] = "routines.view",
+                ["POST"] = "routines.manage",
+                ["DELETE"] = "routines.manage"
+            },
+            ["/api/routines/workouts"] = new Dictionary<string, string>
+            {
+                ["GET"] = "routines.view",
+                ["POST"] = "routines.manage",
+                ["DELETE"] = "routines.manage"
+            },
+            ["/api/routines/measurements"] = new Dictionary<string, string>
+            {
+                ["GET"] = "routines.view",
+                ["POST"] = "routines.manage",
+                ["DELETE"] = "routines.manage"
+            },
             // Fisio
             ["/api/fisio"] = new Dictionary<string, string>
             {
