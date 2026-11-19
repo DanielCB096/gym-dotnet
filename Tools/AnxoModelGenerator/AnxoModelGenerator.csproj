@@ -19,16 +19,17 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <AssemblyName>AnxoModelGenerator</AssemblyName>
     <RootNamespace>AnxoDatabaseGenerator</RootNamespace>
+    <AnxoRoot Condition="'$(AnxoRoot)' == ''">..\..\..\..\repositorios\pilot\ANXO LIBRARIES</AnxoRoot>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\..\..\repositorios\pilot\ANXO LIBRARIES\AnxoDatabaseGenerator\*.cs" />
+    <Compile Include="$(AnxoRoot)\AnxoDatabaseGenerator\*.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\repositorios\pilot\ANXO LIBRARIES\AnxoLibrary\AnxoLibrary.csproj" />
-    <ProjectReference Include="..\..\..\..\repositorios\pilot\ANXO LIBRARIES\AnxoDatabase\AnxoDatabase.csproj" />
-    <ProjectReference Include="..\..\..\..\repositorios\pilot\ANXO LIBRARIES\AnxoObjectDatabaseManager\AnxoObjectDatabaseManager.csproj" />
+    <ProjectReference Include="$(AnxoRoot)\AnxoLibrary\AnxoLibrary.csproj" />
+    <ProjectReference Include="$(AnxoRoot)\AnxoDatabase\AnxoDatabase.csproj" />
+    <ProjectReference Include="$(AnxoRoot)\AnxoObjectDatabaseManager\AnxoObjectDatabaseManager.csproj" />
   </ItemGroup>
 
 </Project>

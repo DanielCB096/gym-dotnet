@@ -51,7 +51,9 @@ namespace AxDatabase
                                      new MappingAttribute(13,"OBJECT_VERSION","OBJECT_VERSION",MappingAttribute.ColumnTypes.VersionTracking,DataType.Int32,250,20,8,"1",String.Empty,false,false)
                                   },
                                   new MappingIndex[]
-                                  {
+                                  { 
+                                     new MappingIndex("IX_GYM_WORKOUTS_MEMBER_ID",MappingIndex.MappingIndexTypes.NonUnique,new MappingIndex.MappingIndexColumn[] { new MappingIndex.MappingIndexColumn(1,"MEMBER_ID") } ),
+                                     new MappingIndex("IX_GYM_WORKOUTS_WORKOUT_DATE",MappingIndex.MappingIndexTypes.NonUnique,new MappingIndex.MappingIndexColumn[] { new MappingIndex.MappingIndexColumn(1,"WORKOUT_DATE") } )
                                   },
                                   new MappingForeignKey[]
                                   { 

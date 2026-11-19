@@ -45,6 +45,15 @@ public class MappingSchemaTests
     }
 
     [Fact]
+    public void GymUsers_Has_Lockout_Columns()
+    {
+        var table = TableOf(GYM_USERS.DatabaseMappingObject);
+
+        Assert.Contains(table.Columns, c => c.ColumnName == "FAILED_LOGIN_ATTEMPTS");
+        Assert.Contains(table.Columns, c => c.ColumnName == "LOCKED_UNTIL");
+    }
+
+    [Fact]
     public void GymSales_Has_Status_ReturnedAt_And_Unique_SaleNumber()
     {
         var table = TableOf(GYM_SALES.DatabaseMappingObject);

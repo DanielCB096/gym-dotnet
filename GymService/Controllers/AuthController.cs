@@ -1,11 +1,13 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using GymService.Tools;
 
 namespace GymService.Controllers
 {
     [ApiController]
+    [EnableRateLimiting("auth")]
     public class AuthController : ControllerBase
     {
         [HttpPost]
@@ -52,7 +54,7 @@ namespace GymService.Controllers
             }
 
             response["success"] = true;
-            response["message"] = "Sesión cerrada";
+            response["message"] = "SesiÃ³n cerrada";
             return Ok(response);
         }
 
@@ -91,6 +93,7 @@ namespace GymService.Controllers
 
         [HttpPost]
         [Route("api/auth/otp/request")]
+        [EnableRateLimiting("strict")]
         public ActionResult<Dictionary<string, object>> RequestOtp([FromBody] Dictionary<string, string> request)
         {
             var response = new Dictionary<string, object>();
@@ -100,7 +103,7 @@ namespace GymService.Controllers
             if (string.IsNullOrEmpty(email))
             {
                 response["success"] = false;
-                response["message"] = "Correo electrónico requerido";
+                response["message"] = "Correo electrÃ³nico requerido";
                 return BadRequest(response);
             }
 
@@ -113,6 +116,7 @@ namespace GymService.Controllers
 
         [HttpPost]
         [Route("api/auth/otp/verify")]
+        [EnableRateLimiting("strict")]
         public ActionResult<Dictionary<string, object>> VerifyOtp([FromBody] Dictionary<string, string> request)
         {
             var email = request.GetValueOrDefault("email", "");
@@ -136,12 +140,12 @@ namespace GymService.Controllers
             if (string.IsNullOrWhiteSpace(expectedToken))
                 return NotFound(new { success = false, message = "No disponible" });
 
-            // Endpoint de recuperación: solo se permite desde la misma máquina.
+            // Endpoint de recuperaciÃ³n: solo se permite desde la misma mÃ¡quina.
             var remote = HttpContext.Connection.RemoteIpAddress;
             if (remote != null && !System.Net.IPAddress.IsLoopback(remote))
                 return NotFound(new { success = false, message = "No disponible" });
 
-            // Además del loopback, se exige el token compartido en la cabecera.
+            // AdemÃ¡s del loopback, se exige el token compartido en la cabecera.
             var providedToken = Request.Headers["X-Admin-Reset-Token"].ToString();
             if (!FixedTimeEquals(providedToken, expectedToken))
                 return NotFound(new { success = false, message = "No disponible" });
@@ -189,3 +193,4 @@ namespace GymService.Controllers
         }
     }
 }
+

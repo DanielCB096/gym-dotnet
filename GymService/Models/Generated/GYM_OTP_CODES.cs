@@ -49,7 +49,9 @@ namespace AxDatabase
                                      new MappingAttribute(11,"OBJECT_VERSION","OBJECT_VERSION",MappingAttribute.ColumnTypes.VersionTracking,DataType.Int32,250,20,8,"1",String.Empty,false,false)
                                   },
                                   new MappingIndex[]
-                                  {
+                                  { 
+                                     new MappingIndex("IX_GYM_OTP_CODES_EMAIL",MappingIndex.MappingIndexTypes.NonUnique,new MappingIndex.MappingIndexColumn[] { new MappingIndex.MappingIndexColumn(1,"EMAIL") } ),
+                                     new MappingIndex("IX_GYM_OTP_CODES_EXPIRES_AT",MappingIndex.MappingIndexTypes.NonUnique,new MappingIndex.MappingIndexColumn[] { new MappingIndex.MappingIndexColumn(1,"EXPIRES_AT") } )
                                   },
                                   new MappingForeignKey[]
                                   {

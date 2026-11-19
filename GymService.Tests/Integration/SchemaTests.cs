@@ -35,6 +35,14 @@ public class SchemaTests
     }
 
     [Fact]
+    public void Schema_Creates_NonUnique_Indexes()
+    {
+        if (!_fx.Available) return;
+
+        Assert.True(Count("SELECT COUNT(*) FROM sys.indexes WHERE name LIKE 'IX[_]GYM%'") >= 20);
+    }
+
+    [Fact]
     public void Sequence_Table_Is_Created()
     {
         if (!_fx.Available) return;

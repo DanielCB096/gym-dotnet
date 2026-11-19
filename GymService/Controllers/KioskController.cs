@@ -1,5 +1,6 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using GymService.Tools;
 
 namespace GymService.Controllers
@@ -25,6 +26,7 @@ namespace GymService.Controllers
 
         [HttpPost]
         [Route("api/kiosk/device/validate")]
+        [EnableRateLimiting("strict")]
         public ActionResult<Dictionary<string, object>> ValidateDeviceToken([FromBody] Dictionary<string, string> request)
         {
             if (DataCenter.BusinessProcess.Kiosk == null)
@@ -51,7 +53,7 @@ namespace GymService.Controllers
             if (string.IsNullOrWhiteSpace(deviceToken) ||
                 !DataCenter.BusinessProcess.Kiosk.ValidateDeviceToken(deviceToken, out _))
             {
-                return Unauthorized(new { success = false, message = "Token de dispositivo inválido" });
+                return Unauthorized(new { success = false, message = "Token de dispositivo invÃ¡lido" });
             }
 
             var success = DataCenter.BusinessProcess.Kiosk.GetUnavailableEquipment(out var response);
@@ -87,3 +89,4 @@ namespace GymService.Controllers
         }
     }
 }
+

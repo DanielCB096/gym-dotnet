@@ -7,14 +7,16 @@
     <Nullable>enable</Nullable>
     <RootNamespace>GymService</RootNamespace>
     <AssemblyName>GymService</AssemblyName>
+    <!-- Ruta de las ANXO Libraries (pilot). Se puede sobrescribir: -p:AnxoRoot=... -->
+    <AnxoRoot Condition="'$(AnxoRoot)' == ''">..\..\..\repositorios\pilot\ANXO LIBRARIES</AnxoRoot>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- ANXO Libraries -->
-    <ProjectReference Include="..\..\..\repositorios\pilot\ANXO LIBRARIES\AnxoServiceTools\AnxoServiceTools.csproj" />
-    <ProjectReference Include="..\..\..\repositorios\pilot\ANXO LIBRARIES\AnxoDatabase\AnxoDatabase.csproj" />
-    <ProjectReference Include="..\..\..\repositorios\pilot\ANXO LIBRARIES\AnxoObjectDatabaseManager\AnxoObjectDatabaseManager.csproj" />
-    <ProjectReference Include="..\..\..\repositorios\pilot\ANXO LIBRARIES\AnxoLibrary\AnxoLibrary.csproj" />
+    <ProjectReference Include="$(AnxoRoot)\AnxoServiceTools\AnxoServiceTools.csproj" />
+    <ProjectReference Include="$(AnxoRoot)\AnxoDatabase\AnxoDatabase.csproj" />
+    <ProjectReference Include="$(AnxoRoot)\AnxoObjectDatabaseManager\AnxoObjectDatabaseManager.csproj" />
+    <ProjectReference Include="$(AnxoRoot)\AnxoLibrary\AnxoLibrary.csproj" />
   </ItemGroup>
 
   <ItemGroup>

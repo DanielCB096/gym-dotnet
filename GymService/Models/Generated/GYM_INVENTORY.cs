@@ -54,7 +54,8 @@ namespace AxDatabase
                                   },
                                   new MappingIndex[]
                                   { 
-                                     new MappingIndex("UX_GYM_INVENTORY_SKU",MappingIndex.MappingIndexTypes.Unique,new MappingIndex.MappingIndexColumn[] { new MappingIndex.MappingIndexColumn(1,"SKU") } )
+                                     new MappingIndex("UX_GYM_INVENTORY_SKU",MappingIndex.MappingIndexTypes.Unique,new MappingIndex.MappingIndexColumn[] { new MappingIndex.MappingIndexColumn(1,"SKU") } ),
+                                     new MappingIndex("IX_GYM_INVENTORY_IS_ACTIVE",MappingIndex.MappingIndexTypes.NonUnique,new MappingIndex.MappingIndexColumn[] { new MappingIndex.MappingIndexColumn(1,"IS_ACTIVE") } )
                                   },
                                   new MappingForeignKey[]
                                   {

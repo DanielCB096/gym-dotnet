@@ -60,6 +60,7 @@ namespace GymService.Services
                 else
                 {
                     existing++;
+                    EnsureMissingColumns(dba, modelTable);
                     differences += ValidateTable(dba, modelTable);
                 }
 
@@ -77,6 +78,144 @@ namespace GymService.Services
         private DatabaseTable BuildDatabaseTable(MappingObject mapping)
         {
             return mapping.GetDatabaseTable();
+        }
+
+        /// <summary>
+        /// Agrega de forma aditiva las columnas del modelo que falten en una tabla existente.
+        /// No modifica ni elimina columnas existentes. Es la migracion segura por defecto;
+        /// MatchTableStructureEx (destructivo) queda detras de Database:MatchStructure.
+        /// </summary>
+        private void EnsureMissingColumns(DatabaseAdministrator dba, DatabaseTable modelTable)
+        {
+            DatabaseTable current;
+
+            try
+            {
+                current = dba.GetTableStructure(modelTable.TableName);
+            }
+            catch (Exception ex)
+            {
+                Logger.AddWarningSubModule(SubModule, $"  No se pudo leer la estructura de '{modelTable.TableName}': {ex.Message}");
+                return;
+            }
+
+            if (current == null)
+                return;
+
+            var existing = new HashSet<string>(
+                current.Columns.Select(c => c.ColumnName),
+                StringComparer.OrdinalIgnoreCase);
+
+            foreach (var column in modelTable.Columns)
+            {
+                if (existing.Contains(column.ColumnName))
+                    continue;
+
+                if (column.ColumnType == ColumnType.PrimaryKey)
+                {
+                    Logger.AddWarningSubModule(SubModule,
+                        $"  La columna PK '{column.ColumnName}' falta en '{modelTable.TableName}' y no se puede agregar automaticamente");
+                    continue;
+                }
+
+                try
+                {
+                    dba.ExecuteRawCommand(BuildAddColumnSql(modelTable.TableName, column));
+                    Logger.AddInfo($"  Columna '{modelTable.TableName}.{column.ColumnName}' agregada");
+                }
+                catch (Exception ex)
+                {
+                    Logger.AddWarningSubModule(SubModule,
+                        $"  No se pudo agregar la columna '{modelTable.TableName}.{column.ColumnName}': {ex.Message}");
+                }
+            }
+        }
+
+        private static string Quote(string identifier)
+        {
+            return "[" + identifier.Replace("]", "]]") + "]";
+        }
+
+        private static string BuildAddColumnSql(string tableName, DatabaseColumn column)
+        {
+            string nullability = column.ColumnType == ColumnType.Null ? "NULL" : "NOT NULL";
+            string defaultValue = string.Empty;
+
+            if (column.ColumnType != ColumnType.Null)
+            {
+                string expression = string.IsNullOrEmpty(column.DefaultValue)
+                    ? FallbackDefault(column.ColumnDataType)
+                    : ToSqlDefault(column);
+
+                string constraint = Quote($"DF_{tableName}_{column.ColumnName}");
+                defaultValue = $" CONSTRAINT {constraint} DEFAULT ({expression})";
+            }
+
+            return $"ALTER TABLE {Quote(tableName)} ADD {Quote(column.ColumnName)} {MapColumnType(column)} {nullability}{defaultValue}";
+        }
+
+        private static string MapColumnType(DatabaseColumn column)
+        {
+            return column.ColumnDataType switch
+            {
+                DataType.Int16 => "smallint",
+                DataType.Int32 => "int",
+                DataType.Int64 => "bigint",
+                DataType.String => column.ColumnStringSize > 0 && column.ColumnStringSize <= 4000
+                    ? $"nvarchar({column.ColumnStringSize})"
+                    : "nvarchar(max)",
+                DataType.Boolean => "bit",
+                DataType.Decimal => $"decimal({column.Precision},{column.Scale})",
+                DataType.Double => "float",
+                DataType.Float => "real",
+                DataType.DateTime => "datetime",
+                DataType.DateTime2 => "datetime2",
+                DataType.Date => "date",
+                DataType.Time => "time",
+                DataType.Guid => "uniqueidentifier",
+                DataType.Byte => "tinyint",
+                DataType.Block => "varbinary(max)",
+                DataType.Xml => "nvarchar(max)",
+                DataType.Geography => "geography",
+                DataType.DateTimeOffset => "datetimeoffset",
+                _ => "nvarchar(max)"
+            };
+        }
+
+        private static string ToSqlDefault(DatabaseColumn column)
+        {
+            string value = column.DefaultValue ?? string.Empty;
+
+            switch (column.ColumnDataType)
+            {
+                case DataType.String:
+                case DataType.Xml:
+                case DataType.Geography:
+                    if (value == "[EMPTY]" || value == "[EMPTYSTRING]" || value.Length == 0)
+                        return "''";
+                    return "'" + value.Replace("'", "''") + "'";
+
+                case DataType.Boolean:
+                    return value == "1" || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ? "1" : "0";
+
+                default:
+                    return value.Length == 0 ? FallbackDefault(column.ColumnDataType) : value;
+            }
+        }
+
+        private static string FallbackDefault(DataType dataType)
+        {
+            return dataType switch
+            {
+                DataType.Int16 or DataType.Int32 or DataType.Int64 or DataType.Byte => "0",
+                DataType.Decimal or DataType.Double or DataType.Float => "0",
+                DataType.Boolean => "0",
+                DataType.DateTime or DataType.DateTime2 or DataType.Date or DataType.DateTimeOffset => "GETDATE()",
+                DataType.Time => "'00:00:00'",
+                DataType.Guid => "NEWID()",
+                DataType.Block => "0x",
+                _ => "''"
+            };
         }
 
         /// <summary>

@@ -19,6 +19,8 @@ public class IdentityFlowTests
             ["Authentication:TokenLifetimeHours"] = "8",
             ["Authentication:OtpExpiryMinutes"] = "10",
             ["Authentication:OtpLength"] = "6",
+            ["Authentication:MaxLoginAttempts"] = "3",
+            ["Authentication:LockoutMinutes"] = "10",
             ["Authentication:MfaEncryptionKey"] = "gym-tests-key-0123456789-ABCDEFGHIJ"
         })
         .Build();
@@ -100,6 +102,34 @@ public class IdentityFlowTests
         Assert.Equal(1, Convert.ToInt32(_fx.Scalar("SELECT MFA_ENABLED FROM GYM_USERS WHERE ID = @id", ("@id", userId))));
     }
 
+    [Fact]
+    public void Login_Locks_Account_After_Max_Failed_Attempts()
+    {
+        if (!_fx.Available) return;
+
+        var (identity, userId) = EnsureOwner();
+
+        for (int attempt = 1; attempt <= 3; attempt++)
+        {
+            bool ok = identity.Login(OwnerName, "clave-incorrecta", "tests", "127.0.0.1", out var failed);
+
+            Assert.False(ok);
+        }
+
+        Assert.NotNull(_fx.Scalar("SELECT LOCKED_UNTIL FROM GYM_USERS WHERE ID = @id", ("@id", userId)));
+
+        // Aun con la contraseña correcta, la cuenta sigue bloqueada.
+        Assert.False(identity.Login(OwnerName, Password, "tests", "127.0.0.1", out var blocked));
+        Assert.NotNull(blocked["lockedUntil"]);
+        Assert.Contains("bloqueada", blocked["message"]?.ToString() ?? "");
+
+        // Al expirar/limpiar el bloqueo, el login vuelve a funcionar y reinicia el contador.
+        _fx.Execute("UPDATE GYM_USERS SET LOCKED_UNTIL = NULL, FAILED_LOGIN_ATTEMPTS = 0 WHERE ID = @id", ("@id", userId));
+
+        Assert.True(identity.Login(OwnerName, Password, "tests", "127.0.0.1", out _));
+        Assert.Equal(0, Convert.ToInt32(_fx.Scalar("SELECT FAILED_LOGIN_ATTEMPTS FROM GYM_USERS WHERE ID = @id", ("@id", userId))));
+    }
+
     private (IdentityModule Identity, long UserId) EnsureOwner()
     {
         var identity = new IdentityModule(_fx.Tools!, Config);
@@ -113,6 +143,11 @@ public class IdentityFlowTests
         }
 
         long userId = Convert.ToInt64(_fx.Scalar("SELECT ID FROM GYM_USERS WHERE USERNAME = @u", ("@u", OwnerName)));
+
+        // Estado limpio para que las pruebas no dependan del orden de ejecución.
+        _fx.Execute("UPDATE GYM_USERS SET FAILED_LOGIN_ATTEMPTS = 0, LOCKED_UNTIL = NULL, MFA_ENABLED = 0 WHERE ID = @id",
+            ("@id", userId));
+
         return (identity, userId);
     }
 
@@ -156,4 +191,5 @@ public class IdentityFlowTests
         return (binary % 1_000_000).ToString("D6");
     }
 }
+
 

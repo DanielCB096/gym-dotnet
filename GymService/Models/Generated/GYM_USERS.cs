@@ -47,12 +47,14 @@ namespace AxDatabase
                                      new MappingAttribute(9,"MFA_SECRET_ENCRYPTED","MFA_SECRET_ENCRYPTED",MappingAttribute.ColumnTypes.Null,DataType.String,500,20,8,String.Empty,String.Empty,false,false),
                                      new MappingAttribute(10,"MFA_BACKUP_CODES","MFA_BACKUP_CODES",MappingAttribute.ColumnTypes.Null,DataType.String,2000,20,8,String.Empty,String.Empty,false,false),
                                      new MappingAttribute(11,"LAST_LOGIN","LAST_LOGIN",MappingAttribute.ColumnTypes.Null,DataType.DateTime2,250,20,8,String.Empty,String.Empty,false,false),
-                                     new MappingAttribute(12,"CREATION_DATETIME","CREATED_AT",MappingAttribute.ColumnTypes.InsertTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
-                                     new MappingAttribute(13,"LAST_UPDATED_DATETIME","UPDATED_AT",MappingAttribute.ColumnTypes.UpdateTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
-                                     new MappingAttribute(14,"CREATED_BY","CREATED_BY",MappingAttribute.ColumnTypes.InsertTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
-                                     new MappingAttribute(15,"LAST_UPDATED_BY","LAST_UPDATED_BY",MappingAttribute.ColumnTypes.UpdateTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
-                                     new MappingAttribute(16,"LAST_UPDATE_LOG","LAST_UPDATE_LOG",MappingAttribute.ColumnTypes.LogTracking,DataType.String,100,20,8,"[EMPTY]",String.Empty,false,false),
-                                     new MappingAttribute(17,"OBJECT_VERSION","OBJECT_VERSION",MappingAttribute.ColumnTypes.VersionTracking,DataType.Int32,250,20,8,"1",String.Empty,false,false)
+                                     new MappingAttribute(12,"FAILED_LOGIN_ATTEMPTS","FAILED_LOGIN_ATTEMPTS",MappingAttribute.ColumnTypes.NotNull,DataType.Int32,250,20,8,"0",String.Empty,false,false),
+                                     new MappingAttribute(13,"LOCKED_UNTIL","LOCKED_UNTIL",MappingAttribute.ColumnTypes.Null,DataType.DateTime2,250,20,8,String.Empty,String.Empty,false,false),
+                                     new MappingAttribute(14,"CREATION_DATETIME","CREATED_AT",MappingAttribute.ColumnTypes.InsertTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
+                                     new MappingAttribute(15,"LAST_UPDATED_DATETIME","UPDATED_AT",MappingAttribute.ColumnTypes.UpdateTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
+                                     new MappingAttribute(16,"CREATED_BY","CREATED_BY",MappingAttribute.ColumnTypes.InsertTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
+                                     new MappingAttribute(17,"LAST_UPDATED_BY","LAST_UPDATED_BY",MappingAttribute.ColumnTypes.UpdateTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
+                                     new MappingAttribute(18,"LAST_UPDATE_LOG","LAST_UPDATE_LOG",MappingAttribute.ColumnTypes.LogTracking,DataType.String,100,20,8,"[EMPTY]",String.Empty,false,false),
+                                     new MappingAttribute(19,"OBJECT_VERSION","OBJECT_VERSION",MappingAttribute.ColumnTypes.VersionTracking,DataType.Int32,250,20,8,"1",String.Empty,false,false)
                                   },
                                   new MappingIndex[]
                                   { 
@@ -67,7 +69,7 @@ namespace AxDatabase
 
 
       private Boolean a_indatabase = false;
-      private Boolean[] a_attributeschanges = new Boolean[18];
+      private Boolean[] a_attributeschanges = new Boolean[20];
       private ReportList a_relateobjects = new ReportList();
       private Object a_tag = null;
 
@@ -84,6 +86,8 @@ namespace AxDatabase
       private String a_mfa_secret_encrypted = null;
       private String a_mfa_backup_codes = null;
       private DateTime? a_last_login = null;
+      private Int32 a_failed_login_attempts = 0;
+      private DateTime? a_locked_until = null;
       private DateTime a_creation_datetime = DateTime.Now;
       private DateTime a_last_updated_datetime = DateTime.Now;
       private Int64 a_created_by = -1;
@@ -104,12 +108,14 @@ namespace AxDatabase
       public const Int32 AttributeID_MFA_SECRET_ENCRYPTED = 9;
       public const Int32 AttributeID_MFA_BACKUP_CODES = 10;
       public const Int32 AttributeID_LAST_LOGIN = 11;
-      public const Int32 AttributeID_CREATION_DATETIME = 12;
-      public const Int32 AttributeID_LAST_UPDATED_DATETIME = 13;
-      public const Int32 AttributeID_CREATED_BY = 14;
-      public const Int32 AttributeID_LAST_UPDATED_BY = 15;
-      public const Int32 AttributeID_LAST_UPDATE_LOG = 16;
-      public const Int32 AttributeID_OBJECT_VERSION = 17;
+      public const Int32 AttributeID_FAILED_LOGIN_ATTEMPTS = 12;
+      public const Int32 AttributeID_LOCKED_UNTIL = 13;
+      public const Int32 AttributeID_CREATION_DATETIME = 14;
+      public const Int32 AttributeID_LAST_UPDATED_DATETIME = 15;
+      public const Int32 AttributeID_CREATED_BY = 16;
+      public const Int32 AttributeID_LAST_UPDATED_BY = 17;
+      public const Int32 AttributeID_LAST_UPDATE_LOG = 18;
+      public const Int32 AttributeID_OBJECT_VERSION = 19;
 
 
 
@@ -270,6 +276,30 @@ namespace AxDatabase
 
 
       /// <summary>
+      /// Propiedad para SET o GET del atributo 'FAILED_LOGIN_ATTEMPTS' que representa la columna 'FAILED_LOGIN_ATTEMPTS' en la base de datos  
+      /// Generado por Anxo Code Generator 
+      /// </summary> 
+
+      public Int32 FAILED_LOGIN_ATTEMPTS
+      {
+        get { return a_failed_login_attempts; }
+        set { a_failed_login_attempts = value; TrackChanges(12); }
+      }
+
+
+      /// <summary>
+      /// Propiedad para SET o GET del atributo 'LOCKED_UNTIL' que representa la columna 'LOCKED_UNTIL' en la base de datos  
+      /// Generado por Anxo Code Generator 
+      /// </summary> 
+
+      public DateTime? LOCKED_UNTIL
+      {
+        get { return a_locked_until; }
+        set { a_locked_until = value; TrackChanges(13); }
+      }
+
+
+      /// <summary>
       /// Propiedad para SET o GET del atributo 'CREATION_DATETIME' que representa la columna 'CREATED_AT' en la base de datos  
       /// Generado por Anxo Code Generator 
       /// </summary> 
@@ -405,28 +435,36 @@ namespace AxDatabase
                  TrackChanges(11);
                  break;
                case 12:
-                 a_creation_datetime= (DateTime) value;
+                 a_failed_login_attempts= (Int32) value;
                  TrackChanges(12);
                  break;
                case 13:
-                 a_last_updated_datetime= (DateTime) value;
+                 a_locked_until= (DateTime?) value;
                  TrackChanges(13);
                  break;
                case 14:
-                 a_created_by= (Int64) value;
+                 a_creation_datetime= (DateTime) value;
                  TrackChanges(14);
                  break;
                case 15:
-                 a_last_updated_by= (Int64) value;
+                 a_last_updated_datetime= (DateTime) value;
                  TrackChanges(15);
                  break;
                case 16:
-                 a_last_update_log= (String) value;
+                 a_created_by= (Int64) value;
                  TrackChanges(16);
                  break;
                case 17:
-                 a_object_version= (Int32) value;
+                 a_last_updated_by= (Int64) value;
                  TrackChanges(17);
+                 break;
+               case 18:
+                 a_last_update_log= (String) value;
+                 TrackChanges(18);
+                 break;
+               case 19:
+                 a_object_version= (Int32) value;
+                 TrackChanges(19);
                  break;
             }
          }
@@ -459,16 +497,20 @@ namespace AxDatabase
                case 11:
                  return a_last_login;
                case 12:
-                 return a_creation_datetime;
+                 return a_failed_login_attempts;
                case 13:
-                 return a_last_updated_datetime;
+                 return a_locked_until;
                case 14:
-                 return a_created_by;
+                 return a_creation_datetime;
                case 15:
-                 return a_last_updated_by;
+                 return a_last_updated_datetime;
                case 16:
-                 return a_last_update_log;
+                 return a_created_by;
                case 17:
+                 return a_last_updated_by;
+               case 18:
+                 return a_last_update_log;
+               case 19:
                  return a_object_version;
             }
 
@@ -632,6 +674,8 @@ namespace AxDatabase
          objdata.a_mfa_secret_encrypted = a_mfa_secret_encrypted;
          objdata.a_mfa_backup_codes = a_mfa_backup_codes;
          objdata.a_last_login = a_last_login;
+         objdata.a_failed_login_attempts = a_failed_login_attempts;
+         objdata.a_locked_until = a_locked_until;
          objdata.a_creation_datetime = a_creation_datetime;
          objdata.a_last_updated_datetime = a_last_updated_datetime;
          objdata.a_created_by = a_created_by;

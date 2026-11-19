@@ -54,7 +54,8 @@ namespace AxDatabase
                                   },
                                   new MappingIndex[]
                                   { 
-                                     new MappingIndex("UX_GYM_SALES_SALE_NUMBER",MappingIndex.MappingIndexTypes.Unique,new MappingIndex.MappingIndexColumn[] { new MappingIndex.MappingIndexColumn(1,"SALE_NUMBER") } )
+                                     new MappingIndex("UX_GYM_SALES_SALE_NUMBER",MappingIndex.MappingIndexTypes.Unique,new MappingIndex.MappingIndexColumn[] { new MappingIndex.MappingIndexColumn(1,"SALE_NUMBER") } ),
+                                     new MappingIndex("IX_GYM_SALES_SALE_DATE",MappingIndex.MappingIndexTypes.NonUnique,new MappingIndex.MappingIndexColumn[] { new MappingIndex.MappingIndexColumn(1,"SALE_DATE") } )
                                   },
                                   new MappingForeignKey[]
                                   {

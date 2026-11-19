@@ -178,12 +178,32 @@ Edita `appsettings.json`:
 > Si `AdminResetToken` está vacío, `/api/auth/reset-admin-password` queda deshabilitado (404); para usarlo, define un token y envíalo en el header `X-Admin-Reset-Token`.
 > En producción no uses `sa`: crea un login SQL con permisos mínimos sobre la base de datos del gimnasio.
 
+### Seguridad y operación
+
+- **Bloqueo de cuenta**: tras `Authentication:MaxLoginAttempts` fallos, la cuenta queda bloqueada
+  `Authentication:LockoutMinutes` minutos (`FAILED_LOGIN_ATTEMPTS` / `LOCKED_UNTIL` en `GYM_USERS`).
+- **Rate limiting** por IP: `auth` (20/min), `strict` (5/min en OTP y validación de kiosco) y
+  `general` (100/min) en `WebServerService`.
+- **OTP por correo real** con MailKit (`Email:SmtpServer/Port/User/Password/FromAddress/EnableSsl`).
+  Si no hay SMTP y `Email:ShowCodeInResponse=true` (solo desarrollo), el código se devuelve en la
+  respuesta; si no, el alta de OTP falla y no deja códigos huérfanos.
+- **Limpieza automática** (`CleanupHostedService` cada `Maintenance:CleanupIntervalMinutes`):
+  sesiones y OTP caducados, códigos de acceso no usados, retención de bitácora y membresías vencidas.
+- **Índices no únicos** para las consultas más frecuentes (`member_id`, `status`, fechas, `sale_id`…),
+  creados de forma aditiva al arrancar.
+- **Migración aditiva de columnas**: si el modelo agrega columnas, se crean con `ALTER TABLE`
+  (sin borrar datos); `Database:MatchStructure=true` sigue siendo la opción destructiva explícita.
+
 ## Compilación
 
 ```powershell
-cd C:\proyectos\gimnasio-dotnet\GymService
-dotnet build
+cd C:\proyectos\gimnasio-dotnet
+.\build.ps1
 ```
+
+`build.ps1` compila `GymService.slnx` (Release) y ejecuta las pruebas unitarias.
+Para integración: `.\build.ps1 -Integration` con las variables `GYM_TEST_DB_*` definidas.
+La ruta de las ANXO Libraries se puede sobrescribir con `-AnxoRoot` o `-p:AnxoRoot=...`.
 
 ## Pruebas
 

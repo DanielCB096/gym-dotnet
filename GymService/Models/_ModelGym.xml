@@ -18,6 +18,8 @@
     <attribute name="MFA_BACKUP_CODES" column="mfa_backup_codes" type="string" flag="null" stringlength="2000" />
     <attribute name="LAST_LOGIN" column="last_login" type="datetime2" flag="null" />
 
+    <attribute name="FAILED_LOGIN_ATTEMPTS" column="failed_login_attempts" type="int32" flag="not_null" default="0" />
+    <attribute name="LOCKED_UNTIL" column="locked_until" type="datetime2" flag="null" />
     <!-- RECORD TRACKING CHANGES (WHO) -->
     <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
     <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
@@ -105,6 +107,12 @@
 
     <indexes>
       <index name="UX_GYM_SESSIONS_TOKEN_HASH" type="UNIQUE"><attribute name="TOKEN_HASH" /></index>
+          <index name="IX_GYM_SESSIONS_USER_ID" type="NON_UNIQUE">
+        <attribute name="USER_ID" />
+      </index>
+      <index name="IX_GYM_SESSIONS_EXPIRES_AT" type="NON_UNIQUE">
+        <attribute name="EXPIRES_AT" />
+      </index>
     </indexes>
 
     <references>
@@ -131,6 +139,15 @@
     <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+      <indexes>
+      <index name="IX_GYM_OTP_CODES_EMAIL" type="NON_UNIQUE">
+        <attribute name="EMAIL" />
+      </index>
+      <index name="IX_GYM_OTP_CODES_EXPIRES_AT" type="NON_UNIQUE">
+        <attribute name="EXPIRES_AT" />
+      </index>
+    </indexes>
 
   </object>
 
@@ -203,6 +220,15 @@
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
 
+        <indexes>
+      <index name="IX_GYM_MEMBERSHIPS_MEMBER_ID" type="NON_UNIQUE">
+        <attribute name="MEMBER_ID" />
+      </index>
+      <index name="IX_GYM_MEMBERSHIPS_STATUS" type="NON_UNIQUE">
+        <attribute name="STATUS" />
+      </index>
+    </indexes>
+
     <references>
       <reference external_table="gym_members">
         <column local="member_id" external="id" />
@@ -234,6 +260,12 @@
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
 
+        <indexes>
+      <index name="IX_GYM_PAYMENTS_MEMBER_ID" type="NON_UNIQUE">
+        <attribute name="MEMBER_ID" />
+      </index>
+    </indexes>
+
     <references>
       <reference external_table="gym_members">
         <column local="member_id" external="id" />
@@ -264,6 +296,15 @@
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
 
+        <indexes>
+      <index name="IX_GYM_ACCESS_CODES_MEMBER_ID" type="NON_UNIQUE">
+        <attribute name="MEMBER_ID" />
+      </index>
+      <index name="IX_GYM_ACCESS_CODES_EXPIRES_AT" type="NON_UNIQUE">
+        <attribute name="EXPIRES_AT" />
+      </index>
+    </indexes>
+
     <references>
       <reference external_table="gym_members">
         <column local="member_id" external="id" />
@@ -289,6 +330,15 @@
     <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+        <indexes>
+      <index name="IX_GYM_ACCESS_LOG_MEMBER_ID" type="NON_UNIQUE">
+        <attribute name="MEMBER_ID" />
+      </index>
+      <index name="IX_GYM_ACCESS_LOG_ACCESSED_AT" type="NON_UNIQUE">
+        <attribute name="ACCESSED_AT" />
+      </index>
+    </indexes>
 
     <references>
       <reference external_table="gym_members">
@@ -343,6 +393,9 @@
 
     <indexes>
       <index name="UX_GYM_INVENTORY_SKU" type="UNIQUE"><attribute name="SKU" /></index>
+          <index name="IX_GYM_INVENTORY_IS_ACTIVE" type="NON_UNIQUE">
+        <attribute name="IS_ACTIVE" />
+      </index>
     </indexes>
 
   </object>
@@ -370,6 +423,9 @@
 
     <indexes>
       <index name="UX_GYM_SALES_SALE_NUMBER" type="UNIQUE"><attribute name="SALE_NUMBER" /></index>
+          <index name="IX_GYM_SALES_SALE_DATE" type="NON_UNIQUE">
+        <attribute name="SALE_DATE" />
+      </index>
     </indexes>
 
   </object>
@@ -390,6 +446,12 @@
     <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+        <indexes>
+      <index name="IX_GYM_SALE_ITEMS_SALE_ID" type="NON_UNIQUE">
+        <attribute name="SALE_ID" />
+      </index>
+    </indexes>
 
     <references>
       <reference external_table="gym_sales">
@@ -465,6 +527,12 @@
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
 
+      <indexes>
+      <index name="IX_GYM_CLASS_TYPES_IS_ACTIVE" type="NON_UNIQUE">
+        <attribute name="IS_ACTIVE" />
+      </index>
+    </indexes>
+
   </object>
 
   <object name="GYM_CLASS_SESSIONS" table="gym_class_sessions" sequence="GYM_CLASS_SESSIONS_SEQ">
@@ -485,6 +553,15 @@
     <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+        <indexes>
+      <index name="IX_GYM_CLASS_SESSIONS_CLASS_TYPE_ID" type="NON_UNIQUE">
+        <attribute name="CLASS_TYPE_ID" />
+      </index>
+      <index name="IX_GYM_CLASS_SESSIONS_START_TIME" type="NON_UNIQUE">
+        <attribute name="START_TIME" />
+      </index>
+    </indexes>
 
     <references>
       <reference external_table="gym_class_types">
@@ -510,6 +587,15 @@
     <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+        <indexes>
+      <index name="IX_GYM_CLASS_RESERVATIONS_SESSION_ID" type="NON_UNIQUE">
+        <attribute name="SESSION_ID" />
+      </index>
+      <index name="IX_GYM_CLASS_RESERVATIONS_MEMBER_ID" type="NON_UNIQUE">
+        <attribute name="MEMBER_ID" />
+      </index>
+    </indexes>
 
     <references>
       <reference external_table="gym_class_sessions">
@@ -538,6 +624,12 @@
     <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+      <indexes>
+      <index name="IX_GYM_ROUTINE_PLANS_IS_ACTIVE" type="NON_UNIQUE">
+        <attribute name="IS_ACTIVE" />
+      </index>
+    </indexes>
 
   </object>
 
@@ -576,6 +668,12 @@
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
 
+        <indexes>
+      <index name="IX_GYM_ROUTINE_ASSIGNMENTS_MEMBER_ID" type="NON_UNIQUE">
+        <attribute name="MEMBER_ID" />
+      </index>
+    </indexes>
+
     <references>
       <reference external_table="gym_members">
         <column local="member_id" external="id" />
@@ -606,6 +704,15 @@
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
 
+        <indexes>
+      <index name="IX_GYM_WORKOUTS_MEMBER_ID" type="NON_UNIQUE">
+        <attribute name="MEMBER_ID" />
+      </index>
+      <index name="IX_GYM_WORKOUTS_WORKOUT_DATE" type="NON_UNIQUE">
+        <attribute name="WORKOUT_DATE" />
+      </index>
+    </indexes>
+
     <references>
       <reference external_table="gym_members">
         <column local="member_id" external="id" />
@@ -635,6 +742,12 @@
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
 
+        <indexes>
+      <index name="IX_GYM_MEASUREMENTS_MEMBER_ID" type="NON_UNIQUE">
+        <attribute name="MEMBER_ID" />
+      </index>
+    </indexes>
+
     <references>
       <reference external_table="gym_members">
         <column local="member_id" external="id" />
@@ -663,6 +776,12 @@
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
 
+        <indexes>
+      <index name="IX_GYM_FISIO_PACKAGES_MEMBER_ID" type="NON_UNIQUE">
+        <attribute name="MEMBER_ID" />
+      </index>
+    </indexes>
+
     <references>
       <reference external_table="gym_members">
         <column local="member_id" external="id" />
@@ -687,6 +806,15 @@
     <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+        <indexes>
+      <index name="IX_GYM_FISIO_APPOINTMENTS_MEMBER_ID" type="NON_UNIQUE">
+        <attribute name="MEMBER_ID" />
+      </index>
+      <index name="IX_GYM_FISIO_APPOINTMENTS_APPOINTMENT_DATE" type="NON_UNIQUE">
+        <attribute name="APPOINTMENT_DATE" />
+      </index>
+    </indexes>
 
     <references>
       <reference external_table="gym_members">
@@ -740,6 +868,12 @@
 
     <indexes>
       <index name="UX_GYM_MAINTENANCE_TICKETS_TICKET_NUMBER" type="UNIQUE"><attribute name="TICKET_NUMBER" /></index>
+          <index name="IX_GYM_MAINTENANCE_TICKETS_EQUIPMENT_ID" type="NON_UNIQUE">
+        <attribute name="EQUIPMENT_ID" />
+      </index>
+      <index name="IX_GYM_MAINTENANCE_TICKETS_STATUS" type="NON_UNIQUE">
+        <attribute name="STATUS" />
+      </index>
     </indexes>
 
     <references>
@@ -773,6 +907,12 @@
 
     <indexes>
       <index name="UX_GYM_INVOICES_INVOICE_NUMBER" type="UNIQUE"><attribute name="INVOICE_NUMBER" /></index>
+          <index name="IX_GYM_INVOICES_MEMBER_ID" type="NON_UNIQUE">
+        <attribute name="MEMBER_ID" />
+      </index>
+      <index name="IX_GYM_INVOICES_INVOICE_DATE" type="NON_UNIQUE">
+        <attribute name="INVOICE_DATE" />
+      </index>
     </indexes>
 
     <references>
@@ -823,6 +963,15 @@
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
 
+        <indexes>
+      <index name="IX_GYM_BANK_TRANSACTIONS_ACCOUNT_ID" type="NON_UNIQUE">
+        <attribute name="ACCOUNT_ID" />
+      </index>
+      <index name="IX_GYM_BANK_TRANSACTIONS_TRANSACTION_DATE" type="NON_UNIQUE">
+        <attribute name="TRANSACTION_DATE" />
+      </index>
+    </indexes>
+
     <references>
       <reference external_table="gym_bank_accounts">
         <column local="account_id" external="id" />
@@ -850,6 +999,12 @@
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
 
+      <indexes>
+      <index name="IX_GYM_SCHEDULED_REPORTS_IS_ACTIVE" type="NON_UNIQUE">
+        <attribute name="IS_ACTIVE" />
+      </index>
+    </indexes>
+
   </object>
 
   <object name="GYM_STAFF" table="gym_staff" sequence="GYM_STAFF_SEQ">
@@ -869,6 +1024,12 @@
     <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+        <indexes>
+      <index name="IX_GYM_STAFF_USER_ID" type="NON_UNIQUE">
+        <attribute name="USER_ID" />
+      </index>
+    </indexes>
 
     <references>
       <reference external_table="gym_users">
@@ -894,6 +1055,12 @@
     <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
     <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
     <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+        <indexes>
+      <index name="IX_GYM_PUSH_SUBSCRIPTIONS_USER_ID" type="NON_UNIQUE">
+        <attribute name="USER_ID" />
+      </index>
+    </indexes>
 
     <references>
       <reference external_table="gym_users">

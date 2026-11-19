@@ -188,6 +188,13 @@ namespace GymService.Services
                 .AddCheck<GymHealthCheck>("gym-health", tags: new[] { "health" })
                 .AddCheck<GymReadinessCheck>("gym-readiness", tags: new[] { "ready" });
 
+            // Limpieza periodica de datos (sesiones, OTP, codigos y membresias)
+            if (DataCenter.DatabaseManager != null)
+            {
+                services.AddSingleton(_ => new MaintenanceService(DataCenter.DatabaseManager.Tools, _configuration));
+                services.AddHostedService<CleanupHostedService>();
+            }
+
             // Add Rate Limiting
             services.AddRateLimiter(options =>
             {
@@ -225,32 +232,41 @@ namespace GymService.Services
                         JsonSerializer.Serialize(response), cancellationToken);
                 };
 
-                // General API policy: 100 requests per minute
-                options.AddFixedWindowLimiter("general", opt =>
-                {
-                    opt.PermitLimit = 100;
-                    opt.QueueLimit = 10;
-                    opt.Window = TimeSpan.FromMinutes(1);
-                    opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                });
+                // General API policy: 100 requests per minute per IP.
+                options.AddPolicy("general", context =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 100,
+                            QueueLimit = 10,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+                        }));
 
-                // Auth policy: 20 requests per minute (login, bootstrap, etc.)
-                options.AddFixedWindowLimiter("auth", opt =>
-                {
-                    opt.PermitLimit = 20;
-                    opt.QueueLimit = 5;
-                    opt.Window = TimeSpan.FromMinutes(1);
-                    opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                });
+                // Auth policy: 20 requests per minute per IP (login, bootstrap, etc.).
+                options.AddPolicy("auth", context =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 20,
+                            QueueLimit = 5,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+                        }));
 
-                // Strict policy for OTP generation: 5 requests per minute
-                options.AddFixedWindowLimiter("strict", opt =>
-                {
-                    opt.PermitLimit = 5;
-                    opt.QueueLimit = 0;
-                    opt.Window = TimeSpan.FromMinutes(1);
-                    opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                });
+                // Strict policy for OTP generation: 5 requests per minute per IP.
+                options.AddPolicy("strict", context =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 5,
+                            QueueLimit = 0,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+                        }));
             });
         }
 

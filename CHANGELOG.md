@@ -6,6 +6,17 @@
 
 ## Backend (.NET)
 
+### Operación y seguridad (2026-11-19)
+- **Bloqueo de login** tras `Authentication:MaxLoginAttempts` fallos con `LockoutMinutes`; nuevas columnas `FAILED_LOGIN_ATTEMPTS` y `LOCKED_UNTIL` (migración aditiva automática).
+- **Rate limiting por IP** aplicado a auth (`auth`) y OTP/kiosco (`strict`); antes las políticas existían pero ningún endpoint las usaba.
+- **OTP por correo real** con MailKit y plantilla HTML; en desarrollo se puede devolver el código con `Email:ShowCodeInResponse`.
+- **Limpieza automática** cada hora: sesiones/OTP caducados, códigos de acceso no usados, retención de bitácora y membresías vencidas.
+- **36 índices no únicos** para las consultas frecuentes.
+- **Migración aditiva de columnas** en `DatabaseService` (sin `MatchTableStructure` destructivo).
+- **Solución y CI**: `GymService.slnx`, `build.ps1` y workflow de GitHub Actions para runner self-hosted; `AnxoRoot` configurable.
+- Pruebas: 60 (unitarias + integración), incluyendo lockout, limpieza y OTP en modo desarrollo.
+
+
 ### Correcciones posteriores a la migración (2026-11-19)
 - **Bug:** `VerifyTotpCode` decodificaba el secreto (Base64 URL-safe sin padding) con `Convert.FromBase64String`, que lanzaba excepción; MFA nunca verificaba. Se normaliza el padding antes de decodificar.
 - **Mejora:** el alta de socios registra `CREATED_BY` con el usuario autenticado (antes `-1`).

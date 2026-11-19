@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
@@ -10,6 +10,7 @@ using AxLogger;
 using AxLibraries;
 using AxDatabase;
 using AxObjectOrientedDatabase;
+using GymService.Services;
 using GymService.Tools;
 
 namespace GymService.Modules.Identity
@@ -38,11 +39,13 @@ namespace GymService.Modules.Identity
 
         private DatabaseTools _tools;
         private IConfiguration _configuration;
+        private readonly EmailService _email;
 
         public IdentityModule(DatabaseTools tools, IConfiguration configuration)
         {
             _tools = tools;
             _configuration = configuration;
+            _email = new EmailService(configuration);
         }
 
         private int GetColumnIndex(ResultSet result, string columnName)
@@ -73,7 +76,8 @@ namespace GymService.Modules.Identity
             {
                 // Find user
                 var result = _tools.ExecuteQueryResultSet(
-                    "SELECT id, username, email, password_hash, role, full_name, is_active, is_owner, mfa_enabled FROM gym_users WHERE username = ?",
+                    "SELECT id, username, email, password_hash, role, full_name, is_active, is_owner, mfa_enabled, " +
+                    "failed_login_attempts, locked_until FROM gym_users WHERE username = ?",
                     username
                 );
 
@@ -91,6 +95,25 @@ namespace GymService.Modules.Identity
                 var isActive = Convert.ToBoolean(GetRowValue(user, result, "is_active"));
                 var mfaEnabled = Convert.ToBoolean(GetRowValue(user, result, "mfa_enabled"));
 
+                int failedAttempts = Convert.ToInt32(GetRowValue(user, result, "failed_login_attempts") ?? 0);
+                object? lockedUntilValue = GetRowValue(user, result, "locked_until");
+                DateTime? lockedUntil = lockedUntilValue == null || lockedUntilValue == DBNull.Value
+                    ? null
+                    : Convert.ToDateTime(lockedUntilValue);
+
+                int maxLoginAttempts = int.Parse(_configuration["Authentication:MaxLoginAttempts"] ?? "5");
+                int lockoutMinutes = int.Parse(_configuration["Authentication:LockoutMinutes"] ?? "10");
+
+                if (lockedUntil.HasValue && lockedUntil.Value > DateTime.Now)
+                {
+                    Logger.AddWarningSubModule(SubModule, $"Login rechazado: la cuenta '{username}' esta bloqueada hasta {lockedUntil.Value:yyyy-MM-dd HH:mm}");
+
+                    response["success"] = false;
+                    response["lockedUntil"] = lockedUntil.Value;
+                    response["message"] = $"Cuenta bloqueada por intentos fallidos. Intente de nuevo a las {lockedUntil.Value:HH:mm}.";
+                    return false;
+                }
+
                 if (!isActive)
                 {
                     response["success"] = false;
@@ -101,8 +124,33 @@ namespace GymService.Modules.Identity
                 // Verify password (PBKDF2-SHA256, con migraciÃ³n transparente del formato antiguo)
                 if (!VerifyPassword(password, storedHash, userId))
                 {
+                    int attempts = failedAttempts + 1;
+                    bool locked = attempts >= maxLoginAttempts;
+
+                    var lockChanges = new GYM_USERS
+                    {
+                        ID = userId,
+                        FAILED_LOGIN_ATTEMPTS = locked ? 0 : attempts
+                    };
+
+                    if (locked)
+                    {
+                        lockChanges.LOCKED_UNTIL = DateTime.Now.AddMinutes(lockoutMinutes);
+                    }
+
+                    var lockSession = _tools.CreateSession(SubModule, userId);
+                    lockSession.UpdateObjectChanges(lockChanges);
+                    lockSession.TryExecute();
+
+                    Logger.AddWarningSubModule(SubModule,
+                        locked
+                            ? $"La cuenta '{username}' fue bloqueada por {lockoutMinutes} minutos tras {maxLoginAttempts} intentos fallidos"
+                            : $"Login fallido para '{username}' (intento {attempts} de {maxLoginAttempts})");
+
                     response["success"] = false;
-                    response["message"] = "Usuario o contraseÃ±a invÃ¡lidos";
+                    response["message"] = locked
+                        ? $"Cuenta bloqueada por {lockoutMinutes} minutos por intentos fallidos."
+                        : "Usuario o contraseña inválidos";
                     return false;
                 }
 
@@ -137,7 +185,9 @@ namespace GymService.Modules.Identity
                 session.UpdateObjectChanges(new GYM_USERS
                 {
                     ID = userId,
-                    LAST_LOGIN = DateTime.Now
+                    LAST_LOGIN = DateTime.Now,
+                    FAILED_LOGIN_ATTEMPTS = 0,
+                    LOCKED_UNTIL = null
                 });
 
                 if (session.TryExecute().IsError)
@@ -446,31 +496,52 @@ namespace GymService.Modules.Identity
                 var otpHash = SecurityValidation.Sha256Hash(otpCode);
                 var expiryMinutes = int.Parse(_configuration["Authentication:OtpExpiryMinutes"] ?? "10");
 
-                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
-                session.InsertObject(new GYM_OTP_CODES
+                var otp = new GYM_OTP_CODES
                 {
                     EMAIL = email,
                     CODE_HASH = otpHash,
                     PURPOSE = purpose,
                     EXPIRES_AT = DateTime.Now.AddMinutes(expiryMinutes),
                     USED = false
-                });
+                };
+
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                session.InsertObject(otp);
 
                 if (session.TryExecute().IsError)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al generar cÃ³digo OTP");
+                    Logger.AddErrorSubModule(SubModule, "Error al generar código OTP");
                     response["success"] = false;
                     response["message"] = "Error interno del servidor";
                     return false;
                 }
 
-                // TODO: Send email with OTP code
-                Logger.AddInfo($"OTP code generated for {email}: {otpCode}");
+                if (_email.TrySendOtp(email, otpCode, purpose, out string emailError))
+                {
+                    response["success"] = true;
+                    response["message"] = "Código OTP enviado por correo";
+                    return true;
+                }
 
-                response["success"] = true;
-                response["message"] = "CÃ³digo OTP enviado por correo";
+                // Modo desarrollo: si no hay SMTP, se devuelve el código en la respuesta.
+                if (string.Equals(_configuration["Email:ShowCodeInResponse"], "true", StringComparison.OrdinalIgnoreCase))
+                {
+                    Logger.AddWarningSubModule(SubModule, "SMTP no configurado; devolviendo OTP en la respuesta (modo desarrollo)");
+                    response["success"] = true;
+                    response["code"] = otpCode;
+                    response["message"] = "Código OTP generado (modo desarrollo, sin envío de correo)";
+                    return true;
+                }
 
-                return true;
+                // No se pudo entregar: se elimina el OTP para no dejar códigos huérfanos.
+                var cleanup = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                cleanup.DeleteObject(new GYM_OTP_CODES { ID = otp.ID });
+                cleanup.TryExecute();
+
+                Logger.AddErrorSubModule(SubModule, $"No se pudo enviar el OTP a {email}: {emailError}");
+                response["success"] = false;
+                response["message"] = emailError;
+                return false;
             }
             catch (Exception ex)
             {

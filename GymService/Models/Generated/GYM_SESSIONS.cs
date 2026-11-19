@@ -51,7 +51,9 @@ namespace AxDatabase
                                   },
                                   new MappingIndex[]
                                   { 
-                                     new MappingIndex("UX_GYM_SESSIONS_TOKEN_HASH",MappingIndex.MappingIndexTypes.Unique,new MappingIndex.MappingIndexColumn[] { new MappingIndex.MappingIndexColumn(1,"TOKEN_HASH") } )
+                                     new MappingIndex("UX_GYM_SESSIONS_TOKEN_HASH",MappingIndex.MappingIndexTypes.Unique,new MappingIndex.MappingIndexColumn[] { new MappingIndex.MappingIndexColumn(1,"TOKEN_HASH") } ),
+                                     new MappingIndex("IX_GYM_SESSIONS_USER_ID",MappingIndex.MappingIndexTypes.NonUnique,new MappingIndex.MappingIndexColumn[] { new MappingIndex.MappingIndexColumn(1,"USER_ID") } ),
+                                     new MappingIndex("IX_GYM_SESSIONS_EXPIRES_AT",MappingIndex.MappingIndexTypes.NonUnique,new MappingIndex.MappingIndexColumn[] { new MappingIndex.MappingIndexColumn(1,"EXPIRES_AT") } )
                                   },
                                   new MappingForeignKey[]
                                   { 
