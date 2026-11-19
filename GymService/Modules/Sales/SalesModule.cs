@@ -60,7 +60,7 @@ namespace GymService.Modules.Sales
             try
             {
                 var memberId = saleData.ContainsKey("memberId") ? Convert.ToInt64(saleData["memberId"]) : 0L;
-                var createdBy = saleData.ContainsKey("createdBy") ? Convert.ToInt64(saleData["createdBy"]) : 0L;
+                var createdBy = saleData.ContainsKey("createdBy") ? Convert.ToInt64(saleData["createdBy"]) : CurrentUser.ForAudit;
                 var paymentMethod = saleData.ContainsKey("paymentMethod") ? Convert.ToString(saleData["paymentMethod"]) : "cash";
                 var totalAmount = saleData.ContainsKey("totalAmount") ? Convert.ToDecimal(saleData["totalAmount"]) : 0m;
                 var taxAmount = saleData.ContainsKey("taxAmount") ? Convert.ToDecimal(saleData["taxAmount"]) : 0m;

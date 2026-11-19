@@ -192,8 +192,18 @@ cd C:\proyectos\gimnasio-dotnet
 dotnet test GymService.Tests\GymService.Tests.csproj
 ```
 
-Cubren hashing de tokens/OTP, el contexto de auditoría (`CurrentUser`) y el convertidor
-JSON que convierte `Dictionary<string, object>` a tipos CLR primitivos.
+- **Unitarias (siempre):** hashing de tokens/OTP, contexto de auditoría (`CurrentUser`),
+  convertidor JSON y consistencia del modelo/entidades de Anxo.
+- **Integración:** crean una base de datos temporal en el servidor configurado, aplican el
+  esquema del modelo, ejecutan los flujos reales (identidad, socios, ventas, accesos,
+  finanzas, catálogos) y **borran la BD al terminar**. Se omiten si no hay credenciales:
+
+```powershell
+$env:GYM_TEST_DB_SERVER   = "leto.anxo.mx,1433"
+$env:GYM_TEST_DB_USER     = "sa"
+$env:GYM_TEST_DB_PASSWORD = "********"
+dotnet test GymService.Tests\GymService.Tests.csproj
+```
 
 ## Ejecución (modo consola)
 

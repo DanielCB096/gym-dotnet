@@ -13,7 +13,7 @@
 - **Mejora:** `GET /api/kiosk/equipment/unavailable` exige token de dispositivo (`X-Device-Token` o `deviceToken`).
 - **Mejora:** nuevo `GET /api/finance/transactions` (paginado y filtrable por `accountId`).
 - **Mejora:** `VerifyMfa` migra de forma transparente secreto legacy (Base64) a AES-256 y códigos de respaldo en texto plano a SHA-256.
-- **Pruebas:** proyecto `GymService.Tests` (xUnit) con 9 tests de hashing/tokens/OTP, `CurrentUser` y el convertidor JSON.
+- **Pruebas:** proyecto `GymService.Tests` (xUnit) con 51 tests: 33 unitarios (hashing/tokens/OTP, `CurrentUser`, convertidor JSON, modelo y entidades Anxo) y 18 de integración contra una BD temporal (identidad, socios, ventas, accesos, finanzas y catálogos).
 
 ### Migración al modelo de objetos Anxo (2026-11-19)
 - **Cambio:** El esquema pasó a estar definido por `GymService/Models/_ModelGym.xml` y las entidades generadas (`Models/Generated/GYM_*.cs`). Las PK ya no son `IDENTITY`: las asigna Anxo con secuencias (`ANXO_SEQUENCES`).

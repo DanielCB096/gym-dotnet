@@ -143,7 +143,7 @@ namespace GymService.Modules.Members
                 var email = memberData.ContainsKey("email") ? Convert.ToString(memberData["email"]) : "";
                 var phone = memberData.ContainsKey("phone") ? Convert.ToString(memberData["phone"]) : "";
                 var membershipType = memberData.ContainsKey("membershipType") ? Convert.ToString(memberData["membershipType"]) : "monthly";
-                var createdBy = memberData.ContainsKey("createdBy") ? Convert.ToInt64(memberData["createdBy"]) : 0L;
+                var createdBy = memberData.ContainsKey("createdBy") ? Convert.ToInt64(memberData["createdBy"]) : CurrentUser.ForAudit;
 
                 // Look up plan_id by membershipType (plan_name) before opening the transaction
                 long planId = 0;
@@ -355,7 +355,8 @@ namespace GymService.Modules.Members
             try
             {
                 // The session user fills CREATED_BY automatically
-                var session = _tools.CreateSession(SubModule, createdBy);
+                long auditUser = createdBy > 0 ? createdBy : CurrentUser.ForAudit;
+                var session = _tools.CreateSession(SubModule, auditUser);
                 session.InsertObject(new GYM_PAYMENTS
                 {
                     MEMBER_ID = memberId,
