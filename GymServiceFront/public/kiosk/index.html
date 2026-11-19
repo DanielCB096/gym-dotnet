@@ -3,177 +3,852 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f172a" />
   <title>Kiosco · Centro Fit</title>
   <style>
     :root { color-scheme: light; }
     * { box-sizing: border-box; }
-    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background:#0f172a; color:#e2e8f0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
-    .shell { width:min(520px,100%); background:#111827; border:1px solid #1f2937; border-radius:24px; padding:24px; box-shadow:0 20px 60px rgba(0,0,0,.45); }
-    h1 { margin:0 0 4px; font-size:26px; }
-    p.sub { margin:0 0 20px; color:#94a3b8; font-size:14px; }
-    .display { background:#020617; border:1px solid #1e293b; border-radius:16px; padding:18px; text-align:center; font-size:32px; letter-spacing:8px; min-height:74px; margin-bottom:16px; }
-    .pad { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-    button { border:0; border-radius:14px; padding:18px; font-size:20px; font-weight:600; background:#1e293b; color:#f8fafc; cursor:pointer; }
-    button:active { transform:scale(.98); }
-    button.clear { background:#7f1d1d; }
-    button.ok { background:#047857; grid-column:span 2; }
-    .result { border-radius:16px; padding:20px; text-align:center; margin-top:16px; font-size:18px; }
-    .ok-result { background:#052e16; border:1px solid #166534; }
-    .bad-result { background:#450a0a; border:1px solid #991b1b; }
-    .config { display:grid; gap:12px; }
-    input { width:100%; padding:12px; border-radius:10px; border:1px solid #334155; background:#020617; color:#e2e8f0; font-size:15px; }
-    .muted { color:#94a3b8; font-size:12px; }
-    .equipment { margin-top:16px; border-top:1px solid #1f2937; padding-top:12px; font-size:13px; color:#fbbf24; }
-    .hidden { display:none; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: radial-gradient(1200px 600px at 50% -10%, #1e293b 0%, #0f172a 55%);
+      color: #e2e8f0;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .shell {
+      width: min(640px, 100%);
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 28px;
+      padding: clamp(18px, 4vw, 28px);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, .5);
+    }
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #10b981, #0ea5e9);
+      color: #04211a;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: .5px;
+    }
+    h1 { margin: 0; font-size: 22px; line-height: 1.2; }
+    .brand-sub {
+      margin: 2px 0 0;
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+    }
+    .topbar-right { display: flex; align-items: center; gap: 14px; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 10px;
+      border: 1px solid #334155;
+      border-radius: 999px;
+      background: #0b1220;
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .pill .dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; }
+    .pill.online { border-color: #065f46; background: #052e16; color: #6ee7b7; }
+    .pill.online .dot { background: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, .18); }
+    .pill.offline { border-color: #7f1d1d; background: #2b0b0b; color: #fca5a5; }
+    .pill.offline .dot { background: #ef4444; }
+    .clock { text-align: right; line-height: 1.15; }
+    .clock-time {
+      display: block;
+      font-size: 24px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .clock-date { font-size: 11px; color: #94a3b8; text-transform: capitalize; }
+    .sub { margin: 0 0 16px; color: #94a3b8; font-size: 15px; text-align: center; }
+    .hidden { display: none !important; }
+
+    .banner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 12px;
+      margin-bottom: 16px;
+      padding: 10px 14px;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      background: #0b1220;
+      color: #cbd5e1;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .banner.valid { border-color: #166534; background: #052e16; color: #bbf7d0; }
+    .banner.warning { border-color: #a16207; background: #3b2506; color: #fde68a; }
+    .banner.error { border-color: #991b1b; background: #450a0a; color: #fecaca; }
+    .banner.checking { border-color: #334155; background: #0b1220; color: #94a3b8; }
+    .banner-text { display: flex; align-items: center; gap: 8px; flex: 1 1 220px; min-width: 0; }
+    .banner-icon {
+      width: 20px;
+      height: 20px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      border: 1px solid currentColor;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .banner-actions { display: flex; align-items: center; gap: 10px; }
+    .link-button {
+      padding: 4px 2px;
+      border: 0;
+      background: none;
+      color: inherit;
+      font: inherit;
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      cursor: pointer;
+    }
+
+    .display {
+      margin-bottom: 16px;
+      min-height: 74px;
+      padding: 16px;
+      border: 1px solid #1e293b;
+      border-radius: 18px;
+      background: #020617;
+      text-align: center;
+      font-size: clamp(26px, 6vw, 38px);
+      font-weight: 600;
+      letter-spacing: clamp(4px, 2vw, 10px);
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+    }
+    .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .pad button {
+      min-height: 64px;
+      padding: 14px;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      background: #1e293b;
+      color: #f8fafc;
+      font-family: inherit;
+      font-size: 22px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s ease, transform .08s ease;
+    }
+    .pad button:hover { background: #273449; }
+    .pad button:active { transform: scale(.97); }
+    .pad button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .pad button.clear { border-color: #7f1d1d; background: #4a1414; color: #fecaca; }
+    .pad button.ok {
+      grid-column: span 2;
+      border-color: #10b981;
+      background: linear-gradient(135deg, #059669, #0d9488);
+      font-size: 17px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .pad button.ok:disabled { opacity: .65; }
+    button:focus-visible, .link-button:focus-visible {
+      outline: 3px solid #38bdf8;
+      outline-offset: 2px;
+    }
+
+    .result {
+      margin-top: 16px;
+      padding: 18px;
+      border-radius: 16px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .ok-result { border: 1px solid #166534; background: #052e16; color: #bbf7d0; }
+    .bad-result { border: 1px solid #991b1b; background: #450a0a; color: #fecaca; }
+
+    .equipment { margin-top: 18px; padding-top: 14px; border-top: 1px solid #1f2937; }
+    .equipment-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .equipment h2 { margin: 0; font-size: 14px; }
+    .refresh {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      background: #1e293b;
+      color: #e2e8f0;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .refresh:hover { background: #273449; }
+    .refresh:disabled { opacity: .6; cursor: wait; }
+    .refresh.spinning span { display: inline-block; animation: spin 1s linear infinite; }
+    .equipment-list {
+      display: grid;
+      gap: 8px;
+      margin: 10px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    .equipment-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      background: #0b1220;
+    }
+    .equipment-name { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+    .equipment-badge {
+      flex-shrink: 0;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .equipment-badge.maintenance { border: 1px solid #a16207; background: #3b2506; color: #fcd34d; }
+    .equipment-badge.out_of_service { border: 1px solid #991b1b; background: #450a0a; color: #fca5a5; }
+    .equipment-badge.unknown { border: 1px solid #334155; background: #1e293b; color: #cbd5e1; }
+
+    .muted { margin: 8px 0 0; color: #94a3b8; font-size: 12px; line-height: 1.5; }
+    .footer { margin-top: 14px; text-align: center; }
+    #configLink { color: #94a3b8; font-size: 12px; }
+
+    .config { display: grid; gap: 14px; }
+    .section-title { margin: 0; font-size: 20px; }
+    .config .field { display: grid; gap: 6px; }
+    .config label { color: #cbd5e1; font-size: 13px; font-weight: 600; }
+    .config input {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      background: #020617;
+      color: #e2e8f0;
+      font-family: inherit;
+      font-size: 16px;
+    }
+    .config input:focus {
+      border-color: #38bdf8;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, .25);
+    }
+    .config-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .config-actions button {
+      padding: 13px 18px;
+      border: 0;
+      border-radius: 12px;
+      color: #f8fafc;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .config-actions .primary { flex: 1 1 180px; background: linear-gradient(135deg, #059669, #0d9488); }
+    .config-actions .secondary { border: 1px solid #334155; background: #1e293b; }
+    .config-actions button:disabled { opacity: .6; cursor: wait; }
+    .config-status { min-height: 18px; margin: 0; color: #94a3b8; font-size: 13px; line-height: 1.5; }
+    .config-status.error { color: #fca5a5; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+      }
+    }
+    @media (max-width: 480px) {
+      body { align-items: flex-start; padding: 12px; }
+      .shell { border-radius: 20px; padding: 16px; }
+      .clock-time { font-size: 20px; }
+      .pad button { min-height: 56px; font-size: 20px; }
+    }
   </style>
 </head>
 <body>
-  <main class="shell">
-    <h1>Centro Fit</h1>
-    <p class="sub">Ingresa tu código de acceso de 6 dígitos</p>
+  <main class="shell" aria-labelledby="appTitle">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">CF</span>
+        <div>
+          <h1 id="appTitle">Centro Fit</h1>
+          <p class="brand-sub">Control de acceso</p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span id="connection" class="pill" role="status" aria-live="polite" aria-label="Estado de conexión">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="connectionText">En línea</span>
+        </span>
+        <div class="clock">
+          <time id="clock" class="clock-time">--:--</time>
+          <span id="date" class="clock-date"></span>
+        </div>
+      </div>
+    </header>
 
-    <section id="config" class="config hidden">
-      <label class="muted" for="apiUrl">URL del API</label>
-      <input id="apiUrl" placeholder="http://localhost:5055" />
-      <label class="muted" for="deviceToken">Token del kiosco</label>
-      <input id="deviceToken" placeholder="Token generado en el panel" />
-      <button id="saveConfig">Guardar configuración</button>
-      <p class="muted">El token se configura una sola vez en esta tablet.</p>
+    <section id="config" class="config hidden" aria-labelledby="configTitle">
+      <h2 id="configTitle" class="section-title">Configurar dispositivo</h2>
+      <p class="muted" id="configHelp">
+        Introduce la dirección del servicio y el token generado en el panel. Solo es necesario una vez por tablet.
+      </p>
+      <div class="field">
+        <label for="apiUrl">URL del API</label>
+        <input id="apiUrl" type="url" inputmode="url" autocomplete="off" autocapitalize="off"
+               autocorrect="off" spellcheck="false" placeholder="https://gimnasio.example.com"
+               aria-describedby="configHelp" />
+      </div>
+      <div class="field">
+        <label for="deviceToken">Token del kiosco</label>
+        <input id="deviceToken" type="text" autocomplete="off" autocapitalize="off"
+               autocorrect="off" spellcheck="false" placeholder="Token generado en el panel"
+               aria-describedby="configHelp" />
+      </div>
+      <div class="config-actions">
+        <button id="saveConfig" class="primary" type="button">Guardar y validar</button>
+        <button id="cancelConfig" class="secondary hidden" type="button">Cancelar</button>
+      </div>
+      <p id="configStatus" class="config-status" role="status" aria-live="polite"></p>
     </section>
 
-    <section id="kiosk">
-      <div id="display" class="display">— — — — — —</div>
-      <div class="pad">
-        <button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button>
-        <button data-key="4">4</button><button data-key="5">5</button><button data-key="6">6</button>
-        <button data-key="7">7</button><button data-key="8">8</button><button data-key="9">9</button>
-        <button class="clear" id="clear">Borrar</button>
-        <button data-key="0">0</button>
-        <button class="ok" id="submit">Entrar</button>
+    <section id="kiosk" class="hidden" aria-label="Ingreso de código de acceso">
+      <div id="tokenBanner" class="banner hidden" role="status" aria-live="polite">
+        <div class="banner-text">
+          <span id="tokenIcon" class="banner-icon" aria-hidden="true">!</span>
+          <span id="tokenMessage"></span>
+        </div>
+        <div class="banner-actions">
+          <button id="retryToken" class="link-button hidden" type="button">Reintentar</button>
+          <button id="reconfigure" class="link-button hidden" type="button">Reconfigurar</button>
+        </div>
       </div>
-      <div id="result" class="result hidden"></div>
-      <div id="equipment" class="equipment hidden"></div>
-      <p class="muted" id="configLink" style="margin-top:16px;text-align:center;cursor:pointer">Configurar dispositivo</p>
+
+      <p class="sub" id="kioskHelp">Ingresa tu código de acceso de 6 dígitos</p>
+
+      <div id="display" class="display" role="status" aria-live="polite"
+           aria-label="Código ingresado: vacío">— — — — — —</div>
+
+      <div class="pad" role="group" aria-label="Teclado numérico">
+        <button type="button" data-key="1" aria-label="1">1</button>
+        <button type="button" data-key="2" aria-label="2">2</button>
+        <button type="button" data-key="3" aria-label="3">3</button>
+        <button type="button" data-key="4" aria-label="4">4</button>
+        <button type="button" data-key="5" aria-label="5">5</button>
+        <button type="button" data-key="6" aria-label="6">6</button>
+        <button type="button" data-key="7" aria-label="7">7</button>
+        <button type="button" data-key="8" aria-label="8">8</button>
+        <button type="button" data-key="9" aria-label="9">9</button>
+        <button type="button" class="clear" id="clear" aria-label="Borrar código">Borrar</button>
+        <button type="button" data-key="0" aria-label="0">0</button>
+        <button type="button" class="ok" id="submit">Entrar</button>
+      </div>
+
+      <div id="result" class="result hidden" role="status" aria-live="assertive"></div>
+
+      <section class="equipment" aria-labelledby="equipmentTitle">
+        <div class="equipment-head">
+          <h2 id="equipmentTitle">Equipos no disponibles</h2>
+          <button id="refreshEquipment" class="refresh" type="button"
+                  title="Actualizar equipos" aria-label="Actualizar equipos no disponibles">
+            <span aria-hidden="true">↻</span>
+          </button>
+        </div>
+        <p id="equipmentStatus" class="muted" role="status" aria-live="polite">Sin datos.</p>
+        <ul id="equipmentList" class="equipment-list" aria-label="Lista de equipos no disponibles"></ul>
+      </section>
+
+      <div class="footer">
+        <button id="configLink" class="link-button" type="button">Configurar dispositivo</button>
+      </div>
     </section>
   </main>
 
   <script>
     const storageKey = 'gym-kiosk-config';
-    const configSection = document.getElementById('config');
-    const kioskSection = document.getElementById('kiosk');
-    const display = document.getElementById('display');
-    const result = document.getElementById('result');
-    const equipment = document.getElementById('equipment');
-    const apiUrlInput = document.getElementById('apiUrl');
-    const tokenInput = document.getElementById('deviceToken');
+    const elements = {
+      config: document.getElementById('config'),
+      kiosk: document.getElementById('kiosk'),
+      apiUrlInput: document.getElementById('apiUrl'),
+      tokenInput: document.getElementById('deviceToken'),
+      saveConfig: document.getElementById('saveConfig'),
+      cancelConfig: document.getElementById('cancelConfig'),
+      configStatus: document.getElementById('configStatus'),
+      configLink: document.getElementById('configLink'),
+      connection: document.getElementById('connection'),
+      connectionText: document.getElementById('connectionText'),
+      clock: document.getElementById('clock'),
+      date: document.getElementById('date'),
+      tokenBanner: document.getElementById('tokenBanner'),
+      tokenIcon: document.getElementById('tokenIcon'),
+      tokenMessage: document.getElementById('tokenMessage'),
+      retryToken: document.getElementById('retryToken'),
+      reconfigure: document.getElementById('reconfigure'),
+      display: document.getElementById('display'),
+      result: document.getElementById('result'),
+      submit: document.getElementById('submit'),
+      clear: document.getElementById('clear'),
+      refreshEquipment: document.getElementById('refreshEquipment'),
+      equipmentStatus: document.getElementById('equipmentStatus'),
+      equipmentList: document.getElementById('equipmentList'),
+    };
+
+    const digitButtons = Array.from(document.querySelectorAll('[data-key]'));
+    const keypadButtons = digitButtons.concat(elements.clear);
+
+    const statusLabels = {
+      maintenance: 'En mantenimiento',
+      out_of_service: 'Fuera de servicio',
+    };
+
     let code = '';
     let config = null;
+    let validating = false;
+    let savingConfig = false;
+    let resultTimer = null;
+    let tokenState = 'idle';
+    let equipmentLoading = false;
+
+    const hideResult = () => {
+      if (resultTimer) {
+        clearTimeout(resultTimer);
+        resultTimer = null;
+      }
+      elements.result.classList.add('hidden');
+      elements.result.textContent = '';
+    };
 
     const render = () => {
       const padded = code.padEnd(6, '—');
-      display.textContent = padded.split('').join(' ');
+      elements.display.textContent = padded.split('').join(' ');
+      elements.display.setAttribute(
+        'aria-label',
+        code ? `Código ingresado: ${code.split('').join(' ')}` : 'Código ingresado: vacío'
+      );
     };
 
     const showResult = (ok, message) => {
-      result.className = `result ${ok ? 'ok-result' : 'bad-result'}`;
-      result.textContent = message;
-      result.classList.remove('hidden');
-      if (ok) setTimeout(() => { code = ''; render(); result.classList.add('hidden'); }, 3500);
+      hideResult();
+      elements.result.className = `result ${ok ? 'ok-result' : 'bad-result'} hidden`;
+      elements.result.textContent = message;
+      elements.result.classList.remove('hidden');
+      resultTimer = setTimeout(() => {
+        elements.result.classList.add('hidden');
+        elements.result.textContent = '';
+        resultTimer = null;
+      }, ok ? 4500 : 5000);
+    };
+
+    const setConnection = (online) => {
+      elements.connection.classList.toggle('online', online);
+      elements.connection.classList.toggle('offline', !online);
+      elements.connectionText.textContent = online ? 'En línea' : 'Sin conexión';
+      elements.connection.setAttribute(
+        'aria-label',
+        online ? 'Estado de conexión: en línea' : 'Estado de conexión: sin conexión'
+      );
+    };
+
+    const setValidating = (value) => {
+      validating = value;
+      elements.submit.disabled = value;
+      elements.submit.setAttribute('aria-busy', value ? 'true' : 'false');
+      elements.submit.textContent = value ? 'Validando…' : 'Entrar';
+      keypadButtons.forEach((button) => { button.disabled = value; });
+    };
+
+    const setConfigStatus = (message, isError) => {
+      elements.configStatus.textContent = message;
+      elements.configStatus.classList.toggle('error', Boolean(isError));
+    };
+
+    const setTokenBanner = (state, message, options = {}) => {
+      tokenState = state;
+      const stateClass = ['valid', 'warning', 'error', 'checking'].includes(state) ? state : 'checking';
+      elements.tokenBanner.className = `banner ${stateClass}`;
+      elements.tokenIcon.textContent = stateClass === 'valid' ? '✓' : stateClass === 'checking' ? '…' : '!';
+      elements.tokenMessage.textContent = message;
+      elements.retryToken.classList.toggle('hidden', !options.retry);
+      elements.reconfigure.classList.toggle('hidden', !options.reconfigure);
+    };
+
+    const formatDateTime = (value) => {
+      const date = value instanceof Date ? value : new Date(value);
+      if (Number.isNaN(date.getTime())) return null;
+      return date.toLocaleString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    };
+
+    const validateToken = async () => {
+      if (!config) return false;
+
+      setTokenBanner('checking', 'Validando token del dispositivo…');
+      try {
+        const response = await fetch(`${config.apiUrl}/api/kiosk/device/validate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: config.deviceToken }),
+        });
+        const data = await response.json().catch(() => null);
+        setConnection(true);
+
+        if (response.ok && data?.success) {
+          const formatted = data.tokenExpiresAt ? formatDateTime(data.tokenExpiresAt) : null;
+          if (formatted) {
+            const expiresAt = new Date(data.tokenExpiresAt).getTime();
+            const daysLeft = (expiresAt - Date.now()) / 86400000;
+            if (Number.isFinite(daysLeft) && daysLeft <= 7) {
+              setTokenBanner('warning', `El token vence pronto: válido hasta ${formatted}.`, {
+                reconfigure: true,
+              });
+            } else {
+              setTokenBanner('valid', `Token válido hasta ${formatted}.`);
+            }
+          } else {
+            setTokenBanner('valid', 'Token válido (sin fecha de caducidad).');
+          }
+          return true;
+        }
+
+        setTokenBanner(
+          'error',
+          data?.message || 'Token inválido o caducado. Reconfigura el dispositivo.',
+          { reconfigure: true }
+        );
+        return false;
+      } catch {
+        setConnection(false);
+        setTokenBanner(
+          'warning',
+          'No se pudo validar el token. Comprueba la conexión con el servidor.',
+          { retry: true, reconfigure: true }
+        );
+        return false;
+      }
+    };
+
+    const renderEquipment = (items) => {
+      elements.equipmentList.replaceChildren();
+      if (!items.length) {
+        elements.equipmentStatus.textContent = 'Todo el equipamiento está disponible.';
+        return;
+      }
+      elements.equipmentStatus.textContent = items.length === 1
+        ? '1 equipo no disponible'
+        : `${items.length} equipos no disponibles`;
+
+      const fragment = document.createDocumentFragment();
+      items.forEach((item) => {
+        const name = typeof item?.name === 'string' && item.name.trim()
+          ? item.name.trim()
+          : 'Equipo sin nombre';
+        const rawStatus = typeof item?.status === 'string' ? item.status : '';
+        const badgeClass = Object.prototype.hasOwnProperty.call(statusLabels, rawStatus)
+          ? rawStatus
+          : 'unknown';
+
+        const row = document.createElement('li');
+        row.className = 'equipment-item';
+
+        const nameEl = document.createElement('span');
+        nameEl.className = 'equipment-name';
+        nameEl.textContent = name;
+
+        const badge = document.createElement('span');
+        badge.className = `equipment-badge ${badgeClass}`;
+        badge.textContent = statusLabels[rawStatus] || 'No disponible';
+
+        row.append(nameEl, badge);
+        fragment.append(row);
+      });
+      elements.equipmentList.append(fragment);
     };
 
     const loadEquipment = async () => {
-      if (!config) return;
+      if (!config || equipmentLoading) return;
+      equipmentLoading = true;
+      elements.refreshEquipment.disabled = true;
+      elements.refreshEquipment.classList.add('spinning');
+      elements.equipmentStatus.textContent = 'Actualizando equipos…';
+
       try {
         const response = await fetch(`${config.apiUrl}/api/kiosk/equipment/unavailable`, {
-          headers: { 'X-Device-Token': config.deviceToken }
+          headers: { 'X-Device-Token': config.deviceToken },
         });
-        const data = await response.json();
-        const items = data?.data || [];
-        if (items.length) {
-          equipment.textContent = `Equipos no disponibles: ${items.map((item) => item.name).join(', ')}`;
-          equipment.classList.remove('hidden');
-        } else {
-          equipment.classList.add('hidden');
+        const data = await response.json().catch(() => null);
+        setConnection(true);
+
+        if (response.status === 401 || response.status === 403) {
+          elements.equipmentList.replaceChildren();
+          elements.equipmentStatus.textContent = 'Token inválido o caducado. Reconfigura el dispositivo.';
+          setTokenBanner(
+            'error',
+            data?.message || 'Token inválido o caducado. Reconfigura el dispositivo.',
+            { reconfigure: true }
+          );
+          return;
         }
+
+        if (!response.ok || !data?.success) {
+          elements.equipmentStatus.textContent =
+            data?.message || 'No se pudieron cargar los equipos. Pulsa actualizar para reintentar.';
+          return;
+        }
+
+        renderEquipment(Array.isArray(data.data) ? data.data : []);
       } catch {
-        equipment.classList.add('hidden');
+        setConnection(false);
+        elements.equipmentList.replaceChildren();
+        elements.equipmentStatus.textContent =
+          'Sin conexión con el servidor. Pulsa actualizar para reintentar.';
+      } finally {
+        equipmentLoading = false;
+        elements.refreshEquipment.disabled = false;
+        elements.refreshEquipment.classList.remove('spinning');
       }
     };
 
-    const saveConfig = () => {
-      const apiUrl = apiUrlInput.value.trim().replace(/\/$/, '');
-      const deviceToken = tokenInput.value.trim();
-      if (!apiUrl || !deviceToken) return;
-      config = { apiUrl, deviceToken };
-      localStorage.setItem(storageKey, JSON.stringify(config));
-      configSection.classList.add('hidden');
-      kioskSection.classList.remove('hidden');
-      loadEquipment();
+    const showKiosk = () => {
+      elements.config.classList.add('hidden');
+      elements.kiosk.classList.remove('hidden');
     };
 
-    document.getElementById('saveConfig').addEventListener('click', saveConfig);
-    document.getElementById('configLink').addEventListener('click', () => {
-      configSection.classList.remove('hidden');
-      kioskSection.classList.add('hidden');
-      apiUrlInput.value = config?.apiUrl || location.origin;
-      tokenInput.value = config?.deviceToken || '';
-    });
+    const openConfig = () => {
+      elements.apiUrlInput.value = config?.apiUrl || location.origin;
+      elements.tokenInput.value = config?.deviceToken || '';
+      setConfigStatus('', false);
+      elements.cancelConfig.classList.toggle('hidden', !config);
+      elements.config.classList.remove('hidden');
+      elements.kiosk.classList.add('hidden');
+      elements.apiUrlInput.focus();
+    };
 
-    document.querySelectorAll('[data-key]').forEach((button) => {
-      button.addEventListener('click', () => {
-        if (code.length >= 6) return;
-        code += button.dataset.key;
-        render();
-      });
-    });
+    const saveConfig = async () => {
+      if (savingConfig) return;
 
-    document.getElementById('clear').addEventListener('click', () => {
-      code = '';
-      render();
-      result.classList.add('hidden');
-    });
-
-    document.getElementById('submit').addEventListener('click', async () => {
-      if (code.length !== 6) {
-        showResult(false, 'Ingresa los 6 dígitos');
+      const apiUrl = elements.apiUrlInput.value.trim().replace(/\/+$/, '');
+      const deviceToken = elements.tokenInput.value.trim();
+      if (!apiUrl || !deviceToken) {
+        setConfigStatus('Completa la URL del API y el token del dispositivo.', true);
+        (apiUrl ? elements.tokenInput : elements.apiUrlInput).focus();
         return;
       }
+
+      savingConfig = true;
+      elements.saveConfig.disabled = true;
+      setConfigStatus('Guardando configuración…', false);
+
+      config = { apiUrl, deviceToken };
+      localStorage.setItem(storageKey, JSON.stringify(config));
+      showKiosk();
+      hideResult();
+      code = '';
+      render();
+
+      const valid = await validateToken();
+      if (valid) {
+        loadEquipment();
+      } else {
+        elements.equipmentList.replaceChildren();
+        elements.equipmentStatus.textContent = 'No disponible hasta validar el token del dispositivo.';
+      }
+
+      savingConfig = false;
+      elements.saveConfig.disabled = false;
+      setConfigStatus('', false);
+    };
+
+    const appendDigit = (digit) => {
+      if (validating || code.length >= 6) return;
+      hideResult();
+      code += digit;
+      render();
+    };
+
+    const clearCode = () => {
+      if (validating) return;
+      hideResult();
+      code = '';
+      render();
+    };
+
+    const submitCode = async () => {
+      if (validating) return;
+
+      if (code.length !== 6) {
+        showResult(false, 'Ingresa los 6 dígitos del código de acceso.');
+        return;
+      }
+
+      hideResult();
+      setValidating(true);
       try {
         const response = await fetch(`${config.apiUrl}/api/access/code/validate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, deviceId: 'kiosk-' + (config.deviceToken.slice(0, 8)) })
+          body: JSON.stringify({
+            code,
+            deviceId: 'kiosk-' + config.deviceToken.slice(0, 8),
+          }),
         });
-        const data = await response.json();
-        if (response.ok && data.success) {
-          showResult(true, `Acceso concedido · ${data.memberName || ''}`);
-          setTimeout(() => { code = ''; render(); }, 3500);
+        const data = await response.json().catch(() => null);
+        setConnection(true);
+
+        if (response.ok && data?.success) {
+          const memberName = typeof data.memberName === 'string' ? data.memberName.trim() : '';
+          showResult(true, memberName ? `Acceso concedido · ${memberName}` : 'Acceso concedido');
         } else {
-          showResult(false, data.message || 'Código inválido o vencido');
-          code = '';
-          render();
+          showResult(false, data?.message || 'Código inválido o vencido');
         }
       } catch {
-        showResult(false, 'No hay conexión con el servidor');
+        setConnection(false);
+        showResult(false, 'No hay conexión con el servidor. Inténtalo de nuevo.');
+      } finally {
+        code = '';
+        render();
+        setValidating(false);
+      }
+    };
+
+    digitButtons.forEach((button) => {
+      button.addEventListener('click', () => appendDigit(button.dataset.key));
+    });
+
+    elements.clear.addEventListener('click', clearCode);
+    elements.submit.addEventListener('click', submitCode);
+    elements.refreshEquipment.addEventListener('click', loadEquipment);
+    elements.saveConfig.addEventListener('click', saveConfig);
+    elements.retryToken.addEventListener('click', async () => {
+      const valid = await validateToken();
+      if (valid) loadEquipment();
+    });
+    elements.reconfigure.addEventListener('click', openConfig);
+    elements.configLink.addEventListener('click', openConfig);
+    elements.cancelConfig.addEventListener('click', () => {
+      if (!config) return;
+      hideResult();
+      showKiosk();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (elements.kiosk.classList.contains('hidden')) return;
+      if (event.target instanceof HTMLInputElement) return;
+
+      if (/^[0-9]$/.test(event.key)) {
+        event.preventDefault();
+        appendDigit(event.key);
+      } else if (event.key === 'Backspace') {
+        event.preventDefault();
+        if (validating) return;
+        hideResult();
+        code = code.slice(0, -1);
+        render();
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        submitCode();
+      } else if (event.key === 'Escape') {
+        clearCode();
       }
     });
 
+    window.addEventListener('online', () => setConnection(true));
+    window.addEventListener('offline', () => setConnection(false));
+
+    const timeFormatter = new Intl.DateTimeFormat('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    const dateFormatter = new Intl.DateTimeFormat('es-ES', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+
+    const tick = () => {
+      const now = new Date();
+      elements.clock.textContent = timeFormatter.format(now);
+      elements.clock.dateTime = now.toISOString();
+      elements.date.textContent = dateFormatter.format(now);
+    };
+
+    // Refresco silencioso de equipos: no consume el rate limit del token.
+    setInterval(() => {
+      if (!config || document.hidden) return;
+      if (elements.kiosk.classList.contains('hidden')) return;
+      if (tokenState !== 'valid' && tokenState !== 'warning') return;
+      loadEquipment();
+    }, 60000);
+
     const stored = localStorage.getItem(storageKey);
     if (stored) {
-      try { config = JSON.parse(stored); } catch { config = null; }
+      try {
+        config = JSON.parse(stored);
+      } catch {
+        config = null;
+      }
     }
+
+    tick();
+    setInterval(tick, 1000);
+    setConnection(navigator.onLine !== false);
+    render();
 
     if (config?.apiUrl && config?.deviceToken) {
-      configSection.classList.add('hidden');
-      kioskSection.classList.remove('hidden');
-      loadEquipment();
+      showKiosk();
+      validateToken().then((valid) => {
+        if (valid) {
+          loadEquipment();
+        } else {
+          elements.equipmentStatus.textContent = 'No disponible hasta validar el token del dispositivo.';
+        }
+      });
     } else {
-      apiUrlInput.value = location.origin;
-      configSection.classList.remove('hidden');
-      kioskSection.classList.add('hidden');
+      config = null;
+      openConfig();
     }
-
-    render();
   </script>
 </body>
 </html>

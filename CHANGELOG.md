@@ -6,6 +6,11 @@
 
 ## Backend (.NET)
 
+### Pendientes menores Fase 1 (2026-11-19)
+- **Recibos de membresía:** listado de pagos recientes del socio y recibo HTML imprimible (`PAGO-{id}`) con plan, periodo, importe, método, referencia y notas; botón “Recibo” en el modal de membresía.
+- **Kiosco/PWA:** botón “Abrir kiosco” en el panel, indicador en línea/offline, reloj, validación y vencimiento del token, anti doble envío, teclado físico, equipos no disponibles con refresco y estados accesibles.
+- **Pruebas:** 103 automatizadas.
+
 ### Fase 1: operación diaria (2026-11-19)
 - **Socios:** edición de datos y estado, cancelación de membresía con motivo e historial de membresías.
 - **Planes:** CRUD completo (precio, moneda, duración, beneficios, límite diario, activación) y página “Planes”.

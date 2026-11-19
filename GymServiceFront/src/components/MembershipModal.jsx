@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, CalendarCheck } from 'lucide-react';
+import { AlertCircle, CalendarCheck, Printer } from 'lucide-react';
 import api from '../services/api';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
 import Input from './ui/Input';
 import Select from './ui/Select';
 import Badge from './ui/Badge';
-import { formatCurrency, formatDate } from '../utils/format';
+import { formatCurrency, formatDate, formatDateTime } from '../utils/format';
 
 const todayInput = () => new Date().toISOString().slice(0, 10);
 
@@ -24,6 +24,12 @@ const paymentOptions = [
   { value: 'none', label: 'Sin cobro (cortesía)' },
 ];
 
+const paymentMethodLabel = {
+  cash: 'Efectivo',
+  card: 'Tarjeta',
+  transfer: 'Transferencia',
+};
+
 const errorMessage = (err, fallback) => err?.response?.data?.message || fallback;
 
 export default function MembershipModal({ target, plans, onClose, onSaved }) {
@@ -36,6 +42,7 @@ export default function MembershipModal({ target, plans, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [history, setHistory] = useState([]);
+  const [payments, setPayments] = useState([]);
 
   useEffect(() => {
     let active = true;
@@ -44,6 +51,10 @@ export default function MembershipModal({ target, plans, onClose, onSaved }) {
     api.get(`/members/${member.id}/memberships`)
       .then((response) => { if (active) setHistory(response.data?.data || []); })
       .catch(() => { if (active) setHistory([]); });
+
+    api.get(`/members/${member.id}/payments`)
+      .then((response) => { if (active) setPayments(response.data?.data || []); })
+      .catch(() => { if (active) setPayments([]); });
 
     return () => { active = false; };
   }, [member]);
@@ -91,6 +102,18 @@ export default function MembershipModal({ target, plans, onClose, onSaved }) {
       setError(errorMessage(err, 'No se pudo asignar la membresía.'));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const openReceipt = async (payment) => {
+    try {
+      const response = await api.get(`/members/${member.id}/payments/${payment.id}/receipt`, {
+        responseType: 'text',
+      });
+      const blob = new Blob([response.data], { type: 'text/html;charset=utf-8' });
+      window.open(URL.createObjectURL(blob), '_blank');
+    } catch {
+      setError('No se pudo generar el recibo del pago.');
     }
   };
 
@@ -209,6 +232,33 @@ export default function MembershipModal({ target, plans, onClose, onSaved }) {
                 </div>
               )}
             </>
+          )}
+
+          {payments.length > 0 && (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Pagos recientes</p>
+              <div className="max-h-40 space-y-1 overflow-y-auto text-xs text-slate-600">
+                {payments.slice(0, 10).map((payment) => (
+                  <div key={payment.id} className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-slate-400">{formatDateTime(payment.paymentDate)}</span>
+                    <span className="flex-1 truncate">
+                      {payment.planName || 'Membresía'} · {formatCurrency(payment.amount, payment.currency)}
+                    </span>
+                    <Badge variant={payment.paymentMethod === 'cash' ? 'success' : 'info'}>
+                      {paymentMethodLabel[payment.paymentMethod] || payment.paymentMethod}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={Printer}
+                      onClick={() => openReceipt(payment)}
+                    >
+                      Recibo
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
 
           {error && (

@@ -38,6 +38,15 @@ export default function Kiosk() {
         canDelete={false}
         createPath="/kiosk/device/register"
         createPayload={(form) => ({ deviceName: form.deviceName })}
+        toolbar={() => (
+          <Button
+            variant="outline"
+            icon={Monitor}
+            onClick={() => window.open('/kiosk/', '_blank', 'noopener,noreferrer')}
+          >
+            Abrir kiosco
+          </Button>
+        )}
         afterCreate={(data, { notify }) => {
           if (data?.token) {
             setToken(data.token);

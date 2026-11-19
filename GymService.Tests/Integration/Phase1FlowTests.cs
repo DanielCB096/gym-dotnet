@@ -105,6 +105,89 @@ public class Phase1FlowTests
     }
 
     [Fact]
+    public void Member_Payments_And_Receipt_Are_Scoped_To_Member()
+    {
+        if (!_fx.Available) return;
+
+        var members = new MembersModule(_fx.Tools!);
+        CurrentUser.Id = 1;
+
+        try
+        {
+            string planName = $"PlanPago_{Guid.NewGuid():N}"[..20];
+            Assert.True(members.CreatePlan(new Dictionary<string, object>
+            {
+                ["planName"] = planName,
+                ["price"] = 450m,
+                ["durationDays"] = 30,
+                ["maxDailyEntries"] = 1
+            }, out var planCreated), planCreated.GetValueOrDefault("message")?.ToString());
+
+            long planId = Convert.ToInt64(planCreated["planId"]);
+
+            string email = $"payments_{Guid.NewGuid():N}@test.local";
+            Assert.True(members.CreateMember(new Dictionary<string, object>
+            {
+                ["firstName"] = "Alejandro",
+                ["lastName"] = "Ramirez",
+                ["email"] = email,
+                ["membershipType"] = ""
+            }, out var created), created.GetValueOrDefault("message")?.ToString());
+
+            long memberId = Convert.ToInt64(created["memberId"]);
+
+            Assert.True(members.AssignMembership(memberId, new Dictionary<string, object>
+            {
+                ["planId"] = planId,
+                ["paymentMethod"] = "card",
+                ["amount"] = 450m,
+                ["reference"] = "AUTH-123"
+            }, out var assigned), assigned.GetValueOrDefault("message")?.ToString());
+
+            Assert.True(members.GetPayments(memberId, out var payments));
+            var rows = Assert.IsAssignableFrom<List<Dictionary<string, object>>>(payments["data"]);
+            var payment = Assert.Single(rows);
+
+            Assert.Equal(450m, Convert.ToDecimal(payment["amount"]));
+            Assert.Equal("card", Convert.ToString(payment["paymentMethod"]));
+            Assert.Equal(planName, Convert.ToString(payment["planName"]));
+            Assert.Equal("AUTH-123", Convert.ToString(payment["reference"]));
+            Assert.Equal(memberId, Convert.ToInt64(payment["memberId"]));
+
+            long paymentId = Convert.ToInt64(payment["id"]);
+
+            Assert.True(members.GetPaymentReceipt(memberId, paymentId, out var html));
+            Assert.Contains("Alejandro", html);
+            Assert.Contains("Ramirez", html);
+            Assert.Contains(planName, html);
+            Assert.Contains("450.00", html);
+            Assert.Contains($"PAGO-{paymentId}", html);
+
+            // El recibo de un pago ajeno no debe exponerse a otro socio.
+            string otherEmail = $"payments_other_{Guid.NewGuid():N}@test.local";
+            Assert.True(members.CreateMember(new Dictionary<string, object>
+            {
+                ["firstName"] = "Otro",
+                ["lastName"] = "Socio",
+                ["email"] = otherEmail,
+                ["membershipType"] = ""
+            }, out var otherCreated), otherCreated.GetValueOrDefault("message")?.ToString());
+
+            long otherMemberId = Convert.ToInt64(otherCreated["memberId"]);
+
+            Assert.False(members.GetPaymentReceipt(otherMemberId, paymentId, out var foreignHtml));
+            Assert.Empty(foreignHtml);
+
+            Assert.True(members.GetPayments(otherMemberId, out var otherPayments));
+            Assert.Empty(Assert.IsAssignableFrom<List<Dictionary<string, object>>>(otherPayments["data"]));
+        }
+        finally
+        {
+            CurrentUser.Id = 0;
+        }
+    }
+
+    [Fact]
     public void Kiosk_Token_Rotation_And_Manual_Access_Work()
     {
         if (!_fx.Available) return;

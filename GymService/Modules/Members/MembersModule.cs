@@ -412,6 +412,157 @@ namespace GymService.Modules.Members
         }
 
         /// <summary>
+        /// Lista los pagos de membresía de un socio (más recientes primero, máximo 50).
+        /// </summary>
+        public bool GetPayments(long memberId, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var result = _tools.ExecuteQueryResultSet(@"
+                    SELECT TOP 50 p.*, pl.PLAN_NAME
+                    FROM GYM_PAYMENTS p
+                    LEFT JOIN GYM_MEMBERSHIPS m ON m.ID = p.MEMBERSHIP_ID
+                    LEFT JOIN GYM_MEMBERSHIP_PLANS pl ON pl.ID = m.PLAN_ID
+                    WHERE p.MEMBER_ID = ?
+                    ORDER BY p.PAYMENT_DATE DESC, p.ID DESC", memberId);
+
+                var items = new List<Dictionary<string, object>>();
+                if (result != null)
+                {
+                    foreach (Row row in result.Rows)
+                    {
+                        items.Add(new Dictionary<string, object>
+                        {
+                            ["id"] = Convert.ToInt64(GetRowValue(row, result, "id")),
+                            ["memberId"] = Convert.ToInt64(GetRowValue(row, result, "member_id")),
+                            ["membershipId"] = GetRowValue(row, result, "membership_id") != null
+                                ? Convert.ToInt64(GetRowValue(row, result, "membership_id"))
+                                : (long?)null,
+                            ["planName"] = Convert.ToString(GetRowValue(row, result, "plan_name")) ?? "",
+                            ["amount"] = Convert.ToDecimal(GetRowValue(row, result, "amount")),
+                            ["currency"] = Convert.ToString(GetRowValue(row, result, "currency")) ?? "MXN",
+                            ["paymentMethod"] = Convert.ToString(GetRowValue(row, result, "payment_method")) ?? "",
+                            ["paymentDate"] = GetRowValue(row, result, "payment_date") != null
+                                ? Convert.ToDateTime(GetRowValue(row, result, "payment_date"))
+                                : (DateTime?)null,
+                            ["reference"] = Convert.ToString(GetRowValue(row, result, "reference")) ?? "",
+                            ["notes"] = Convert.ToString(GetRowValue(row, result, "notes")) ?? ""
+                        });
+                    }
+                }
+
+                response["success"] = true;
+                response["data"] = items;
+                response["count"] = items.Count;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en GetPayments: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Genera un recibo HTML imprimible para un pago de membresía del socio indicado.
+        /// Devuelve false si el pago no existe o no pertenece al socio.
+        /// </summary>
+        public bool GetPaymentReceipt(long memberId, long paymentId, out string html)
+        {
+            html = string.Empty;
+
+            try
+            {
+                var result = _tools.ExecuteQueryResultSet(@"
+                    SELECT p.*, mem.FIRST_NAME, mem.LAST_NAME, mem.EMAIL,
+                           m.START_DATE, m.END_DATE,
+                           pl.PLAN_NAME
+                    FROM GYM_PAYMENTS p
+                    INNER JOIN GYM_MEMBERS mem ON mem.ID = p.MEMBER_ID
+                    LEFT JOIN GYM_MEMBERSHIPS m ON m.ID = p.MEMBERSHIP_ID
+                    LEFT JOIN GYM_MEMBERSHIP_PLANS pl ON pl.ID = m.PLAN_ID
+                    WHERE p.ID = ? AND p.MEMBER_ID = ?", paymentId, memberId);
+
+                if (result == null || result.Rows.Count == 0)
+                    return false;
+
+                var payment = result.Rows[0];
+
+                long id = Convert.ToInt64(GetRowValue(payment, result, "id"));
+                string folio = $"PAGO-{id}";
+                string memberName = $"{GetRowValue(payment, result, "first_name")} {GetRowValue(payment, result, "last_name")}".Trim();
+                string memberEmail = Convert.ToString(GetRowValue(payment, result, "email")) ?? "";
+                string planName = Convert.ToString(GetRowValue(payment, result, "plan_name")) ?? "";
+                DateTime? startDate = GetRowValue(payment, result, "start_date") != null
+                    ? Convert.ToDateTime(GetRowValue(payment, result, "start_date"))
+                    : (DateTime?)null;
+                DateTime? endDate = GetRowValue(payment, result, "end_date") != null
+                    ? Convert.ToDateTime(GetRowValue(payment, result, "end_date"))
+                    : (DateTime?)null;
+                decimal amount = Convert.ToDecimal(GetRowValue(payment, result, "amount"));
+                string currency = Convert.ToString(GetRowValue(payment, result, "currency")) ?? "MXN";
+                string paymentMethod = Convert.ToString(GetRowValue(payment, result, "payment_method")) ?? "";
+                DateTime paymentDate = Convert.ToDateTime(GetRowValue(payment, result, "payment_date"));
+                string reference = Convert.ToString(GetRowValue(payment, result, "reference")) ?? "";
+                string notes = Convert.ToString(GetRowValue(payment, result, "notes")) ?? "";
+
+                string methodLabel = paymentMethod switch
+                {
+                    "cash" => "Efectivo",
+                    "card" => "Tarjeta",
+                    "transfer" => "Transferencia",
+                    _ => paymentMethod
+                };
+
+                string period = startDate.HasValue && endDate.HasValue
+                    ? $"{startDate.Value:dd/MM/yyyy} al {endDate.Value:dd/MM/yyyy}"
+                    : "—";
+
+                string extra = "";
+                if (!string.IsNullOrWhiteSpace(reference))
+                    extra += $"<br><strong>Referencia:</strong> {System.Net.WebUtility.HtmlEncode(reference)}";
+                if (!string.IsNullOrWhiteSpace(notes))
+                    extra += $"<br><strong>Notas:</strong> {System.Net.WebUtility.HtmlEncode(notes)}";
+
+                html = $@"<!doctype html>
+<html lang=""es""><head><meta charset=""utf-8""><title>Recibo {folio}</title>
+<style>
+  body {{ font-family: Arial, sans-serif; max-width: 720px; margin: 32px auto; color:#111827; }}
+  header {{ display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #111827; padding-bottom:12px; margin-bottom:20px; }}
+  h1 {{ margin:0; font-size:22px; }} .muted {{ color:#6b7280; font-size:13px; }}
+  table {{ width:100%; border-collapse:collapse; margin-top:16px; }} th,td {{ padding:8px; border-bottom:1px solid #e5e7eb; font-size:14px; }}
+  th {{ text-align:left; background:#f9fafb; }} .right {{ text-align:right; }}
+  .total {{ margin-top:16px; text-align:right; font-size:18px; font-weight:bold; }}
+  .footer {{ margin-top:28px; font-size:12px; color:#6b7280; text-align:center; }}
+  @media print {{ body {{ margin:0; }} }}
+</style></head><body>
+<header><div><h1>Centro Fit</h1><p class=""muted"">Recibo de pago de membresía</p></div>
+<div class=""muted""><strong>{System.Net.WebUtility.HtmlEncode(folio)}</strong><br>{paymentDate:dd/MM/yyyy HH:mm}</div></header>
+<p><strong>Socio:</strong> {System.Net.WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(memberName) ? "Socio" : memberName)}
+{(string.IsNullOrWhiteSpace(memberEmail) ? "" : $"<br><strong>Correo:</strong> {System.Net.WebUtility.HtmlEncode(memberEmail)}")}<br>
+<strong>Plan:</strong> {System.Net.WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(planName) ? "—" : planName)}<br>
+<strong>Periodo:</strong> {period}<br>
+<strong>Método de pago:</strong> {System.Net.WebUtility.HtmlEncode(methodLabel)}{extra}</p>
+<table><thead><tr><th>Concepto</th><th class=""right"">Importe</th></tr></thead>
+<tbody><tr><td>Membresía {System.Net.WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(planName) ? "" : planName)}</td><td class=""right"">${amount:0.00} {System.Net.WebUtility.HtmlEncode(currency)}</td></tr></tbody></table>
+<p class=""total"">Total: ${amount:0.00} <span class=""muted"">({System.Net.WebUtility.HtmlEncode(currency)})</span></p>
+<p class=""footer"">Gracias por tu pago · GymService</p>
+</body></html>";
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en GetPaymentReceipt: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Cancela una membresía con motivo.
         /// </summary>
         public bool CancelMembership(long membershipId, string reason, out Dictionary<string, object> response)

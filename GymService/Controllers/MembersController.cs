@@ -170,6 +170,36 @@ namespace GymService.Controllers
             return success ? Ok(response) : BadRequest(response);
         }
 
+        [HttpGet]
+        [Route("api/members/{memberId}/payments")]
+        public ActionResult<Dictionary<string, object>> GetPayments(long memberId)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Members == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Members.GetPayments(memberId, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpGet]
+        [Route("api/members/{memberId}/payments/{paymentId}/receipt")]
+        public ActionResult GetPaymentReceipt(long memberId, long paymentId)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Members == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            if (!DataCenter.BusinessProcess.Members.GetPaymentReceipt(memberId, paymentId, out var html))
+                return NotFound(new { success = false, message = "El pago no existe" });
+
+            return Content(html, "text/html; charset=utf-8");
+        }
+
         [HttpPost]
         [Route("api/members/{memberId}/payments")]
         public ActionResult<Dictionary<string, object>> RecordPayment(long memberId, [FromBody] Dictionary<string, object> paymentData)
