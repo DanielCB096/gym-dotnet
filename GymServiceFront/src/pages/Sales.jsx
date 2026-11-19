@@ -325,9 +325,17 @@ export default function Sales() {
           label: 'Recibo',
           icon: Printer,
           onClick: async (row) => {
+            const receiptWindow = window.open('', '_blank');
             const response = await api.get(`/sales/${row.id}/receipt`, { responseType: 'text' });
             const blob = new Blob([response.data], { type: 'text/html;charset=utf-8' });
-            window.open(URL.createObjectURL(blob), '_blank');
+            const url = URL.createObjectURL(blob);
+            if (receiptWindow) {
+              receiptWindow.document.open();
+              receiptWindow.document.write(response.data);
+              receiptWindow.document.close();
+            } else {
+              window.open(url, '_blank');
+            }
           },
         },
         {

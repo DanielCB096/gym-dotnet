@@ -43,11 +43,14 @@
 
 ## Pruebas y verificación
 
+- **Toda funcionalidad debe probarse en vivo antes de darse por terminada.**
+  Ver [`docs/pruebas-en-vivo.md`](docs/pruebas-en-vivo.md).
 - `dotnet build GymService.slnx -c Release`
 - Pruebas unitarias: `dotnet test GymService.Tests\GymService.Tests.csproj -c Release --no-build`
 - Integración: definir `GYM_TEST_DB_SERVER`, `GYM_TEST_DB_USER` y `GYM_TEST_DB_PASSWORD`.
 - Frontend: `npm run build` y `npm run lint` en `GymServiceFront/`.
-- Probar el flujo real (HTTP o UI) antes de dar por terminado un cambio.
+- Probar el flujo real en API y navegador (incluyendo modales, validaciones y consola).
+  Usar base temporal o datos autorizados para acciones destructivas.
 
 ## Documentación obligatoria
 

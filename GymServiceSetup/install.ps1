@@ -102,6 +102,13 @@ if ($existing -and -not $PrepareOnly) {
 
 # Copiar archivos conservando appsettings.json y logs.
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+
+# El panel se reemplaza completo para no dejar rutas antiguas (p. ej. /kiosk/).
+$wwwrootTarget = Join-Path $InstallDir 'wwwroot'
+if (Test-Path $wwwrootTarget) {
+    Remove-Item -Recurse -Force $wwwrootTarget
+}
+
 Get-ChildItem -LiteralPath $Source -Force |
     Where-Object { $_.Name -notin @('appsettings.json', 'logs') } |
     ForEach-Object {

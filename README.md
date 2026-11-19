@@ -218,6 +218,10 @@ cd C:\proyectos\gimnasio-dotnet
 dotnet test GymService.Tests\GymService.Tests.csproj
 ```
 
+> **Regla obligatoria:** toda funcionalidad debe probarse **en vivo** (API real y
+> navegador cuando aplique) antes de considerarse terminada. Ver
+> [`docs/pruebas-en-vivo.md`](docs/pruebas-en-vivo.md).
+
 - **Unitarias (siempre):** hashing de tokens/OTP, contexto de auditoría (`CurrentUser`),
   convertidor JSON y consistencia del modelo/entidades de Anxo.
 - **Integración:** crean una base de datos temporal en el servidor configurado, aplican el

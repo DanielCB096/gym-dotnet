@@ -106,13 +106,24 @@ export default function MembershipModal({ target, plans, onClose, onSaved }) {
   };
 
   const openReceipt = async (payment) => {
+    // Abre la pestaña antes del await para que el navegador no bloquee el popup.
+    const receiptWindow = window.open('', '_blank');
+
     try {
       const response = await api.get(`/members/${member.id}/payments/${payment.id}/receipt`, {
         responseType: 'text',
       });
       const blob = new Blob([response.data], { type: 'text/html;charset=utf-8' });
-      window.open(URL.createObjectURL(blob), '_blank');
+      const url = URL.createObjectURL(blob);
+      if (receiptWindow) {
+        receiptWindow.document.open();
+        receiptWindow.document.write(response.data);
+        receiptWindow.document.close();
+      } else {
+        window.open(url, '_blank');
+      }
     } catch {
+      if (receiptWindow) receiptWindow.close();
       setError('No se pudo generar el recibo del pago.');
     }
   };

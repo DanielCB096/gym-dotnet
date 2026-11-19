@@ -6,6 +6,11 @@
 
 ## Backend (.NET)
 
+### Regla de pruebas en vivo (2026-11-19)
+- Se establece como obligatorio probar cada funcionalidad **en vivo** (API real y navegador cuando aplique) antes de darla por terminada. Documentado en `docs/pruebas-en-vivo.md`, `AGENTS.md` y `README.md`.
+- Motivo: las pruebas automatizadas no detectaron el bloqueo del popup del recibo ni el conflicto de `/kiosk` entre la PWA y la página administrativa; ambos se encontraron al probar en navegador.
+- **Correcciones de la prueba en vivo:** los recibos ahora escriben el HTML en la pestaña abierta antes del `await` (evita bloqueo de popup); la PWA se movió a `/kiosk-app/` para liberar `/kiosk` (panel administrativo); el instalador borra `wwwroot` anterior para no conservar rutas viejas.
+
 ### Pendientes menores Fase 1 (2026-11-19)
 - **Recibos de membresía:** listado de pagos recientes del socio y recibo HTML imprimible (`PAGO-{id}`) con plan, periodo, importe, método, referencia y notas; botón “Recibo” en el modal de membresía.
 - **Kiosco/PWA:** botón “Abrir kiosco” en el panel, indicador en línea/offline, reloj, validación y vencimiento del token, anti doble envío, teclado físico, equipos no disponibles con refresco y estados accesibles.
@@ -16,7 +21,7 @@
 - **Planes:** CRUD completo (precio, moneda, duración, beneficios, límite diario, activación) y página “Planes”.
 - **Caja:** turnos con apertura/cierre, efectivo esperado (fondo + ventas + cobros de membresía en efectivo), diferencia y historial; ventas y pagos quedan ligados al turno abierto.
 - **Recibos:** recibo HTML imprimible de venta desde el historial.
-- **Kiosco:** vencimiento de token a 90 días, rotación y revocación desde el panel; PWA estática en `/kiosk/` con teclado numérico, configuración del dispositivo y aviso de equipos no disponibles.
+- **Kiosco:** vencimiento de token a 90 días, rotación y revocación desde el panel; PWA estática en `/kiosk-app/` con teclado numérico, configuración del dispositivo y aviso de equipos no disponibles.
 - **Acceso manual:** endpoint y modal en Logs de acceso con motivo y usuario autorizador; se registra en bitácora.
 - **Dashboard:** resumen de ingresos del día, membresías activas, por vencer, accesos y stock bajo.
 - **Correcciones:** nombres de equipos en el kiosco (columna correcta y estados fuera de servicio) y SKU automático para productos sin SKU (evita colisión del índice único).

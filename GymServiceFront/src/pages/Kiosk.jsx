@@ -42,7 +42,7 @@ export default function Kiosk() {
           <Button
             variant="outline"
             icon={Monitor}
-            onClick={() => window.open('/kiosk/', '_blank', 'noopener,noreferrer')}
+            onClick={() => window.open('/kiosk-app/', '_blank', 'noopener,noreferrer')}
           >
             Abrir kiosco
           </Button>
