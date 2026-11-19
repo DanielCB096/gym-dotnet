@@ -256,6 +256,18 @@ namespace GymService.Services
                 ["GET"] = "classes.view",
                 ["POST"] = "classes.manage"
             },
+            ["/api/classes/sessions"] = new Dictionary<string, string>
+            {
+                ["GET"] = "classes.view",
+                ["POST"] = "classes.manage",
+                ["PUT"] = "classes.manage",
+                ["DELETE"] = "classes.manage"
+            },
+            ["/api/classes/reservations"] = new Dictionary<string, string>
+            {
+                ["PUT"] = "classes.manage",
+                ["DELETE"] = "classes.manage"
+            },
             // Routines
             ["/api/routines"] = new Dictionary<string, string>
             {

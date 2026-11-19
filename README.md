@@ -178,6 +178,10 @@ Edita `appsettings.json`:
 > Si `AdminResetToken` está vacío, `/api/auth/reset-admin-password` queda deshabilitado (404); para usarlo, define un token y envíalo en el header `X-Admin-Reset-Token`.
 > En producción no uses `sa`: crea un login SQL con permisos mínimos sobre la base de datos del gimnasio.
 
+Cualquier clave de `appsettings.json` se puede sobrescribir con variables de entorno usando
+doble guion bajo (`Database__Server`, `WebServer__Port`, `Email__SmtpPassword`…), útil para
+producción y CI.
+
 ### Seguridad y operación
 
 - **Bloqueo de cuenta**: tras `Authentication:MaxLoginAttempts` fallos, la cuenta queda bloqueada

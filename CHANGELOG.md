@@ -6,6 +6,14 @@
 
 ## Backend (.NET)
 
+### Clases y reservas (2026-11-19)
+- **Backend:** CRUD de sesiones de clase (tipo, instructor, salón, horario, estado), reservas con control de cupo, lista de espera con promoción automática al liberarse un lugar, asistencia y cancelación de sesión con sus reservas.
+- **API:** `/api/classes/sessions`, `/api/classes/sessions/{id}/reservations` y `/api/classes/reservations/{id}` con permisos `classes.view` / `classes.manage`.
+- **UI:** página de Clases con pestañas “Tipos” y “Sesiones y reservas”: filtros por fecha/tipo, alta/edición/cancelación de sesiones y modal de reservas con asistencia.
+- **Config:** soporte de variables de entorno (`Database__Server`, `WebServer__Port`, …).
+- **Pruebas:** 63 (unitarias + integración), incluyendo cupo, lista de espera, promoción, asistencia y cancelación.
+
+
 ### Operación y seguridad (2026-11-19)
 - **Bloqueo de login** tras `Authentication:MaxLoginAttempts` fallos con `LockoutMinutes`; nuevas columnas `FAILED_LOGIN_ATTEMPTS` y `LOCKED_UNTIL` (migración aditiva automática).
 - **Rate limiting por IP** aplicado a auth (`auth`) y OTP/kiosco (`strict`); antes las políticas existían pero ningún endpoint las usaba.

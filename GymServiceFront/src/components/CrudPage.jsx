@@ -67,6 +67,7 @@ export default function CrudPage({
   emptyText,
   emptyIcon,
   modalSize = 'lg',
+  hideHeader = false,
   afterCreate,
 }) {
   const [search, setSearch] = useState('');
@@ -338,20 +339,33 @@ export default function CrudPage({
 
   return (
     <div className="animate-fade-in">
-      <PageHeader
-        title={title}
-        subtitle={subtitle}
-        actions={
-          <>
-            {toolbar && toolbar({ items, reload, notify })}
-            {canCreate && (
-              <Button icon={Plus} onClick={openCreate} className="w-full sm:w-auto">
-                {createLabel}
-              </Button>
-            )}
-          </>
-        }
-      />
+      {!hideHeader && (
+        <PageHeader
+          title={title}
+          subtitle={subtitle}
+          actions={
+            <>
+              {toolbar && toolbar({ items, reload, notify })}
+              {canCreate && (
+                <Button icon={Plus} onClick={openCreate} className="w-full sm:w-auto">
+                  {createLabel}
+                </Button>
+              )}
+            </>
+          }
+        />
+      )}
+
+      {hideHeader && (toolbar || canCreate) && (
+        <div className="flex flex-wrap items-center justify-end gap-2 mb-4">
+          {toolbar && toolbar({ items, reload, notify })}
+          {canCreate && (
+            <Button icon={Plus} onClick={openCreate}>
+              {createLabel}
+            </Button>
+          )}
+        </div>
+      )}
 
       {notice && (
         <div
