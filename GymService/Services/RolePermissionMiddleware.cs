@@ -204,7 +204,10 @@ namespace GymService.Services
             },
             ["/api/members/plans"] = new Dictionary<string, string>
             {
-                ["GET"] = "members.view"
+                ["GET"] = "members.view",
+                ["POST"] = "members.edit",
+                ["PUT"] = "members.edit",
+                ["DELETE"] = "members.edit"
             },
             // Access
             ["/api/access/generate"] = new Dictionary<string, string>
@@ -245,6 +248,14 @@ namespace GymService.Services
             ["/api/inventory/adjust"] = new Dictionary<string, string>
             {
                 ["POST"] = "inventory.edit"
+            },
+            // Caja / turnos
+            ["/api/cash-sessions"] = new Dictionary<string, string>
+            {
+                ["GET"] = "sales.view",
+                ["POST"] = "sales.create",
+                ["PUT"] = "sales.create",
+                ["DELETE"] = "sales.create"
             },
             // Classes
             ["/api/classes"] = new Dictionary<string, string>
@@ -378,6 +389,10 @@ namespace GymService.Services
                 ["PUT"] = "reports.view",
                 ["DELETE"] = "reports.view"
             },
+            ["/api/dashboard"] = new Dictionary<string, string>
+            {
+                ["GET"] = "reports.view"
+            },
             // Kiosk
             ["/api/kiosk/register"] = new Dictionary<string, string>
             {
@@ -425,6 +440,10 @@ namespace GymService.Services
                 ["POST"] = "access.view",
                 ["PUT"] = "access.override",
                 ["DELETE"] = "access.override"
+            },
+            ["/api/access/manual"] = new Dictionary<string, string>
+            {
+                ["POST"] = "access.override"
             },
             // Kiosco (validate es público y se omite antes de este punto)
             ["/api/kiosk"] = new Dictionary<string, string>

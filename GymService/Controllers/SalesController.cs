@@ -60,6 +60,22 @@ namespace GymService.Controllers
             return success ? Ok(response) : BadRequest(response);
         }
 
+        [HttpGet]
+        [Route("api/sales/{saleId}/receipt")]
+        public ActionResult GetSaleReceipt(long saleId)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Sales == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            if (!DataCenter.BusinessProcess.Sales.GetSaleReceipt(saleId, out var html))
+                return NotFound(new { success = false, message = "La venta no existe" });
+
+            return Content(html, "text/html; charset=utf-8");
+        }
+
         [HttpDelete]
         [Route("api/sales/{saleId}")]
         public ActionResult<Dictionary<string, object>> DeleteSale(long saleId)

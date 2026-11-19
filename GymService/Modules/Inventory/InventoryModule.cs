@@ -86,7 +86,7 @@ namespace GymService.Modules.Inventory
                     ID = productId,
                     PRODUCT_NAME = productName.Trim(),
                     DESCRIPTION = description.Trim(),
-                    SKU = sku.Trim(),
+                    SKU = string.IsNullOrWhiteSpace(sku) ? $"AUTO-{Guid.NewGuid().ToString("N")[..10].ToUpperInvariant()}" : sku.Trim(),
                     CATEGORY = category.Trim(),
                     PRICE = price,
                     COST = cost,
@@ -196,7 +196,9 @@ namespace GymService.Modules.Inventory
                     ID = productId,
                     PRODUCT_NAME = productName.Trim(),
                     DESCRIPTION = description.Trim(),
-                    SKU = sku.Trim(),
+                    SKU = string.IsNullOrWhiteSpace(sku)
+                        ? (string.IsNullOrWhiteSpace(current.Value.Sku) ? $"AUTO-{Guid.NewGuid().ToString("N")[..10].ToUpperInvariant()}" : current.Value.Sku)
+                        : sku.Trim(),
                     CATEGORY = category.Trim(),
                     PRICE = price,
                     COST = cost,

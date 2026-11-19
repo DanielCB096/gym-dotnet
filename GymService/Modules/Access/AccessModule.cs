@@ -315,7 +315,7 @@ namespace GymService.Modules.Access
                 parameters.Add(offset);
                 parameters.Add(limit);
 
-                var sql = $"SELECT al.id, al.member_id, al.access_type, al.access_result, al.device_id, al.accessed_at, m.first_name, m.last_name FROM gym_access_log al INNER JOIN gym_members m ON al.member_id = m.id {whereClause} ORDER BY al.accessed_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+                var sql = $"SELECT al.id, al.member_id, al.access_type, al.access_result, al.device_id, al.accessed_at, al.reason, al.authorized_by, m.first_name, m.last_name FROM gym_access_log al INNER JOIN gym_members m ON al.member_id = m.id {whereClause} ORDER BY al.accessed_at DESC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
                 var result = _tools.ExecuteQueryResultSet(sql, parameters.ToArray());
 
@@ -332,6 +332,8 @@ namespace GymService.Modules.Access
                             ["accessType"] = Convert.ToString(GetRowValue(row, result, "access_type")) ?? "",
                             ["accessResult"] = Convert.ToString(GetRowValue(row, result, "access_result")) ?? "",
                             ["deviceId"] = Convert.ToString(GetRowValue(row, result, "device_id")) ?? "",
+                            ["reason"] = Convert.ToString(GetRowValue(row, result, "reason")) ?? "",
+                            ["authorizedBy"] = GetRowValue(row, result, "authorized_by") != null ? Convert.ToInt64(GetRowValue(row, result, "authorized_by")) : (long?)null,
                             ["accessedAt"] = Convert.ToString(GetRowValue(row, result, "accessed_at")) ?? ""
                         });
                     }
@@ -418,6 +420,77 @@ namespace GymService.Modules.Access
             catch (Exception ex)
             {
                 Logger.AddErrorSubModule(SubModule, $"Error en CleanOldAccessCodes: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Registra una entrada manual autorizada por recepción.
+        /// </summary>
+        public bool RegisterManualAccess(long memberId, string reason, string deviceId, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                reason = (reason ?? "").Trim();
+                if (memberId <= 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "Selecciona un socio";
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(reason))
+                {
+                    response["success"] = false;
+                    response["message"] = "El motivo es requerido para un acceso manual";
+                    return false;
+                }
+
+                var member = _tools.ExecuteQueryResultSet(
+                    "SELECT ID, FIRST_NAME, LAST_NAME, STATUS FROM GYM_MEMBERS WHERE ID = ?", memberId);
+
+                if (member == null || member.Rows.Count == 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "El socio no existe";
+                    return false;
+                }
+
+                var row = member.Rows[0];
+                string memberName = $"{GetRowValue(row, member, "first_name")} {GetRowValue(row, member, "last_name")}".Trim();
+
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                session.InsertObject(new GYM_ACCESS_LOG
+                {
+                    MEMBER_ID = memberId,
+                    ACCESS_TYPE = "manual",
+                    ACCESS_RESULT = "granted",
+                    DEVICE_ID = string.IsNullOrWhiteSpace(deviceId) ? "reception" : deviceId,
+                    REASON = reason,
+                    AUTHORIZED_BY = CurrentUser.ForAudit > 0 ? CurrentUser.ForAudit : (long?)null,
+                    ACCESSED_AT = DateTime.Now
+                });
+
+                if (session.TryExecute().IsError)
+                {
+                    response["success"] = false;
+                    response["message"] = "Error al registrar el acceso manual";
+                    return false;
+                }
+
+                response["success"] = true;
+                response["memberId"] = memberId;
+                response["memberName"] = memberName;
+                response["message"] = "Acceso manual registrado";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en RegisterManualAccess: {ex.Message}");
                 response["success"] = false;
                 response["message"] = "Error interno del servidor";
                 return false;

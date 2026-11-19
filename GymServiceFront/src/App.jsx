@@ -5,8 +5,10 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Members from './pages/Members';
+import Plans from './pages/Plans';
 import Inventory from './pages/Inventory';
 import Sales from './pages/Sales';
+import Cash from './pages/Cash';
 import Classes from './pages/Classes';
 import Staff from './pages/Staff';
 import Billing from './pages/Billing';
@@ -46,6 +48,16 @@ function App() {
             }
           />
           <Route
+            path="/plans"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Plans />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/inventory"
             element={
               <ProtectedRoute>
@@ -61,6 +73,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Sales />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cash"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Cash />
                 </Layout>
               </ProtectedRoute>
             }

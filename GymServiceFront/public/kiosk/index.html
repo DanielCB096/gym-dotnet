@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kiosco · Centro Fit</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background:#0f172a; color:#e2e8f0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+    .shell { width:min(520px,100%); background:#111827; border:1px solid #1f2937; border-radius:24px; padding:24px; box-shadow:0 20px 60px rgba(0,0,0,.45); }
+    h1 { margin:0 0 4px; font-size:26px; }
+    p.sub { margin:0 0 20px; color:#94a3b8; font-size:14px; }
+    .display { background:#020617; border:1px solid #1e293b; border-radius:16px; padding:18px; text-align:center; font-size:32px; letter-spacing:8px; min-height:74px; margin-bottom:16px; }
+    .pad { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    button { border:0; border-radius:14px; padding:18px; font-size:20px; font-weight:600; background:#1e293b; color:#f8fafc; cursor:pointer; }
+    button:active { transform:scale(.98); }
+    button.clear { background:#7f1d1d; }
+    button.ok { background:#047857; grid-column:span 2; }
+    .result { border-radius:16px; padding:20px; text-align:center; margin-top:16px; font-size:18px; }
+    .ok-result { background:#052e16; border:1px solid #166534; }
+    .bad-result { background:#450a0a; border:1px solid #991b1b; }
+    .config { display:grid; gap:12px; }
+    input { width:100%; padding:12px; border-radius:10px; border:1px solid #334155; background:#020617; color:#e2e8f0; font-size:15px; }
+    .muted { color:#94a3b8; font-size:12px; }
+    .equipment { margin-top:16px; border-top:1px solid #1f2937; padding-top:12px; font-size:13px; color:#fbbf24; }
+    .hidden { display:none; }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <h1>Centro Fit</h1>
+    <p class="sub">Ingresa tu código de acceso de 6 dígitos</p>
+
+    <section id="config" class="config hidden">
+      <label class="muted" for="apiUrl">URL del API</label>
+      <input id="apiUrl" placeholder="http://localhost:5055" />
+      <label class="muted" for="deviceToken">Token del kiosco</label>
+      <input id="deviceToken" placeholder="Token generado en el panel" />
+      <button id="saveConfig">Guardar configuración</button>
+      <p class="muted">El token se configura una sola vez en esta tablet.</p>
+    </section>
+
+    <section id="kiosk">
+      <div id="display" class="display">— — — — — —</div>
+      <div class="pad">
+        <button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button>
+        <button data-key="4">4</button><button data-key="5">5</button><button data-key="6">6</button>
+        <button data-key="7">7</button><button data-key="8">8</button><button data-key="9">9</button>
+        <button class="clear" id="clear">Borrar</button>
+        <button data-key="0">0</button>
+        <button class="ok" id="submit">Entrar</button>
+      </div>
+      <div id="result" class="result hidden"></div>
+      <div id="equipment" class="equipment hidden"></div>
+      <p class="muted" id="configLink" style="margin-top:16px;text-align:center;cursor:pointer">Configurar dispositivo</p>
+    </section>
+  </main>
+
+  <script>
+    const storageKey = 'gym-kiosk-config';
+    const configSection = document.getElementById('config');
+    const kioskSection = document.getElementById('kiosk');
+    const display = document.getElementById('display');
+    const result = document.getElementById('result');
+    const equipment = document.getElementById('equipment');
+    const apiUrlInput = document.getElementById('apiUrl');
+    const tokenInput = document.getElementById('deviceToken');
+    let code = '';
+    let config = null;
+
+    const render = () => {
+      const padded = code.padEnd(6, '—');
+      display.textContent = padded.split('').join(' ');
+    };
+
+    const showResult = (ok, message) => {
+      result.className = `result ${ok ? 'ok-result' : 'bad-result'}`;
+      result.textContent = message;
+      result.classList.remove('hidden');
+      if (ok) setTimeout(() => { code = ''; render(); result.classList.add('hidden'); }, 3500);
+    };
+
+    const loadEquipment = async () => {
+      if (!config) return;
+      try {
+        const response = await fetch(`${config.apiUrl}/api/kiosk/equipment/unavailable`, {
+          headers: { 'X-Device-Token': config.deviceToken }
+        });
+        const data = await response.json();
+        const items = data?.data || [];
+        if (items.length) {
+          equipment.textContent = `Equipos no disponibles: ${items.map((item) => item.name).join(', ')}`;
+          equipment.classList.remove('hidden');
+        } else {
+          equipment.classList.add('hidden');
+        }
+      } catch {
+        equipment.classList.add('hidden');
+      }
+    };
+
+    const saveConfig = () => {
+      const apiUrl = apiUrlInput.value.trim().replace(/\/$/, '');
+      const deviceToken = tokenInput.value.trim();
+      if (!apiUrl || !deviceToken) return;
+      config = { apiUrl, deviceToken };
+      localStorage.setItem(storageKey, JSON.stringify(config));
+      configSection.classList.add('hidden');
+      kioskSection.classList.remove('hidden');
+      loadEquipment();
+    };
+
+    document.getElementById('saveConfig').addEventListener('click', saveConfig);
+    document.getElementById('configLink').addEventListener('click', () => {
+      configSection.classList.remove('hidden');
+      kioskSection.classList.add('hidden');
+      apiUrlInput.value = config?.apiUrl || location.origin;
+      tokenInput.value = config?.deviceToken || '';
+    });
+
+    document.querySelectorAll('[data-key]').forEach((button) => {
+      button.addEventListener('click', () => {
+        if (code.length >= 6) return;
+        code += button.dataset.key;
+        render();
+      });
+    });
+
+    document.getElementById('clear').addEventListener('click', () => {
+      code = '';
+      render();
+      result.classList.add('hidden');
+    });
+
+    document.getElementById('submit').addEventListener('click', async () => {
+      if (code.length !== 6) {
+        showResult(false, 'Ingresa los 6 dígitos');
+        return;
+      }
+      try {
+        const response = await fetch(`${config.apiUrl}/api/access/code/validate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, deviceId: 'kiosk-' + (config.deviceToken.slice(0, 8)) })
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          showResult(true, `Acceso concedido · ${data.memberName || ''}`);
+          setTimeout(() => { code = ''; render(); }, 3500);
+        } else {
+          showResult(false, data.message || 'Código inválido o vencido');
+          code = '';
+          render();
+        }
+      } catch {
+        showResult(false, 'No hay conexión con el servidor');
+      }
+    });
+
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+      try { config = JSON.parse(stored); } catch { config = null; }
+    }
+
+    if (config?.apiUrl && config?.deviceToken) {
+      configSection.classList.add('hidden');
+      kioskSection.classList.remove('hidden');
+      loadEquipment();
+    } else {
+      apiUrlInput.value = location.origin;
+      configSection.classList.remove('hidden');
+      kioskSection.classList.add('hidden');
+    }
+
+    render();
+  </script>
+</body>
+</html>

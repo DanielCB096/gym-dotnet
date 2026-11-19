@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Copy, Power, CheckCircle2, Monitor } from 'lucide-react';
+import { Copy, Power, CheckCircle2, Monitor, RotateCw } from 'lucide-react';
 import api from '../services/api';
 import CrudPage from '../components/CrudPage';
 import Badge from '../components/ui/Badge';
@@ -56,6 +56,11 @@ export default function Kiosk() {
               </Badge>
             ),
           },
+          {
+            key: 'tokenExpiresAt',
+            label: 'Token vence',
+            render: (row) => (row.tokenExpiresAt ? formatDateTime(row.tokenExpiresAt) : '—'),
+          },
           { key: 'createdAt', label: 'Registrado', render: (row) => formatDateTime(row.createdAt) },
         ]}
         fields={[
@@ -68,6 +73,20 @@ export default function Kiosk() {
           },
         ]}
         actions={[
+          {
+            label: 'Rotar token',
+            icon: RotateCw,
+            hidden: (item) => !item.isActive,
+            onClick: async (item, { reload, notify }) => {
+              const response = await api.post(`/kiosk/devices/${item.id}/rotate`);
+              if (response.data?.token) {
+                setToken(response.data.token);
+              } else {
+                notify('success', response.data?.message || 'Token rotado.');
+              }
+              reload();
+            },
+          },
           {
             label: 'Desactivar',
             icon: Power,

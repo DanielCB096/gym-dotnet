@@ -54,6 +54,7 @@ namespace GymService.Modules.Kiosk
                 {
                     DEVICE_NAME = deviceName,
                     DEVICE_TOKEN_HASH = tokenHash,
+                    TOKEN_EXPIRES_AT = DateTime.Now.AddDays(90),
                     IS_ACTIVE = true
                 };
 
@@ -70,6 +71,7 @@ namespace GymService.Modules.Kiosk
 
                 response["success"] = true;
                 response["token"] = token;
+                response["tokenExpiresAt"] = device.TOKEN_EXPIRES_AT;
                 response["message"] = "Dispositivo registrado exitosamente";
                 return true;
             }
@@ -94,7 +96,9 @@ namespace GymService.Modules.Kiosk
                 var tokenHash = SecurityValidation.Sha256Hash(token);
 
                 var result = _tools.ExecuteQueryResultSet(
-                    "SELECT id, device_name FROM gym_kiosk_devices WHERE device_token_hash = ? AND is_active = 1",
+                    "SELECT id, device_name, TOKEN_EXPIRES_AT FROM gym_kiosk_devices " +
+                    "WHERE device_token_hash = ? AND is_active = 1 " +
+                    "AND (TOKEN_EXPIRES_AT IS NULL OR TOKEN_EXPIRES_AT > GETDATE())",
                     tokenHash
                 );
 
@@ -109,6 +113,9 @@ namespace GymService.Modules.Kiosk
                 response["success"] = true;
                 response["deviceId"] = Convert.ToInt64(GetRowValue(row, result, "id"));
                 response["deviceName"] = Convert.ToString(GetRowValue(row, result, "device_name")) ?? "";
+                response["tokenExpiresAt"] = GetRowValue(row, result, "token_expires_at") != null
+                    ? Convert.ToDateTime(GetRowValue(row, result, "token_expires_at"))
+                    : (DateTime?)null;
                 return true;
             }
             catch (Exception ex)
@@ -130,7 +137,7 @@ namespace GymService.Modules.Kiosk
             try
             {
                 var result = _tools.ExecuteQueryResultSet(
-                    "SELECT e.* FROM gym_equipment e WHERE e.status = 'maintenance' ORDER BY e.equipment_name"
+                    "SELECT e.* FROM gym_equipment e WHERE e.status IN ('maintenance','out_of_service') ORDER BY e.equipment_name"
                 );
 
                 var equipment = new List<Dictionary<string, object>>();
@@ -141,7 +148,7 @@ namespace GymService.Modules.Kiosk
                         equipment.Add(new Dictionary<string, object>
                         {
                             ["id"] = Convert.ToInt64(GetRowValue(row, result, "id")),
-                            ["name"] = Convert.ToString(GetRowValue(row, result, "name")) ?? "",
+                            ["name"] = Convert.ToString(GetRowValue(row, result, "equipment_name")) ?? "",
                             ["status"] = Convert.ToString(GetRowValue(row, result, "status")) ?? "maintenance"
                         });
                     }
@@ -170,7 +177,7 @@ namespace GymService.Modules.Kiosk
             try
             {
                 var result = _tools.ExecuteQueryResultSet(
-                    "SELECT id, device_name, is_active, created_at FROM gym_kiosk_devices ORDER BY device_name"
+                    "SELECT id, device_name, is_active, token_expires_at, last_seen, created_at FROM gym_kiosk_devices ORDER BY device_name"
                 );
 
                 var devices = new List<Dictionary<string, object>>();
@@ -183,6 +190,8 @@ namespace GymService.Modules.Kiosk
                             ["id"] = Convert.ToInt64(GetRowValue(row, result, "id")),
                             ["deviceName"] = Convert.ToString(GetRowValue(row, result, "device_name")) ?? "",
                             ["isActive"] = Convert.ToBoolean(GetRowValue(row, result, "is_active")),
+                            ["tokenExpiresAt"] = GetRowValue(row, result, "token_expires_at") != null ? Convert.ToDateTime(GetRowValue(row, result, "token_expires_at")) : (DateTime?)null,
+                            ["lastSeen"] = GetRowValue(row, result, "last_seen") != null ? Convert.ToDateTime(GetRowValue(row, result, "last_seen")) : (DateTime?)null,
                             ["createdAt"] = Convert.ToString(GetRowValue(row, result, "created_at")) ?? ""
                         });
                     }
@@ -196,6 +205,67 @@ namespace GymService.Modules.Kiosk
             catch (Exception ex)
             {
                 Logger.AddErrorSubModule(SubModule, $"Error en GetDevices: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Rota el token de un kiosco activo (90 días).
+        /// </summary>
+        public bool RotateDeviceToken(long deviceId, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var current = _tools.ExecuteQueryResultSet(
+                    "SELECT id, is_active FROM gym_kiosk_devices WHERE id = ?", deviceId);
+
+                if (current == null || current.Rows.Count == 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "El dispositivo no existe";
+                    return false;
+                }
+
+                if (!Convert.ToBoolean(GetRowValue(current.Rows[0], current, "is_active")))
+                {
+                    response["success"] = false;
+                    response["message"] = "El dispositivo está revocado";
+                    return false;
+                }
+
+                var token = SecurityValidation.GenerateToken(64);
+                var tokenHash = SecurityValidation.Sha256Hash(token);
+                var expiresAt = DateTime.Now.AddDays(90);
+
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                session.UpdateObjectChanges(new GYM_KIOSK_DEVICES
+                {
+                    ID = deviceId,
+                    DEVICE_TOKEN_HASH = tokenHash,
+                    TOKEN_EXPIRES_AT = expiresAt,
+                    IS_ACTIVE = true
+                });
+
+                if (session.TryExecute().IsError)
+                {
+                    response["success"] = false;
+                    response["message"] = "Error al rotar el token";
+                    return false;
+                }
+
+                response["success"] = true;
+                response["token"] = token;
+                response["tokenExpiresAt"] = expiresAt;
+                response["message"] = "Token rotado correctamente";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en RotateDeviceToken: {ex.Message}");
                 response["success"] = false;
                 response["message"] = "Error interno del servidor";
                 return false;

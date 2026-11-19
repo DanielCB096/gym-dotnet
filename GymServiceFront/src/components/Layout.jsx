@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Users, Package, DollarSign, Dumbbell, UserCog,
   FileText, Landmark, Wrench, Activity, ClipboardCheck, Monitor,
   BarChart3, Shield, LogOut, Menu, X, ChevronLeft, ChevronRight,
-  Bell, Search, Home
+  Bell, Search, Home, Tags, Wallet
 } from 'lucide-react';
 
 const menuSections = [
@@ -19,8 +19,10 @@ const menuSections = [
     title: 'MÓDULOS',
     items: [
       { to: '/members', label: 'Miembros', icon: Users },
+      { to: '/plans', label: 'Planes', icon: Tags },
       { to: '/inventory', label: 'Inventario', icon: Package },
       { to: '/sales', label: 'Ventas', icon: DollarSign },
+      { to: '/cash', label: 'Caja', icon: Wallet },
       { to: '/classes', label: 'Clases', icon: Dumbbell },
       { to: '/staff', label: 'Personal', icon: UserCog },
       { to: '/billing', label: 'Facturación', icon: FileText },
@@ -39,8 +41,10 @@ const menuSections = [
 const routeLabels = {
   '/': 'Dashboard',
   '/members': 'Miembros',
+  '/plans': 'Planes',
   '/inventory': 'Inventario',
   '/sales': 'Ventas',
+  '/cash': 'Caja',
   '/classes': 'Clases',
   '/staff': 'Personal',
   '/billing': 'Facturación',

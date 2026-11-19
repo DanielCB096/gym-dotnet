@@ -168,7 +168,8 @@ namespace GymService.Modules.Sales
                     TAX_AMOUNT = taxAmount,
                     PAYMENT_METHOD = paymentMethod,
                     SALE_DATE = DateTime.Now,
-                    IS_OFFLINE = isOffline
+                    IS_OFFLINE = isOffline,
+                    CASH_SESSION_ID = GymService.Modules.Cash.CashModule.GetOpenSessionId(_tools)
                 });
 
                 foreach (var item in saleItems)
@@ -476,6 +477,83 @@ namespace GymService.Modules.Sales
                 Logger.AddErrorSubModule(SubModule, $"Error en DeleteSale: {ex.Message}");
                 response["success"] = false;
                 response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Genera un recibo HTML imprimible para una venta.
+        /// </summary>
+        public bool GetSaleReceipt(long saleId, out string html)
+        {
+            html = string.Empty;
+
+            try
+            {
+                var saleResult = _tools.ExecuteQueryResultSet(@"
+                    SELECT s.*, m.FIRST_NAME, m.LAST_NAME
+                    FROM GYM_SALES s
+                    LEFT JOIN GYM_MEMBERS m ON m.ID = s.MEMBER_ID
+                    WHERE s.ID = ?", saleId);
+
+                if (saleResult == null || saleResult.Rows.Count == 0)
+                    return false;
+
+                var sale = saleResult.Rows[0];
+                var itemsResult = _tools.ExecuteQueryResultSet(@"
+                    SELECT i.*, p.PRODUCT_NAME
+                    FROM GYM_SALE_ITEMS i
+                    LEFT JOIN GYM_INVENTORY p ON p.ID = i.PRODUCT_ID
+                    WHERE i.SALE_ID = ?", saleId);
+
+                string saleNumber = Convert.ToString(GetRowValue(sale, saleResult, "sale_number")) ?? saleId.ToString();
+                string memberName = $"{GetRowValue(sale, saleResult, "first_name")} {GetRowValue(sale, saleResult, "last_name")}".Trim();
+                DateTime saleDate = Convert.ToDateTime(GetRowValue(sale, saleResult, "sale_date"));
+                decimal total = Convert.ToDecimal(GetRowValue(sale, saleResult, "total_amount"));
+                decimal tax = Convert.ToDecimal(GetRowValue(sale, saleResult, "tax_amount"));
+                string paymentMethod = Convert.ToString(GetRowValue(sale, saleResult, "payment_method")) ?? "";
+
+                var rows = new System.Text.StringBuilder();
+                if (itemsResult != null)
+                {
+                    foreach (Row item in itemsResult.Rows)
+                    {
+                        string product = System.Net.WebUtility.HtmlEncode(Convert.ToString(GetRowValue(item, itemsResult, "product_name")) ?? "");
+                        int quantity = Convert.ToInt32(GetRowValue(item, itemsResult, "quantity"));
+                        decimal unit = Convert.ToDecimal(GetRowValue(item, itemsResult, "unit_price"));
+                        decimal lineTotal = Convert.ToDecimal(GetRowValue(item, itemsResult, "total_price"));
+
+                        rows.Append($"<tr><td>{product}</td><td class=\"right\">{quantity}</td><td class=\"right\">${unit:0.00}</td><td class=\"right\">${lineTotal:0.00}</td></tr>");
+                    }
+                }
+
+                html = $@"<!doctype html>
+<html lang=""es""><head><meta charset=""utf-8""><title>Recibo {saleNumber}</title>
+<style>
+  body {{ font-family: Arial, sans-serif; max-width: 720px; margin: 32px auto; color:#111827; }}
+  header {{ display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #111827; padding-bottom:12px; margin-bottom:20px; }}
+  h1 {{ margin:0; font-size:22px; }} .muted {{ color:#6b7280; font-size:13px; }}
+  table {{ width:100%; border-collapse:collapse; margin-top:16px; }} th,td {{ padding:8px; border-bottom:1px solid #e5e7eb; font-size:14px; }}
+  th {{ text-align:left; background:#f9fafb; }} .right {{ text-align:right; }}
+  .total {{ margin-top:16px; text-align:right; font-size:18px; font-weight:bold; }}
+  .footer {{ margin-top:28px; font-size:12px; color:#6b7280; text-align:center; }}
+  @media print {{ body {{ margin:0; }} }}
+</style></head><body>
+<header><div><h1>Centro Fit</h1><p class=""muted"">Recibo de venta</p></div>
+<div class=""muted""><strong>{System.Net.WebUtility.HtmlEncode(saleNumber)}</strong><br>{saleDate:dd/MM/yyyy HH:mm}</div></header>
+<p><strong>Socio:</strong> {System.Net.WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(memberName) ? "Público general" : memberName)}<br>
+<strong>Método de pago:</strong> {System.Net.WebUtility.HtmlEncode(paymentMethod)}</p>
+<table><thead><tr><th>Producto</th><th class=""right"">Cant.</th><th class=""right"">Precio</th><th class=""right"">Importe</th></tr></thead>
+<tbody>{rows}</tbody></table>
+<p class=""total"">Total: ${total:0.00} <span class=""muted"">(IVA ${tax:0.00})</span></p>
+<p class=""footer"">Gracias por tu compra · GymService</p>
+</body></html>";
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en GetSaleReceipt: {ex.Message}");
                 return false;
             }
         }

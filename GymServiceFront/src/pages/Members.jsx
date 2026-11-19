@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { CreditCard } from 'lucide-react';
+import { CreditCard, XCircle } from 'lucide-react';
 import api from '../services/api';
 import CrudPage from '../components/CrudPage';
 import MembershipModal from '../components/MembershipModal';
+import CancelMembershipModal from '../components/CancelMembershipModal';
 import Badge from '../components/ui/Badge';
 import { formatCurrency, formatDate } from '../utils/format';
 
@@ -17,6 +18,7 @@ export default function Members() {
   const [plans, setPlans] = useState([]);
   const [plansError, setPlansError] = useState('');
   const [membershipTarget, setMembershipTarget] = useState(null);
+  const [cancelTarget, setCancelTarget] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -106,6 +108,7 @@ export default function Members() {
         },
         { key: 'membershipEnd', label: 'Vence', render: (row) => formatDate(row.membershipEnd) },
       ]}
+      canEdit
       fields={[
         { name: 'firstName', label: 'Nombre', required: true, placeholder: 'Juan' },
         { name: 'lastName', label: 'Apellido', required: true, placeholder: 'Pérez' },
@@ -113,11 +116,33 @@ export default function Members() {
         { name: 'phone', label: 'Teléfono', type: 'tel', placeholder: '555-1234' },
         planField,
       ]}
+      editFields={[
+        { name: 'firstName', label: 'Nombre', required: true },
+        { name: 'lastName', label: 'Apellido', required: true },
+        { name: 'email', label: 'Email', type: 'email' },
+        { name: 'phone', label: 'Teléfono', type: 'tel' },
+        {
+          name: 'status',
+          label: 'Estado de la cuenta',
+          type: 'select',
+          options: [
+            { value: 'active', label: 'Activo' },
+            { value: 'inactive', label: 'Inactivo' },
+          ],
+        },
+      ]}
       actions={[
         {
           label: 'Membresía',
           icon: CreditCard,
           onClick: (row, { reload, notify }) => setMembershipTarget({ member: row, reload, notify }),
+        },
+        {
+          label: 'Cancelar membresía',
+          icon: XCircle,
+          variant: 'danger',
+          hidden: (row) => !row.membershipId || (row.membershipStatus !== 'active' && row.membershipStatus !== 'frozen'),
+          onClick: (row, { reload, notify }) => setCancelTarget({ member: row, reload, notify }),
         },
       ]}
     />
@@ -131,6 +156,18 @@ export default function Members() {
           onSaved={(message) => {
             membershipTarget.notify('success', message);
             membershipTarget.reload();
+          }}
+        />
+      )}
+
+      {cancelTarget && (
+        <CancelMembershipModal
+          key={`cancel-${cancelTarget.member.id}`}
+          target={cancelTarget}
+          onClose={() => setCancelTarget(null)}
+          onCancelled={(message) => {
+            cancelTarget.notify('success', message);
+            cancelTarget.reload();
           }}
         />
       )}

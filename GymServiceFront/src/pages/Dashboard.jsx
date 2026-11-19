@@ -8,6 +8,7 @@ import api from '../services/api';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
+import { formatCurrency } from '../utils/format';
 
 const statCards = [
   { label: 'Miembros', value: 'members', icon: Users, color: 'brand' },
@@ -28,6 +29,7 @@ const colorMap = {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState({ members: 0, sales: 0, inventory: 0, staff: 0, classes: 0 });
+  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,12 +38,13 @@ export default function Dashboard() {
 
   const loadStats = async () => {
     try {
-      const [members, sales, inventory, staff, classes] = await Promise.all([
+      const [members, sales, inventory, staff, classes, dashboard] = await Promise.all([
         api.get('/members').catch(() => ({ data: { data: [], pagination: { totalCount: 0 } } })),
         api.get('/sales').catch(() => ({ data: { data: [], pagination: { totalCount: 0 } } })),
         api.get('/inventory').catch(() => ({ data: { data: [], pagination: { totalCount: 0 } } })),
         api.get('/staff').catch(() => ({ data: { data: [], pagination: { totalCount: 0 } } })),
         api.get('/classes').catch(() => ({ data: { data: [], pagination: { totalCount: 0 } } })),
+        api.get('/dashboard/summary').catch(() => ({ data: { data: null } })),
       ]);
 
       const getCount = (resp) => {
@@ -58,6 +61,7 @@ export default function Dashboard() {
         staff: getCount(staff),
         classes: getCount(classes),
       });
+      setSummary(dashboard.data?.data || null);
     } catch (err) {
       console.error('Error cargando estadísticas:', err);
     } finally {
@@ -110,6 +114,23 @@ export default function Dashboard() {
           );
         })}
       </div>
+
+      {summary && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 lg:gap-6 mb-6">
+          {[
+            { label: 'Ingresos hoy', value: formatCurrency(summary.salesToday + summary.paymentsToday) },
+            { label: 'Membresías activas', value: summary.activeMemberships },
+            { label: 'Por vencer (7 días)', value: summary.expiringSoon },
+            { label: 'Accesos hoy', value: summary.accessToday },
+            { label: 'Stock bajo', value: summary.lowStock },
+          ].map((item) => (
+            <div key={item.label} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{item.label}</p>
+              <p className="mt-2 text-xl font-bold text-slate-800">{item.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Bottom section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">

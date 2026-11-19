@@ -42,12 +42,13 @@ namespace AxDatabase
                                      new MappingAttribute(4,"DEVICE_ID","DEVICE_ID",MappingAttribute.ColumnTypes.Null,DataType.String,100,20,8,String.Empty,String.Empty,false,false),
                                      new MappingAttribute(5,"REASON","REASON",MappingAttribute.ColumnTypes.Null,DataType.String,500,20,8,String.Empty,String.Empty,false,false),
                                      new MappingAttribute(6,"ACCESSED_AT","ACCESSED_AT",MappingAttribute.ColumnTypes.NotNull,DataType.DateTime2,250,20,8,"GETDATE()",String.Empty,false,false),
-                                     new MappingAttribute(7,"CREATION_DATETIME","CREATED_AT",MappingAttribute.ColumnTypes.InsertTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
-                                     new MappingAttribute(8,"LAST_UPDATED_DATETIME","UPDATED_AT",MappingAttribute.ColumnTypes.UpdateTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
-                                     new MappingAttribute(9,"CREATED_BY","CREATED_BY",MappingAttribute.ColumnTypes.InsertTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
-                                     new MappingAttribute(10,"LAST_UPDATED_BY","LAST_UPDATED_BY",MappingAttribute.ColumnTypes.UpdateTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
-                                     new MappingAttribute(11,"LAST_UPDATE_LOG","LAST_UPDATE_LOG",MappingAttribute.ColumnTypes.LogTracking,DataType.String,100,20,8,"[EMPTY]",String.Empty,false,false),
-                                     new MappingAttribute(12,"OBJECT_VERSION","OBJECT_VERSION",MappingAttribute.ColumnTypes.VersionTracking,DataType.Int32,250,20,8,"1",String.Empty,false,false)
+                                     new MappingAttribute(7,"AUTHORIZED_BY","AUTHORIZED_BY",MappingAttribute.ColumnTypes.Null,DataType.Int64,250,20,8,String.Empty,String.Empty,false,false),
+                                     new MappingAttribute(8,"CREATION_DATETIME","CREATED_AT",MappingAttribute.ColumnTypes.InsertTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
+                                     new MappingAttribute(9,"LAST_UPDATED_DATETIME","UPDATED_AT",MappingAttribute.ColumnTypes.UpdateTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
+                                     new MappingAttribute(10,"CREATED_BY","CREATED_BY",MappingAttribute.ColumnTypes.InsertTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
+                                     new MappingAttribute(11,"LAST_UPDATED_BY","LAST_UPDATED_BY",MappingAttribute.ColumnTypes.UpdateTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
+                                     new MappingAttribute(12,"LAST_UPDATE_LOG","LAST_UPDATE_LOG",MappingAttribute.ColumnTypes.LogTracking,DataType.String,100,20,8,"[EMPTY]",String.Empty,false,false),
+                                     new MappingAttribute(13,"OBJECT_VERSION","OBJECT_VERSION",MappingAttribute.ColumnTypes.VersionTracking,DataType.Int32,250,20,8,"1",String.Empty,false,false)
                                   },
                                   new MappingIndex[]
                                   { 
@@ -63,7 +64,7 @@ namespace AxDatabase
 
 
       private Boolean a_indatabase = false;
-      private Boolean[] a_attributeschanges = new Boolean[13];
+      private Boolean[] a_attributeschanges = new Boolean[14];
       private ReportList a_relateobjects = new ReportList();
       private Object a_tag = null;
 
@@ -75,6 +76,7 @@ namespace AxDatabase
       private String a_device_id = null;
       private String a_reason = null;
       private DateTime a_accessed_at = DateTime.Now;
+      private Int64? a_authorized_by = null;
       private DateTime a_creation_datetime = DateTime.Now;
       private DateTime a_last_updated_datetime = DateTime.Now;
       private Int64 a_created_by = -1;
@@ -90,12 +92,13 @@ namespace AxDatabase
       public const Int32 AttributeID_DEVICE_ID = 4;
       public const Int32 AttributeID_REASON = 5;
       public const Int32 AttributeID_ACCESSED_AT = 6;
-      public const Int32 AttributeID_CREATION_DATETIME = 7;
-      public const Int32 AttributeID_LAST_UPDATED_DATETIME = 8;
-      public const Int32 AttributeID_CREATED_BY = 9;
-      public const Int32 AttributeID_LAST_UPDATED_BY = 10;
-      public const Int32 AttributeID_LAST_UPDATE_LOG = 11;
-      public const Int32 AttributeID_OBJECT_VERSION = 12;
+      public const Int32 AttributeID_AUTHORIZED_BY = 7;
+      public const Int32 AttributeID_CREATION_DATETIME = 8;
+      public const Int32 AttributeID_LAST_UPDATED_DATETIME = 9;
+      public const Int32 AttributeID_CREATED_BY = 10;
+      public const Int32 AttributeID_LAST_UPDATED_BY = 11;
+      public const Int32 AttributeID_LAST_UPDATE_LOG = 12;
+      public const Int32 AttributeID_OBJECT_VERSION = 13;
 
 
 
@@ -192,6 +195,18 @@ namespace AxDatabase
       {
         get { return a_accessed_at; }
         set { a_accessed_at = value; TrackChanges(6); }
+      }
+
+
+      /// <summary>
+      /// Propiedad para SET o GET del atributo 'AUTHORIZED_BY' que representa la columna 'AUTHORIZED_BY' en la base de datos  
+      /// Generado por Anxo Code Generator 
+      /// </summary> 
+
+      public Int64? AUTHORIZED_BY
+      {
+        get { return a_authorized_by; }
+        set { a_authorized_by = value; TrackChanges(7); }
       }
 
 
@@ -311,28 +326,32 @@ namespace AxDatabase
                  TrackChanges(6);
                  break;
                case 7:
-                 a_creation_datetime= (DateTime) value;
+                 a_authorized_by= (Int64?) value;
                  TrackChanges(7);
                  break;
                case 8:
-                 a_last_updated_datetime= (DateTime) value;
+                 a_creation_datetime= (DateTime) value;
                  TrackChanges(8);
                  break;
                case 9:
-                 a_created_by= (Int64) value;
+                 a_last_updated_datetime= (DateTime) value;
                  TrackChanges(9);
                  break;
                case 10:
-                 a_last_updated_by= (Int64) value;
+                 a_created_by= (Int64) value;
                  TrackChanges(10);
                  break;
                case 11:
-                 a_last_update_log= (String) value;
+                 a_last_updated_by= (Int64) value;
                  TrackChanges(11);
                  break;
                case 12:
-                 a_object_version= (Int32) value;
+                 a_last_update_log= (String) value;
                  TrackChanges(12);
+                 break;
+               case 13:
+                 a_object_version= (Int32) value;
+                 TrackChanges(13);
                  break;
             }
          }
@@ -355,16 +374,18 @@ namespace AxDatabase
                case 6:
                  return a_accessed_at;
                case 7:
-                 return a_creation_datetime;
+                 return a_authorized_by;
                case 8:
-                 return a_last_updated_datetime;
+                 return a_creation_datetime;
                case 9:
-                 return a_created_by;
+                 return a_last_updated_datetime;
                case 10:
-                 return a_last_updated_by;
+                 return a_created_by;
                case 11:
-                 return a_last_update_log;
+                 return a_last_updated_by;
                case 12:
+                 return a_last_update_log;
+               case 13:
                  return a_object_version;
             }
 
@@ -523,6 +544,7 @@ namespace AxDatabase
          objdata.a_device_id = a_device_id;
          objdata.a_reason = a_reason;
          objdata.a_accessed_at = a_accessed_at;
+         objdata.a_authorized_by = a_authorized_by;
          objdata.a_creation_datetime = a_creation_datetime;
          objdata.a_last_updated_datetime = a_last_updated_datetime;
          objdata.a_created_by = a_created_by;

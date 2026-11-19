@@ -8,6 +8,7 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import { formatCurrency, formatDateTime, humanize } from '../utils/format';
+import { Printer } from 'lucide-react';
 
 const TAX_RATE = 0.16;
 
@@ -320,6 +321,15 @@ export default function Sales() {
         { key: 'saleDate', label: 'Fecha', render: (row) => formatDateTime(row.saleDate) },
       ]}
       actions={[
+        {
+          label: 'Recibo',
+          icon: Printer,
+          onClick: async (row) => {
+            const response = await api.get(`/sales/${row.id}/receipt`, { responseType: 'text' });
+            const blob = new Blob([response.data], { type: 'text/html;charset=utf-8' });
+            window.open(URL.createObjectURL(blob), '_blank');
+          },
+        },
         {
           label: 'Registrar devolución',
           icon: RotateCcw,

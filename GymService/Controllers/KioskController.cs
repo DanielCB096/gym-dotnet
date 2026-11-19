@@ -74,6 +74,20 @@ namespace GymService.Controllers
             return success ? Ok(response) : BadRequest(response);
         }
 
+        [HttpPost]
+        [Route("api/kiosk/devices/{deviceId}/rotate")]
+        public ActionResult<Dictionary<string, object>> RotateDeviceToken(long deviceId)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Kiosk == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Kiosk.RotateDeviceToken(deviceId, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
         [HttpPut]
         [Route("api/kiosk/devices/{deviceId}/deactivate")]
         public ActionResult<Dictionary<string, object>> DeactivateDevice(long deviceId)

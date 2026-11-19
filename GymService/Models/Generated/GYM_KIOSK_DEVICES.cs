@@ -40,12 +40,13 @@ namespace AxDatabase
                                      new MappingAttribute(2,"DEVICE_TOKEN_HASH","DEVICE_TOKEN_HASH",MappingAttribute.ColumnTypes.NotNull,DataType.String,128,20,8,String.Empty,String.Empty,false,false),
                                      new MappingAttribute(3,"IS_ACTIVE","IS_ACTIVE",MappingAttribute.ColumnTypes.NotNull,DataType.Boolean,250,20,8,"1",String.Empty,false,false),
                                      new MappingAttribute(4,"LAST_SEEN","LAST_SEEN",MappingAttribute.ColumnTypes.Null,DataType.DateTime2,250,20,8,String.Empty,String.Empty,false,false),
-                                     new MappingAttribute(5,"CREATION_DATETIME","CREATED_AT",MappingAttribute.ColumnTypes.InsertTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
-                                     new MappingAttribute(6,"LAST_UPDATED_DATETIME","UPDATED_AT",MappingAttribute.ColumnTypes.UpdateTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
-                                     new MappingAttribute(7,"CREATED_BY","CREATED_BY",MappingAttribute.ColumnTypes.InsertTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
-                                     new MappingAttribute(8,"LAST_UPDATED_BY","LAST_UPDATED_BY",MappingAttribute.ColumnTypes.UpdateTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
-                                     new MappingAttribute(9,"LAST_UPDATE_LOG","LAST_UPDATE_LOG",MappingAttribute.ColumnTypes.LogTracking,DataType.String,100,20,8,"[EMPTY]",String.Empty,false,false),
-                                     new MappingAttribute(10,"OBJECT_VERSION","OBJECT_VERSION",MappingAttribute.ColumnTypes.VersionTracking,DataType.Int32,250,20,8,"1",String.Empty,false,false)
+                                     new MappingAttribute(5,"TOKEN_EXPIRES_AT","TOKEN_EXPIRES_AT",MappingAttribute.ColumnTypes.Null,DataType.DateTime2,250,20,8,String.Empty,String.Empty,false,false),
+                                     new MappingAttribute(6,"CREATION_DATETIME","CREATED_AT",MappingAttribute.ColumnTypes.InsertTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
+                                     new MappingAttribute(7,"LAST_UPDATED_DATETIME","UPDATED_AT",MappingAttribute.ColumnTypes.UpdateTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
+                                     new MappingAttribute(8,"CREATED_BY","CREATED_BY",MappingAttribute.ColumnTypes.InsertTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
+                                     new MappingAttribute(9,"LAST_UPDATED_BY","LAST_UPDATED_BY",MappingAttribute.ColumnTypes.UpdateTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
+                                     new MappingAttribute(10,"LAST_UPDATE_LOG","LAST_UPDATE_LOG",MappingAttribute.ColumnTypes.LogTracking,DataType.String,100,20,8,"[EMPTY]",String.Empty,false,false),
+                                     new MappingAttribute(11,"OBJECT_VERSION","OBJECT_VERSION",MappingAttribute.ColumnTypes.VersionTracking,DataType.Int32,250,20,8,"1",String.Empty,false,false)
                                   },
                                   new MappingIndex[]
                                   { 
@@ -59,7 +60,7 @@ namespace AxDatabase
 
 
       private Boolean a_indatabase = false;
-      private Boolean[] a_attributeschanges = new Boolean[11];
+      private Boolean[] a_attributeschanges = new Boolean[12];
       private ReportList a_relateobjects = new ReportList();
       private Object a_tag = null;
 
@@ -69,6 +70,7 @@ namespace AxDatabase
       private String a_device_token_hash = String.Empty;
       private Boolean a_is_active = true;
       private DateTime? a_last_seen = null;
+      private DateTime? a_token_expires_at = null;
       private DateTime a_creation_datetime = DateTime.Now;
       private DateTime a_last_updated_datetime = DateTime.Now;
       private Int64 a_created_by = -1;
@@ -82,12 +84,13 @@ namespace AxDatabase
       public const Int32 AttributeID_DEVICE_TOKEN_HASH = 2;
       public const Int32 AttributeID_IS_ACTIVE = 3;
       public const Int32 AttributeID_LAST_SEEN = 4;
-      public const Int32 AttributeID_CREATION_DATETIME = 5;
-      public const Int32 AttributeID_LAST_UPDATED_DATETIME = 6;
-      public const Int32 AttributeID_CREATED_BY = 7;
-      public const Int32 AttributeID_LAST_UPDATED_BY = 8;
-      public const Int32 AttributeID_LAST_UPDATE_LOG = 9;
-      public const Int32 AttributeID_OBJECT_VERSION = 10;
+      public const Int32 AttributeID_TOKEN_EXPIRES_AT = 5;
+      public const Int32 AttributeID_CREATION_DATETIME = 6;
+      public const Int32 AttributeID_LAST_UPDATED_DATETIME = 7;
+      public const Int32 AttributeID_CREATED_BY = 8;
+      public const Int32 AttributeID_LAST_UPDATED_BY = 9;
+      public const Int32 AttributeID_LAST_UPDATE_LOG = 10;
+      public const Int32 AttributeID_OBJECT_VERSION = 11;
 
 
 
@@ -160,6 +163,18 @@ namespace AxDatabase
       {
         get { return a_last_seen; }
         set { a_last_seen = value; TrackChanges(4); }
+      }
+
+
+      /// <summary>
+      /// Propiedad para SET o GET del atributo 'TOKEN_EXPIRES_AT' que representa la columna 'TOKEN_EXPIRES_AT' en la base de datos  
+      /// Generado por Anxo Code Generator 
+      /// </summary> 
+
+      public DateTime? TOKEN_EXPIRES_AT
+      {
+        get { return a_token_expires_at; }
+        set { a_token_expires_at = value; TrackChanges(5); }
       }
 
 
@@ -271,28 +286,32 @@ namespace AxDatabase
                  TrackChanges(4);
                  break;
                case 5:
-                 a_creation_datetime= (DateTime) value;
+                 a_token_expires_at= (DateTime?) value;
                  TrackChanges(5);
                  break;
                case 6:
-                 a_last_updated_datetime= (DateTime) value;
+                 a_creation_datetime= (DateTime) value;
                  TrackChanges(6);
                  break;
                case 7:
-                 a_created_by= (Int64) value;
+                 a_last_updated_datetime= (DateTime) value;
                  TrackChanges(7);
                  break;
                case 8:
-                 a_last_updated_by= (Int64) value;
+                 a_created_by= (Int64) value;
                  TrackChanges(8);
                  break;
                case 9:
-                 a_last_update_log= (String) value;
+                 a_last_updated_by= (Int64) value;
                  TrackChanges(9);
                  break;
                case 10:
-                 a_object_version= (Int32) value;
+                 a_last_update_log= (String) value;
                  TrackChanges(10);
+                 break;
+               case 11:
+                 a_object_version= (Int32) value;
+                 TrackChanges(11);
                  break;
             }
          }
@@ -311,16 +330,18 @@ namespace AxDatabase
                case 4:
                  return a_last_seen;
                case 5:
-                 return a_creation_datetime;
+                 return a_token_expires_at;
                case 6:
-                 return a_last_updated_datetime;
+                 return a_creation_datetime;
                case 7:
-                 return a_created_by;
+                 return a_last_updated_datetime;
                case 8:
-                 return a_last_updated_by;
+                 return a_created_by;
                case 9:
-                 return a_last_update_log;
+                 return a_last_updated_by;
                case 10:
+                 return a_last_update_log;
+               case 11:
                  return a_object_version;
             }
 
@@ -477,6 +498,7 @@ namespace AxDatabase
          objdata.a_device_token_hash = a_device_token_hash;
          objdata.a_is_active = a_is_active;
          objdata.a_last_seen = a_last_seen;
+         objdata.a_token_expires_at = a_token_expires_at;
          objdata.a_creation_datetime = a_creation_datetime;
          objdata.a_last_updated_datetime = a_last_updated_datetime;
          objdata.a_created_by = a_created_by;

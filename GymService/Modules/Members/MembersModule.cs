@@ -76,10 +76,10 @@ namespace GymService.Modules.Members
                 totalCount = countResult;
 
                 // Main query with pagination (SQL Server OFFSET/FETCH)
-                var sql = $"SELECT m.*, mem.plan_id, mp.plan_name AS membership_type, mem.start_date, mem.end_date, " +
+                var sql = $"SELECT m.*, mem.id AS membership_id, mem.plan_id, mp.plan_name AS membership_type, mem.start_date, mem.end_date, " +
                     $"m.status AS member_status, mem.status AS membership_status " +
                     $"FROM gym_members m " +
-                    $"OUTER APPLY (SELECT TOP 1 mem2.plan_id, mem2.status, mem2.start_date, mem2.end_date " +
+                    $"OUTER APPLY (SELECT TOP 1 mem2.id, mem2.plan_id, mem2.status, mem2.start_date, mem2.end_date " +
                     $"             FROM gym_memberships mem2 WHERE mem2.member_id = m.id " +
                     $"             ORDER BY CASE WHEN mem2.status = 'active' THEN 0 WHEN mem2.status = 'frozen' THEN 1 ELSE 2 END, mem2.end_date DESC) mem " +
                     $"LEFT JOIN gym_membership_plans mp ON mem.plan_id = mp.id " +
@@ -121,6 +121,7 @@ namespace GymService.Modules.Members
                             ["membershipType"] = membershipType,
                             ["membershipStatus"] = membershipStatus,
                             ["hasActiveMembership"] = membershipStatus == "active",
+                            ["membershipId"] = GetRowValue(row, result, "membership_id") != null ? Convert.ToInt64(GetRowValue(row, result, "membership_id")) : (long?)null,
                             ["membershipEnd"] = membershipEnd
                         });
                     }
@@ -265,15 +266,222 @@ namespace GymService.Modules.Members
         /// <summary>
         /// Get active membership plans
         /// </summary>
-        public bool GetMembershipPlans(out Dictionary<string, object> response)
+        /// <summary>
+        /// Actualiza los datos del socio.
+        /// </summary>
+        public bool UpdateMember(long memberId, Dictionary<string, object> memberData, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var current = GetMemberState(memberId);
+                if (current == null)
+                {
+                    response["success"] = false;
+                    response["message"] = "El socio no existe";
+                    return false;
+                }
+
+                var firstName = memberData.ContainsKey("firstName")
+                    ? (Convert.ToString(memberData["firstName"]) ?? "").Trim()
+                    : current.Value.FirstName;
+
+                var lastName = memberData.ContainsKey("lastName")
+                    ? (Convert.ToString(memberData["lastName"]) ?? "").Trim()
+                    : current.Value.LastName;
+
+                var email = memberData.ContainsKey("email")
+                    ? (Convert.ToString(memberData["email"]) ?? "").Trim()
+                    : current.Value.Email;
+
+                var phone = memberData.ContainsKey("phone")
+                    ? (Convert.ToString(memberData["phone"]) ?? "").Trim()
+                    : current.Value.Phone;
+
+                var status = memberData.ContainsKey("status")
+                    ? (Convert.ToString(memberData["status"]) ?? "").Trim().ToLowerInvariant()
+                    : current.Value.Status;
+
+                if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName))
+                {
+                    response["success"] = false;
+                    response["message"] = "El nombre y el apellido son requeridos";
+                    return false;
+                }
+
+                if (status != "active" && status != "inactive" && status != "pending")
+                {
+                    response["success"] = false;
+                    response["message"] = "Estado de socio no válido";
+                    return false;
+                }
+
+                if (!string.IsNullOrWhiteSpace(email))
+                {
+                    long duplicateEmail = _tools.ExecuteQueryObjectCount(
+                        "SELECT COUNT(*) FROM GYM_MEMBERS WHERE EMAIL = ? AND ID <> ?", email, memberId);
+
+                    if (duplicateEmail > 0)
+                    {
+                        response["success"] = false;
+                        response["message"] = "Ya existe otro socio con ese correo";
+                        return false;
+                    }
+                }
+
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                session.UpdateObjectChanges(new GYM_MEMBERS
+                {
+                    ID = memberId,
+                    FIRST_NAME = firstName,
+                    LAST_NAME = lastName,
+                    EMAIL = email,
+                    PHONE = phone,
+                    STATUS = status
+                });
+
+                if (session.TryExecute().IsError)
+                {
+                    response["success"] = false;
+                    response["message"] = "Error al actualizar el socio";
+                    return false;
+                }
+
+                response["success"] = true;
+                response["message"] = "Socio actualizado correctamente";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en UpdateMember: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Lista el historial de membresías de un socio.
+        /// </summary>
+        public bool GetMembershipHistory(long memberId, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var result = _tools.ExecuteQueryResultSet(@"
+                    SELECT m.*, p.PLAN_NAME
+                    FROM GYM_MEMBERSHIPS m
+                    INNER JOIN GYM_MEMBERSHIP_PLANS p ON p.ID = m.PLAN_ID
+                    WHERE m.MEMBER_ID = ?
+                    ORDER BY m.START_DATE DESC, m.ID DESC", memberId);
+
+                var items = new List<Dictionary<string, object>>();
+                if (result != null)
+                {
+                    foreach (Row row in result.Rows)
+                    {
+                        items.Add(new Dictionary<string, object>
+                        {
+                            ["id"] = Convert.ToInt64(GetRowValue(row, result, "id")),
+                            ["planId"] = Convert.ToInt64(GetRowValue(row, result, "plan_id")),
+                            ["planName"] = Convert.ToString(GetRowValue(row, result, "plan_name")) ?? "",
+                            ["startDate"] = GetRowValue(row, result, "start_date") != null ? Convert.ToDateTime(GetRowValue(row, result, "start_date")) : (DateTime?)null,
+                            ["endDate"] = GetRowValue(row, result, "end_date") != null ? Convert.ToDateTime(GetRowValue(row, result, "end_date")) : (DateTime?)null,
+                            ["status"] = Convert.ToString(GetRowValue(row, result, "status")) ?? "",
+                            ["autoRenew"] = GetRowValue(row, result, "auto_renew") != null && Convert.ToBoolean(GetRowValue(row, result, "auto_renew")),
+                            ["cancelledAt"] = GetRowValue(row, result, "cancelled_at") != null ? Convert.ToDateTime(GetRowValue(row, result, "cancelled_at")) : (DateTime?)null,
+                            ["cancelReason"] = Convert.ToString(GetRowValue(row, result, "cancel_reason")) ?? ""
+                        });
+                    }
+                }
+
+                response["success"] = true;
+                response["data"] = items;
+                response["count"] = items.Count;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en GetMembershipHistory: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Cancela una membresía con motivo.
+        /// </summary>
+        public bool CancelMembership(long membershipId, string reason, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                reason = (reason ?? "").Trim();
+                if (string.IsNullOrWhiteSpace(reason))
+                {
+                    response["success"] = false;
+                    response["message"] = "El motivo de cancelación es requerido";
+                    return false;
+                }
+
+                var membership = GetMembershipState(membershipId);
+                if (membership == null)
+                {
+                    response["success"] = false;
+                    response["message"] = "La membresía no existe";
+                    return false;
+                }
+
+                if (string.Equals(membership.Value.Status, "cancelled", StringComparison.OrdinalIgnoreCase))
+                {
+                    response["success"] = false;
+                    response["message"] = "La membresía ya está cancelada";
+                    return false;
+                }
+
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                session.UpdateObjectChanges(new GYM_MEMBERSHIPS
+                {
+                    ID = membershipId,
+                    STATUS = "cancelled",
+                    CANCELLED_AT = DateTime.Now,
+                    CANCEL_REASON = reason
+                });
+
+                if (session.TryExecute().IsError)
+                {
+                    response["success"] = false;
+                    response["message"] = "Error al cancelar la membresía";
+                    return false;
+                }
+
+                Logger.AddInfoSubModule(SubModule, $"Membresía {membershipId} cancelada: {reason}");
+                response["success"] = true;
+                response["message"] = "Membresía cancelada correctamente";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en CancelMembership: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        public bool GetMembershipPlans(out Dictionary<string, object> response, bool includeInactive = false)
         {
             response = new Dictionary<string, object>();
 
             try
             {
                 var result = _tools.ExecuteQueryResultSet(
-                    "SELECT id, plan_name, description, price, currency, duration_days, max_daily_entries, includes_classes, includes_premium_classes " +
-                    "FROM gym_membership_plans WHERE is_active = 1 ORDER BY price"
+                    "SELECT id, plan_name, description, price, currency, duration_days, max_daily_entries, includes_classes, includes_premium_classes, is_active " +
+                    $"FROM gym_membership_plans {(includeInactive ? "" : "WHERE is_active = 1")} ORDER BY price"
                 );
 
                 var plans = new List<Dictionary<string, object>>();
@@ -291,7 +499,8 @@ namespace GymService.Modules.Members
                             ["durationDays"] = Convert.ToInt32(GetRowValue(row, result, "duration_days")),
                             ["maxDailyEntries"] = Convert.ToInt32(GetRowValue(row, result, "max_daily_entries")),
                             ["includesClasses"] = Convert.ToBoolean(GetRowValue(row, result, "includes_classes")),
-                            ["includesPremiumClasses"] = Convert.ToBoolean(GetRowValue(row, result, "includes_premium_classes"))
+                            ["includesPremiumClasses"] = Convert.ToBoolean(GetRowValue(row, result, "includes_premium_classes")),
+                            ["isActive"] = Convert.ToBoolean(GetRowValue(row, result, "is_active"))
                         });
                     }
                 }
@@ -304,6 +513,201 @@ namespace GymService.Modules.Members
             catch (Exception ex)
             {
                 Logger.AddErrorSubModule(SubModule, $"Error en GetMembershipPlans: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Crea un plan de membresía.
+        /// </summary>
+        public bool CreatePlan(Dictionary<string, object> data, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var name = (Convert.ToString(data.GetValueOrDefault("planName", "")) ?? "").Trim();
+                var description = (Convert.ToString(data.GetValueOrDefault("description", "")) ?? "").Trim();
+                var price = data.ContainsKey("price") ? Convert.ToDecimal(data["price"]) : 0m;
+                var currency = (Convert.ToString(data.GetValueOrDefault("currency", "MXN")) ?? "MXN").Trim().ToUpperInvariant();
+                var durationDays = data.ContainsKey("durationDays") ? Convert.ToInt32(data["durationDays"]) : 30;
+                var maxDailyEntries = data.ContainsKey("maxDailyEntries") ? Convert.ToInt32(data["maxDailyEntries"]) : -1;
+                var includesClasses = !data.ContainsKey("includesClasses") || Convert.ToBoolean(data["includesClasses"]);
+                var includesPremiumClasses = data.ContainsKey("includesPremiumClasses") && Convert.ToBoolean(data["includesPremiumClasses"]);
+                var isActive = !data.ContainsKey("isActive") || Convert.ToBoolean(data["isActive"]);
+
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    response["success"] = false;
+                    response["message"] = "El nombre del plan es requerido";
+                    return false;
+                }
+
+                if (durationDays <= 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "La duración debe ser mayor a cero días";
+                    return false;
+                }
+
+                if (price < 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "El precio no puede ser negativo";
+                    return false;
+                }
+
+                long duplicate = _tools.ExecuteQueryObjectCount(
+                    "SELECT COUNT(*) FROM GYM_MEMBERSHIP_PLANS WHERE PLAN_NAME = ?", name);
+
+                if (duplicate > 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "Ya existe un plan con ese nombre";
+                    return false;
+                }
+
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                long planId = _tools.GenerateUniqueID(GYM_MEMBERSHIP_PLANS.DatabaseMappingObject, 1).GetInt64UniqueId();
+
+                session.InsertObjectWithID(new GYM_MEMBERSHIP_PLANS
+                {
+                    ID = planId,
+                    PLAN_NAME = name,
+                    DESCRIPTION = description,
+                    PRICE = price,
+                    CURRENCY = string.IsNullOrWhiteSpace(currency) ? "MXN" : currency,
+                    DURATION_DAYS = durationDays,
+                    MAX_DAILY_ENTRIES = maxDailyEntries,
+                    INCLUDES_CLASSES = includesClasses,
+                    INCLUDES_PREMIUM_CLASSES = includesPremiumClasses,
+                    IS_ACTIVE = isActive
+                });
+
+                if (session.TryExecute().IsError)
+                {
+                    response["success"] = false;
+                    response["message"] = "Error al crear el plan";
+                    return false;
+                }
+
+                response["success"] = true;
+                response["planId"] = planId;
+                response["message"] = "Plan creado correctamente";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en CreatePlan: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Actualiza un plan de membresía.
+        /// </summary>
+        public bool UpdatePlan(long planId, Dictionary<string, object> data, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var current = GetPlanState(planId);
+                if (current == null)
+                {
+                    response["success"] = false;
+                    response["message"] = "El plan no existe";
+                    return false;
+                }
+
+                var name = data.ContainsKey("planName")
+                    ? (Convert.ToString(data["planName"]) ?? "").Trim()
+                    : current.Value.Name;
+
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    response["success"] = false;
+                    response["message"] = "El nombre del plan es requerido";
+                    return false;
+                }
+
+                long duplicate = _tools.ExecuteQueryObjectCount(
+                    "SELECT COUNT(*) FROM GYM_MEMBERSHIP_PLANS WHERE PLAN_NAME = ? AND ID <> ?", name, planId);
+
+                if (duplicate > 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "Ya existe otro plan con ese nombre";
+                    return false;
+                }
+
+                var durationDays = data.ContainsKey("durationDays") ? Convert.ToInt32(data["durationDays"]) : current.Value.DurationDays;
+                if (durationDays <= 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "La duración debe ser mayor a cero días";
+                    return false;
+                }
+
+                var price = data.ContainsKey("price") ? Convert.ToDecimal(data["price"]) : current.Value.Price;
+                if (price < 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "El precio no puede ser negativo";
+                    return false;
+                }
+
+                var currency = data.ContainsKey("currency")
+                    ? (Convert.ToString(data["currency"]) ?? "MXN").Trim().ToUpperInvariant()
+                    : current.Value.Currency;
+
+                var maxDailyEntries = data.ContainsKey("maxDailyEntries")
+                    ? Convert.ToInt32(data["maxDailyEntries"])
+                    : current.Value.MaxDailyEntries;
+
+                var isActive = data.ContainsKey("isActive")
+                    ? Convert.ToBoolean(data["isActive"])
+                    : current.Value.IsActive;
+
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                session.UpdateObjectChanges(new GYM_MEMBERSHIP_PLANS
+                {
+                    ID = planId,
+                    PLAN_NAME = name,
+                    DESCRIPTION = data.ContainsKey("description")
+                        ? (Convert.ToString(data["description"]) ?? "").Trim()
+                        : current.Value.Description,
+                    PRICE = price,
+                    CURRENCY = string.IsNullOrWhiteSpace(currency) ? "MXN" : currency,
+                    DURATION_DAYS = durationDays,
+                    MAX_DAILY_ENTRIES = maxDailyEntries,
+                    INCLUDES_CLASSES = data.ContainsKey("includesClasses")
+                        ? Convert.ToBoolean(data["includesClasses"])
+                        : current.Value.IncludesClasses,
+                    INCLUDES_PREMIUM_CLASSES = data.ContainsKey("includesPremiumClasses")
+                        ? Convert.ToBoolean(data["includesPremiumClasses"])
+                        : current.Value.IncludesPremiumClasses,
+                    IS_ACTIVE = isActive
+                });
+
+                if (session.TryExecute().IsError)
+                {
+                    response["success"] = false;
+                    response["message"] = "Error al actualizar el plan";
+                    return false;
+                }
+
+                response["success"] = true;
+                response["message"] = "Plan actualizado correctamente";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en UpdatePlan: {ex.Message}");
                 response["success"] = false;
                 response["message"] = "Error interno del servidor";
                 return false;
@@ -405,7 +809,11 @@ namespace GymService.Modules.Members
                     MEMBER_ID = memberId,
                     MEMBERSHIP_ID = membershipId,
                     AMOUNT = amount,
-                    PAYMENT_METHOD = paymentMethod
+                    CURRENCY = "MXN",
+                    PAYMENT_METHOD = paymentMethod,
+                    PAYMENT_DATE = DateTime.Now,
+                    NOTES = "",
+                    CASH_SESSION_ID = GymService.Modules.Cash.CashModule.GetOpenSessionId(_tools)
                 });
 
                 if (session.TryExecute().IsError)
@@ -569,7 +977,8 @@ namespace GymService.Modules.Members
                         PAYMENT_METHOD = paymentMethod,
                         PAYMENT_DATE = DateTime.Now,
                         REFERENCE = Convert.ToString(data.GetValueOrDefault("reference", "")) ?? "",
-                        NOTES = (Convert.ToString(data.GetValueOrDefault("notes", "")) ?? "").Trim()
+                        NOTES = (Convert.ToString(data.GetValueOrDefault("notes", "")) ?? "").Trim(),
+                        CASH_SESSION_ID = GymService.Modules.Cash.CashModule.GetOpenSessionId(_tools)
                     });
                 }
 
@@ -663,6 +1072,43 @@ namespace GymService.Modules.Members
             }
         }
 
+        private (string FirstName, string LastName, string Email, string Phone, string Status)? GetMemberState(long memberId)
+        {
+            var result = _tools.ExecuteQueryResultSet(
+                "SELECT FIRST_NAME, LAST_NAME, EMAIL, PHONE, STATUS FROM GYM_MEMBERS WHERE ID = ?", memberId);
+
+            if (result == null || result.Rows.Count == 0)
+                return null;
+
+            var row = result.Rows[0];
+
+            return (
+                Convert.ToString(GetRowValue(row, result, "first_name")) ?? "",
+                Convert.ToString(GetRowValue(row, result, "last_name")) ?? "",
+                Convert.ToString(GetRowValue(row, result, "email")) ?? "",
+                Convert.ToString(GetRowValue(row, result, "phone")) ?? "",
+                Convert.ToString(GetRowValue(row, result, "status")) ?? "active"
+            );
+        }
+
+        private (long Id, string Status, DateTime StartDate, DateTime EndDate)? GetMembershipState(long membershipId)
+        {
+            var result = _tools.ExecuteQueryResultSet(
+                "SELECT ID, STATUS, START_DATE, END_DATE FROM GYM_MEMBERSHIPS WHERE ID = ?", membershipId);
+
+            if (result == null || result.Rows.Count == 0)
+                return null;
+
+            var row = result.Rows[0];
+
+            return (
+                Convert.ToInt64(GetRowValue(row, result, "id")),
+                Convert.ToString(GetRowValue(row, result, "status")) ?? "",
+                Convert.ToDateTime(GetRowValue(row, result, "start_date")),
+                Convert.ToDateTime(GetRowValue(row, result, "end_date"))
+            );
+        }
+
         private string? GetMemberStatus(long memberId)
         {
             var result = _tools.ExecuteQueryResultSet(
@@ -674,7 +1120,8 @@ namespace GymService.Modules.Members
             return Convert.ToString(GetRowValue(result.Rows[0], result, "status")) ?? "";
         }
 
-        private (long Id, string Name, decimal Price, string Currency, int DurationDays, bool IsActive)? GetPlanState(long planId)
+        private (long Id, string Name, string Description, decimal Price, string Currency, int DurationDays,
+                 int MaxDailyEntries, bool IncludesClasses, bool IncludesPremiumClasses, bool IsActive)? GetPlanState(long planId)
         {
             var result = _tools.ExecuteQueryResultSet(
                 "SELECT * FROM GYM_MEMBERSHIP_PLANS WHERE ID = ?", planId);
@@ -687,9 +1134,13 @@ namespace GymService.Modules.Members
             return (
                 Convert.ToInt64(GetRowValue(row, result, "id")),
                 Convert.ToString(GetRowValue(row, result, "plan_name")) ?? "",
+                Convert.ToString(GetRowValue(row, result, "description")) ?? "",
                 Convert.ToDecimal(GetRowValue(row, result, "price")),
                 Convert.ToString(GetRowValue(row, result, "currency")) ?? "MXN",
                 Convert.ToInt32(GetRowValue(row, result, "duration_days")),
+                Convert.ToInt32(GetRowValue(row, result, "max_daily_entries")),
+                Convert.ToBoolean(GetRowValue(row, result, "includes_classes")),
+                Convert.ToBoolean(GetRowValue(row, result, "includes_premium_classes")),
                 Convert.ToBoolean(GetRowValue(row, result, "is_active"))
             );
         }

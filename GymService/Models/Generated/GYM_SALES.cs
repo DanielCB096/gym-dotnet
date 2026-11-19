@@ -45,12 +45,13 @@ namespace AxDatabase
                                      new MappingAttribute(7,"IS_OFFLINE","IS_OFFLINE",MappingAttribute.ColumnTypes.NotNull,DataType.Boolean,250,20,8,"0",String.Empty,false,false),
                                      new MappingAttribute(8,"STATUS","STATUS",MappingAttribute.ColumnTypes.NotNull,DataType.String,20,20,8,"completed",String.Empty,false,false),
                                      new MappingAttribute(9,"RETURNED_AT","RETURNED_AT",MappingAttribute.ColumnTypes.Null,DataType.DateTime2,250,20,8,String.Empty,String.Empty,false,false),
-                                     new MappingAttribute(10,"CREATION_DATETIME","CREATED_AT",MappingAttribute.ColumnTypes.InsertTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
-                                     new MappingAttribute(11,"LAST_UPDATED_DATETIME","UPDATED_AT",MappingAttribute.ColumnTypes.UpdateTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
-                                     new MappingAttribute(12,"CREATED_BY","CREATED_BY",MappingAttribute.ColumnTypes.InsertTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
-                                     new MappingAttribute(13,"LAST_UPDATED_BY","LAST_UPDATED_BY",MappingAttribute.ColumnTypes.UpdateTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
-                                     new MappingAttribute(14,"LAST_UPDATE_LOG","LAST_UPDATE_LOG",MappingAttribute.ColumnTypes.LogTracking,DataType.String,100,20,8,"[EMPTY]",String.Empty,false,false),
-                                     new MappingAttribute(15,"OBJECT_VERSION","OBJECT_VERSION",MappingAttribute.ColumnTypes.VersionTracking,DataType.Int32,250,20,8,"1",String.Empty,false,false)
+                                     new MappingAttribute(10,"CASH_SESSION_ID","CASH_SESSION_ID",MappingAttribute.ColumnTypes.Null,DataType.Int64,250,20,8,String.Empty,String.Empty,false,false),
+                                     new MappingAttribute(11,"CREATION_DATETIME","CREATED_AT",MappingAttribute.ColumnTypes.InsertTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
+                                     new MappingAttribute(12,"LAST_UPDATED_DATETIME","UPDATED_AT",MappingAttribute.ColumnTypes.UpdateTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
+                                     new MappingAttribute(13,"CREATED_BY","CREATED_BY",MappingAttribute.ColumnTypes.InsertTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
+                                     new MappingAttribute(14,"LAST_UPDATED_BY","LAST_UPDATED_BY",MappingAttribute.ColumnTypes.UpdateTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
+                                     new MappingAttribute(15,"LAST_UPDATE_LOG","LAST_UPDATE_LOG",MappingAttribute.ColumnTypes.LogTracking,DataType.String,100,20,8,"[EMPTY]",String.Empty,false,false),
+                                     new MappingAttribute(16,"OBJECT_VERSION","OBJECT_VERSION",MappingAttribute.ColumnTypes.VersionTracking,DataType.Int32,250,20,8,"1",String.Empty,false,false)
                                   },
                                   new MappingIndex[]
                                   { 
@@ -65,7 +66,7 @@ namespace AxDatabase
 
 
       private Boolean a_indatabase = false;
-      private Boolean[] a_attributeschanges = new Boolean[16];
+      private Boolean[] a_attributeschanges = new Boolean[17];
       private ReportList a_relateobjects = new ReportList();
       private Object a_tag = null;
 
@@ -80,6 +81,7 @@ namespace AxDatabase
       private Boolean a_is_offline = false;
       private String a_status = "completed";
       private DateTime? a_returned_at = null;
+      private Int64? a_cash_session_id = null;
       private DateTime a_creation_datetime = DateTime.Now;
       private DateTime a_last_updated_datetime = DateTime.Now;
       private Int64 a_created_by = -1;
@@ -98,12 +100,13 @@ namespace AxDatabase
       public const Int32 AttributeID_IS_OFFLINE = 7;
       public const Int32 AttributeID_STATUS = 8;
       public const Int32 AttributeID_RETURNED_AT = 9;
-      public const Int32 AttributeID_CREATION_DATETIME = 10;
-      public const Int32 AttributeID_LAST_UPDATED_DATETIME = 11;
-      public const Int32 AttributeID_CREATED_BY = 12;
-      public const Int32 AttributeID_LAST_UPDATED_BY = 13;
-      public const Int32 AttributeID_LAST_UPDATE_LOG = 14;
-      public const Int32 AttributeID_OBJECT_VERSION = 15;
+      public const Int32 AttributeID_CASH_SESSION_ID = 10;
+      public const Int32 AttributeID_CREATION_DATETIME = 11;
+      public const Int32 AttributeID_LAST_UPDATED_DATETIME = 12;
+      public const Int32 AttributeID_CREATED_BY = 13;
+      public const Int32 AttributeID_LAST_UPDATED_BY = 14;
+      public const Int32 AttributeID_LAST_UPDATE_LOG = 15;
+      public const Int32 AttributeID_OBJECT_VERSION = 16;
 
 
 
@@ -240,6 +243,18 @@ namespace AxDatabase
 
 
       /// <summary>
+      /// Propiedad para SET o GET del atributo 'CASH_SESSION_ID' que representa la columna 'CASH_SESSION_ID' en la base de datos  
+      /// Generado por Anxo Code Generator 
+      /// </summary> 
+
+      public Int64? CASH_SESSION_ID
+      {
+        get { return a_cash_session_id; }
+        set { a_cash_session_id = value; TrackChanges(10); }
+      }
+
+
+      /// <summary>
       /// Propiedad para SET o GET del atributo 'CREATION_DATETIME' que representa la columna 'CREATED_AT' en la base de datos  
       /// Generado por Anxo Code Generator 
       /// </summary> 
@@ -367,28 +382,32 @@ namespace AxDatabase
                  TrackChanges(9);
                  break;
                case 10:
-                 a_creation_datetime= (DateTime) value;
+                 a_cash_session_id= (Int64?) value;
                  TrackChanges(10);
                  break;
                case 11:
-                 a_last_updated_datetime= (DateTime) value;
+                 a_creation_datetime= (DateTime) value;
                  TrackChanges(11);
                  break;
                case 12:
-                 a_created_by= (Int64) value;
+                 a_last_updated_datetime= (DateTime) value;
                  TrackChanges(12);
                  break;
                case 13:
-                 a_last_updated_by= (Int64) value;
+                 a_created_by= (Int64) value;
                  TrackChanges(13);
                  break;
                case 14:
-                 a_last_update_log= (String) value;
+                 a_last_updated_by= (Int64) value;
                  TrackChanges(14);
                  break;
                case 15:
-                 a_object_version= (Int32) value;
+                 a_last_update_log= (String) value;
                  TrackChanges(15);
+                 break;
+               case 16:
+                 a_object_version= (Int32) value;
+                 TrackChanges(16);
                  break;
             }
          }
@@ -417,16 +436,18 @@ namespace AxDatabase
                case 9:
                  return a_returned_at;
                case 10:
-                 return a_creation_datetime;
+                 return a_cash_session_id;
                case 11:
-                 return a_last_updated_datetime;
+                 return a_creation_datetime;
                case 12:
-                 return a_created_by;
+                 return a_last_updated_datetime;
                case 13:
-                 return a_last_updated_by;
+                 return a_created_by;
                case 14:
-                 return a_last_update_log;
+                 return a_last_updated_by;
                case 15:
+                 return a_last_update_log;
+               case 16:
                  return a_object_version;
             }
 
@@ -588,6 +609,7 @@ namespace AxDatabase
          objdata.a_is_offline = a_is_offline;
          objdata.a_status = a_status;
          objdata.a_returned_at = a_returned_at;
+         objdata.a_cash_session_id = a_cash_session_id;
          objdata.a_creation_datetime = a_creation_datetime;
          objdata.a_last_updated_datetime = a_last_updated_datetime;
          objdata.a_created_by = a_created_by;

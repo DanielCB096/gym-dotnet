@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, CalendarCheck } from 'lucide-react';
 import api from '../services/api';
 import Modal from './ui/Modal';
@@ -35,6 +35,18 @@ export default function MembershipModal({ target, plans, onClose, onSaved }) {
   const [autoRenew, setAutoRenew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    if (!member) return () => { active = false; };
+
+    api.get(`/members/${member.id}/memberships`)
+      .then((response) => { if (active) setHistory(response.data?.data || []); })
+      .catch(() => { if (active) setHistory([]); });
+
+    return () => { active = false; };
+  }, [member]);
 
   const selectedPlan = useMemo(
     () => plans.find((plan) => String(plan.id) === String(planId)) || null,
@@ -175,6 +187,25 @@ export default function MembershipModal({ target, plans, onClose, onSaved }) {
                     Nuevo vencimiento estimado: <strong>{formatDate(projectedEnd)}</strong>
                     {isCourtesy ? ' · sin cobro' : ` · cobro ${formatCurrency(Number(amount) || 0)}`}
                   </span>
+                </div>
+              )}
+
+              {history.length > 0 && (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Historial</p>
+                  <div className="max-h-32 space-y-1 overflow-y-auto text-xs text-slate-600">
+                    {history.slice(0, 6).map((item) => (
+                      <div key={item.id} className="flex items-center justify-between gap-2">
+                        <span>{item.planName}</span>
+                        <span className="text-slate-400">
+                          {formatDate(item.startDate)} → {formatDate(item.endDate)}
+                        </span>
+                        <Badge variant={item.status === 'active' ? 'success' : item.status === 'frozen' ? 'warning' : 'neutral'}>
+                          {item.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </>

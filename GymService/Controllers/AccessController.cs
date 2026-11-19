@@ -39,6 +39,24 @@ namespace GymService.Controllers
             return success ? Ok(response) : BadRequest(response);
         }
 
+        [HttpPost]
+        [Route("api/access/manual")]
+        public ActionResult<Dictionary<string, object>> RegisterManualAccess([FromBody] Dictionary<string, object> request)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Access == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            long memberId = request.ContainsKey("memberId") ? Convert.ToInt64(request["memberId"]) : 0L;
+            string reason = Convert.ToString(request.GetValueOrDefault("reason", "")) ?? "";
+            string deviceId = Convert.ToString(request.GetValueOrDefault("deviceId", "reception")) ?? "reception";
+
+            var success = DataCenter.BusinessProcess.Access.RegisterManualAccess(memberId, reason, deviceId, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
         [HttpGet]
         [Route("api/access/logs")]
         public ActionResult<Dictionary<string, object>> GetAccessLogs([FromQuery] string? startDate = null, [FromQuery] string? endDate = null, [FromQuery] int page = 1, [FromQuery] int limit = 50)

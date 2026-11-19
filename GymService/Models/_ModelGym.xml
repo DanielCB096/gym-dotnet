@@ -213,6 +213,8 @@
     <attribute name="FREEZE_END" column="freeze_end" type="date" flag="null" />
 
     <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CANCELLED_AT" column="cancelled_at" type="datetime2" flag="null" />
+    <attribute name="CANCEL_REASON" column="cancel_reason" type="string" flag="null" stringlength="300" />
     <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
     <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
     <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
@@ -253,6 +255,7 @@
     <attribute name="NOTES" column="notes" type="string" flag="null" stringlength="500" />
 
     <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CASH_SESSION_ID" column="cash_session_id" type="int64" flag="null" />
     <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
     <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
     <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
@@ -324,6 +327,7 @@
     <attribute name="ACCESSED_AT" column="accessed_at" type="datetime2" flag="not_null" default="GETDATE()" />
 
     <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="AUTHORIZED_BY" column="authorized_by" type="int64" flag="null" />
     <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
     <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
     <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
@@ -357,6 +361,7 @@
     <attribute name="LAST_SEEN" column="last_seen" type="datetime2" flag="null" />
 
     <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="TOKEN_EXPIRES_AT" column="token_expires_at" type="datetime2" flag="null" />
     <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
     <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
     <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
@@ -414,6 +419,7 @@
     <attribute name="RETURNED_AT" column="returned_at" type="datetime2" flag="null" />
 
     <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CASH_SESSION_ID" column="cash_session_id" type="int64" flag="null" />
     <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
     <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
     <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
@@ -1108,5 +1114,36 @@
 
   </object>
 
+
+  <object name="GYM_CASH_SESSIONS" table="gym_cash_sessions" sequence="GYM_CASH_SESSIONS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="OPENED_AT" column="opened_at" type="datetime2" flag="not_null" />
+    <attribute name="OPENED_BY" column="opened_by" type="int64" flag="not_null" />
+    <attribute name="CLOSED_AT" column="closed_at" type="datetime2" flag="null" />
+    <attribute name="CLOSED_BY" column="closed_by" type="int64" flag="null" />
+    <attribute name="OPENING_AMOUNT" column="opening_amount" type="decimal" flag="not_null" default="0" />
+    <attribute name="CLOSING_AMOUNT" column="closing_amount" type="decimal" flag="null" />
+    <attribute name="EXPECTED_CASH" column="expected_cash" type="decimal" flag="null" />
+    <attribute name="STATUS" column="status" type="string" flag="not_null" stringlength="20" default="open" />
+    <attribute name="NOTES" column="notes" type="string" flag="null" stringlength="300" />
+
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <indexes>
+      <index name="IX_GYM_CASH_SESSIONS_STATUS" type="NON_UNIQUE">
+        <attribute name="STATUS" />
+      </index>
+      <index name="IX_GYM_CASH_SESSIONS_OPENED_AT" type="NON_UNIQUE">
+        <attribute name="OPENED_AT" />
+      </index>
+    </indexes>
+
+  </object>
 </objectdb>
 

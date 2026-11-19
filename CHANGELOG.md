@@ -6,6 +6,17 @@
 
 ## Backend (.NET)
 
+### Fase 1: operación diaria (2026-11-19)
+- **Socios:** edición de datos y estado, cancelación de membresía con motivo e historial de membresías.
+- **Planes:** CRUD completo (precio, moneda, duración, beneficios, límite diario, activación) y página “Planes”.
+- **Caja:** turnos con apertura/cierre, efectivo esperado (fondo + ventas + cobros de membresía en efectivo), diferencia y historial; ventas y pagos quedan ligados al turno abierto.
+- **Recibos:** recibo HTML imprimible de venta desde el historial.
+- **Kiosco:** vencimiento de token a 90 días, rotación y revocación desde el panel; PWA estática en `/kiosk/` con teclado numérico, configuración del dispositivo y aviso de equipos no disponibles.
+- **Acceso manual:** endpoint y modal en Logs de acceso con motivo y usuario autorizador; se registra en bitácora.
+- **Dashboard:** resumen de ingresos del día, membresías activas, por vencer, accesos y stock bajo.
+- **Correcciones:** nombres de equipos en el kiosco (columna correcta y estados fuera de servicio) y SKU automático para productos sin SKU (evita colisión del índice único).
+- **Pruebas:** 102 automatizadas y smoke de caja/kiosco/acceso manual.
+
 ### Asignación y renovación de membresía (2026-11-19)
 - **API:** `POST /api/members/{id}/membership` asigna, activa o renueva la membresía con plan, fecha de inicio, cobro manual (`cash`/`card`/`transfer`) o cortesía sin cobro.
 - **Reglas portadas del proyecto original:** renovación desde `max(hoy, vencimiento)` para no perder días; membresía congelada no se renueva; sin cobro explícito y auditado; el pago se registra en la misma transacción; una sola membresía activa por socio.

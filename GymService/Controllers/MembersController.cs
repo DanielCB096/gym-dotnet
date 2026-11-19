@@ -40,9 +40,9 @@ namespace GymService.Controllers
             return success ? Ok(response) : BadRequest(response);
         }
 
-        [HttpGet]
-        [Route("api/members/plans")]
-        public ActionResult<Dictionary<string, object>> GetMembershipPlans()
+        [HttpPut]
+        [Route("api/members/{memberId}")]
+        public ActionResult<Dictionary<string, object>> UpdateMember(long memberId, [FromBody] Dictionary<string, object> memberData)
         {
             if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
                 return Unauthorized(new { success = false, message = errorMessage });
@@ -50,7 +50,63 @@ namespace GymService.Controllers
             if (DataCenter.BusinessProcess.Members == null)
                 return BadRequest(new { success = false, message = "Servicio no disponible" });
 
-            var success = DataCenter.BusinessProcess.Members.GetMembershipPlans(out var response);
+            var success = DataCenter.BusinessProcess.Members.UpdateMember(memberId, memberData, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpGet]
+        [Route("api/members/{memberId}/memberships")]
+        public ActionResult<Dictionary<string, object>> GetMembershipHistory(long memberId)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Members == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Members.GetMembershipHistory(memberId, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpGet]
+        [Route("api/members/plans")]
+        public ActionResult<Dictionary<string, object>> GetMembershipPlans([FromQuery] bool includeInactive = false)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Members == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Members.GetMembershipPlans(out var response, includeInactive);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPost]
+        [Route("api/members/plans")]
+        public ActionResult<Dictionary<string, object>> CreatePlan([FromBody] Dictionary<string, object> planData)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Members == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Members.CreatePlan(planData, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPut]
+        [Route("api/members/plans/{planId}")]
+        public ActionResult<Dictionary<string, object>> UpdatePlan(long planId, [FromBody] Dictionary<string, object> planData)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Members == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Members.UpdatePlan(planId, planData, out var response);
             return success ? Ok(response) : BadRequest(response);
         }
 
@@ -96,6 +152,21 @@ namespace GymService.Controllers
                 return BadRequest(new { success = false, message = "Servicio no disponible" });
 
             var success = DataCenter.BusinessProcess.Members.AssignMembership(memberId, membershipData, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPost]
+        [Route("api/memberships/{membershipId}/cancel")]
+        public ActionResult<Dictionary<string, object>> CancelMembership(long membershipId, [FromBody] Dictionary<string, string> request)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Members == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var reason = Convert.ToString(request.GetValueOrDefault("reason", "")) ?? "";
+            var success = DataCenter.BusinessProcess.Members.CancelMembership(membershipId, reason, out var response);
             return success ? Ok(response) : BadRequest(response);
         }
 

@@ -200,6 +200,7 @@ namespace GymService
                 DataCenter.BusinessProcess.Reports = new Modules.Reports.ReportsModule(tools);
                 DataCenter.BusinessProcess.Kiosk = new Modules.Kiosk.KioskModule(tools);
                 DataCenter.BusinessProcess.Staff = new Modules.Staff.StaffModule(tools);
+                DataCenter.BusinessProcess.Cash = new Modules.Cash.CashModule(tools);
 
                 Logger.AddInfo("Módulos de negocio inicializados");
             }
