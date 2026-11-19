@@ -143,6 +143,7 @@ namespace GymService.Modules.Members
                 var email = memberData.ContainsKey("email") ? Convert.ToString(memberData["email"]) : "";
                 var phone = memberData.ContainsKey("phone") ? Convert.ToString(memberData["phone"]) : "";
                 var membershipType = memberData.ContainsKey("membershipType") ? Convert.ToString(memberData["membershipType"]) : "monthly";
+                var createdBy = memberData.ContainsKey("createdBy") ? Convert.ToInt64(memberData["createdBy"]) : 0L;
 
                 // Look up plan_id by membershipType (plan_name) before opening the transaction
                 long planId = 0;
@@ -168,7 +169,7 @@ namespace GymService.Modules.Members
                 // Pre-generate the IDs so the member and its membership are inserted in the same transaction
                 long memberId = _tools.GenerateUniqueID(GYM_MEMBERS.DatabaseMappingObject, 1).GetInt64UniqueId();
 
-                var session = _tools.CreateSession(SubModule);
+                var session = _tools.CreateSession(SubModule, createdBy);
                 session.InsertObjectWithID(new GYM_MEMBERS
                 {
                     ID = memberId,

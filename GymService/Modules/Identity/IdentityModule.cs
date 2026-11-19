@@ -390,13 +390,29 @@ namespace GymService.Modules.Identity
 
                 if (isValid)
                 {
-                    // Enable MFA
-                    var session = _tools.CreateSession(SubModule);
-                    session.UpdateObjectChanges(new GYM_USERS
+                    var userChanges = new GYM_USERS
                     {
                         ID = userId,
                         MFA_ENABLED = true
-                    });
+                    };
+
+                    // Migracion transparente: secretos legacy (Base64 plano) -> AES-256.
+                    if (!encryptedSecret.StartsWith(MfaEncryptedPrefix, StringComparison.Ordinal))
+                    {
+                        userChanges.MFA_SECRET_ENCRYPTED = MfaEncryptedPrefix + cipher.EncryptAsBASE64(secret);
+                        Logger.AddInfoSubModule(SubModule, "Secreto MFA migrado de Base64 legacy a AES-256");
+                    }
+
+                    // Migracion transparente: codigos de respaldo en texto plano -> SHA-256.
+                    var migratedCodes = MigrateBackupCodes(backupCodes);
+                    if (migratedCodes != null)
+                    {
+                        userChanges.MFA_BACKUP_CODES = migratedCodes;
+                        Logger.AddInfoSubModule(SubModule, "Codigos de respaldo MFA migrados a SHA-256");
+                    }
+
+                    var session = _tools.CreateSession(SubModule, userId);
+                    session.UpdateObjectChanges(userChanges);
                     session.TryExecute();
 
                     response["success"] = true;
@@ -974,6 +990,35 @@ namespace GymService.Modules.Identity
             return Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
         }
 
+        /// <summary>
+        /// Convierte una lista de codigos de respaldo legacy (texto plano) al formato
+        /// hasheado "sha256:...". Devuelve null si no habia nada que migrar.
+        /// </summary>
+        private static string? MigrateBackupCodes(string storedBackupCodes)
+        {
+            if (string.IsNullOrEmpty(storedBackupCodes))
+                return null;
+
+            var entries = storedBackupCodes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            bool changed = false;
+            var result = new List<string>(entries.Length);
+
+            foreach (var entry in entries)
+            {
+                if (entry.StartsWith(BackupCodeHashPrefix, StringComparison.Ordinal))
+                {
+                    result.Add(entry);
+                }
+                else
+                {
+                    result.Add(HashBackupCode(entry));
+                    changed = true;
+                }
+            }
+
+            return changed ? string.Join(",", result) : null;
+        }
+
         private static bool FixedTimeEqualsStrings(string a, string b)
         {
             var bytesA = Encoding.UTF8.GetBytes(a ?? string.Empty);
@@ -988,8 +1033,15 @@ namespace GymService.Modules.Identity
         {
             try
             {
-                // Decode secret (URL-safe Base64)
-                var secretBytes = Convert.FromBase64String(secret.Replace("-", "+").Replace("_", "/"));
+                // Decode secret (URL-safe Base64, sin padding)
+                var normalizedSecret = secret.Replace("-", "+").Replace("_", "/");
+                switch (normalizedSecret.Length % 4)
+                {
+                    case 2: normalizedSecret += "=="; break;
+                    case 3: normalizedSecret += "="; break;
+                }
+
+                var secretBytes = Convert.FromBase64String(normalizedSecret);
 
                 // Get current time step
                 var time = DateTime.UtcNow;

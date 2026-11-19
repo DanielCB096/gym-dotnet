@@ -32,6 +32,10 @@ namespace GymService.Controllers
             if (DataCenter.BusinessProcess.Members == null)
                 return BadRequest(new { success = false, message = "Servicio no disponible" });
 
+            // El módulo usa createdBy para la auditoría (CREATED_BY) del socio.
+            if (!memberData.ContainsKey("createdBy"))
+                memberData["createdBy"] = SecurityValidation.GetUserId(userData!);
+
             var success = DataCenter.BusinessProcess.Members.CreateMember(memberData, out var response);
             return success ? Ok(response) : BadRequest(response);
         }

@@ -43,6 +43,17 @@ namespace GymService.Controllers
             if (DataCenter.BusinessProcess.Kiosk == null)
                 return BadRequest(new { success = false, message = "Servicio no disponible" });
 
+            // Endpoint de kiosco: exige el token del dispositivo (header o query string).
+            var deviceToken = Request.Headers["X-Device-Token"].ToString();
+            if (string.IsNullOrWhiteSpace(deviceToken))
+                deviceToken = Request.Query["deviceToken"].ToString();
+
+            if (string.IsNullOrWhiteSpace(deviceToken) ||
+                !DataCenter.BusinessProcess.Kiosk.ValidateDeviceToken(deviceToken, out _))
+            {
+                return Unauthorized(new { success = false, message = "Token de dispositivo inválido" });
+            }
+
             var success = DataCenter.BusinessProcess.Kiosk.GetUnavailableEquipment(out var response);
             return success ? Ok(response) : BadRequest(response);
         }
