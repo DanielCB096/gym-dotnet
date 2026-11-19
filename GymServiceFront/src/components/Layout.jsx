@@ -57,8 +57,18 @@ export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Persist sidebar state in localStorage
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const stored = localStorage.getItem('sidebar-collapsed');
+    return stored ? stored === 'false' : true;
+  });
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Save sidebar state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('sidebar-collapsed', String(!sidebarOpen));
+  }, [sidebarOpen]);
 
   // Close sidebar on small screens by default
   useEffect(() => {
@@ -118,6 +128,7 @@ export default function Layout({ children }) {
           {/* Mobile close */}
           <button
             onClick={() => setMobileOpen(false)}
+            aria-label="Cerrar menú lateral"
             className="lg:hidden p-2 rounded-lg hover:bg-sidebar-700 transition-colors"
           >
             <X className="w-5 h-5" />
@@ -185,6 +196,7 @@ export default function Layout({ children }) {
               <div className="flex gap-2">
                 <button
                   onClick={handleLogout}
+                  aria-label="Cerrar sesión"
                   className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-danger-400 hover:text-danger-300 hover:bg-danger-500/10 rounded-lg transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
@@ -192,8 +204,8 @@ export default function Layout({ children }) {
                 </button>
                 <button
                   onClick={() => setSidebarOpen(false)}
+                  aria-label="Colapsar menú lateral"
                   className="flex items-center justify-center p-2 text-slate-400 hover:text-white hover:bg-sidebar-700 rounded-lg transition-colors"
-                  title="Colapsar menú"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -203,15 +215,15 @@ export default function Layout({ children }) {
             <div className="p-3 flex flex-col items-center gap-2">
               <button
                 onClick={handleLogout}
+                aria-label="Cerrar sesión"
                 className="p-2 text-slate-400 hover:text-danger-400 hover:bg-danger-500/10 rounded-lg transition-colors"
-                title="Cerrar sesión"
               >
                 <LogOut className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setSidebarOpen(true)}
+                aria-label="Expandir menú lateral"
                 className="p-2 text-slate-400 hover:text-white hover:bg-sidebar-700 rounded-lg transition-colors"
-                title="Expandir menú"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -232,6 +244,7 @@ export default function Layout({ children }) {
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <button
                 onClick={() => setMobileOpen(true)}
+                aria-label="Abrir menú lateral"
                 className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors flex-shrink-0"
               >
                 <Menu className="w-5 h-5" />
@@ -256,7 +269,7 @@ export default function Layout({ children }) {
               </div>
 
               {/* Notifications */}
-              <button className="relative p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors flex-shrink-0">
+              <button className="relative p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors flex-shrink-0" aria-label="Notificaciones">
                 <Bell className="w-5 h-5" />
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-danger-500 rounded-full ring-2 ring-white"></span>
               </button>

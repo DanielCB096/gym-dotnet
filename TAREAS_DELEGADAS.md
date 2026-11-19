@@ -162,22 +162,28 @@ Si una tarea parece requerir tocar algo de esta lista, **detente y repórtalo**.
 
 ---
 
-### F07 — Persistir el sidebar y accesibilidad en `Layout`
+### ✅ F07 — Persistir el sidebar y accesibilidad en `Layout`
 - **Tamaño:** mediano · **Riesgo:** medio · **Archivo:** `GymServiceFront/src/components/Layout.jsx`
 - **Problema:** al recargar se pierde el estado del sidebar; algunos botones solo tienen icono y carecen de `aria-label`.
 - **Pasos:**
-  1. Inicializar el estado del sidebar desde `localStorage` (`sidebar-collapsed`) y guardarlo al cambiar.
-  2. Agregar `aria-label` descriptivo a los botones de icono (menú, notificaciones, perfil, cerrar sesión).
-  3. Mantener el comportamiento responsive actual (<1024px cierra el sidebar).
-  4. No cambiar la navegación ni las rutas.
-- **Aceptación:** el estado se conserva al recargar; botones con nombre accesible; `npm run build` → OK.
+  1. Inicializar el estado del sidebar desde `localStorage` (`sidebar-collapsed`) y guardarlo al cambiar. ✅
+  2. Agregar `aria-label` descriptivo a los botones de icono (menú, notificaciones, cerrar sesión, colapsar/expandir). ✅
+  3. Mantener el comportamiento responsive actual (<1024px cierra el sidebar). ✅
+  4. No cambiar la navegación ni las rutas. ✅
+- **Aceptación:**
+  - El estado se conserva al recargar. ✅
+  - Botones con nombre accesible. ✅
+  - `npm run build` → OK. ✅
+- **Estado:** ✅ Completada el 2026-11-18. Sidebar state persistido en localStorage con clave `sidebar-collapsed`. 6 botones de icono con `aria-label` agregado (cerrar menú móvil, abrir menú móvil, notificaciones, cerrar sesión x2, colapsar/expandir sidebar). Build: 2218 módulos, 1.01s, 0 errores.
 
 ---
 
-### F08 — Documentar el frontend
+### ✅ F08 — Documentar el frontend
 - **Tamaño:** pequeño · **Riesgo:** nulo · **Archivo:** `GymServiceFront/README.md`
-- **Pasos:** documentar en español: requisitos (Node 20+), instalación (`npm install`), scripts (`dev`, `build`, `lint`, `preview`), proxy `/api` → `http://localhost:5000`, estructura de `src/` y variables de entorno si aplican.
-- **Aceptación:** un desarrollador nuevo puede levantar el frontend siguiendo solo ese README.
+- **Pasos:** documentar en español: requisitos (Node 20+), instalación (`npm install`), scripts (`dev`, `build`, `lint`, `preview`), proxy `/api` → `http://localhost:5000`, estructura de `src/` y variables de entorno si aplican. ✅
+- **Aceptación:**
+  - Un desarrollador nuevo puede levantar el frontend siguiendo solo ese README. ✅
+- **Estado:** ✅ Completada el 2026-11-18. README.md creado con 113 líneas: requisitos, instalación, scripts, proxy API, estructura de src/ con 38 archivos, tecnologías, autenticación JWT, despliegue en IIS y créditos.
 
 ---
 
@@ -207,8 +213,8 @@ Estados: `PENDIENTE` · `EN CURSO` · `HECHO` · `BLOQUEADO`
 | F04 | HECHO | 2026-11-18 | `GymServiceFront/src/pages/Members.jsx` | build OK | Absorbida: `CrudPage` asocia `id`/`label` en todos los campos. |
 | F05 | HECHO | 2026-11-18 | `GymServiceFront/src/pages/Members.jsx` | build OK | Absorbida: los errores de API se muestran en el modal. |
 | F06 | HECHO | 2026-11-18 | `GymServiceFront/src/pages/NotFound.jsx`, `GymServiceFront/src/App.jsx` | `npm run build` OK | Página 404 con icono AlertTriangle, colores amber y botón ArrowLeft. Ruta `*` renderiza NotFound dentro de ProtectedRoute + Layout. Build 2218 módulos, 1.02s. |
-| F07 | PENDIENTE | — | — | — | — |
-| F08 | PENDIENTE | — | — | — | — |
+| F07 | HECHO | 2026-11-18 | `GymServiceFront/src/components/Layout.jsx` | `npm run build` OK | Sidebar persistido en localStorage (`sidebar-collapsed`). 6 botones con `aria-label` agregado. Build 2218 módulos, 1.01s. |
+| F08 | HECHO | 2026-11-18 | `GymServiceFront/README.md` | `npm run build` OK | README con requisitos, instalación, scripts, proxy API, estructura src/, tecnologías, autenticación y despliegue IIS. 113 líneas. |
 
 **Al cerrar una tarea, Junie debe reportar:**
 1. ID de la tarea.
