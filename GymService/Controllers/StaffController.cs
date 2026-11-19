@@ -109,6 +109,126 @@ namespace GymService.Controllers
             return success ? Ok(response) : BadRequest(response);
         }
 
+        // ========================= Turnos y asistencia =======================
+
+        [HttpGet]
+        [Route("api/staff/shifts")]
+        public ActionResult<Dictionary<string, object>> GetShifts(
+            [FromQuery] long? staffId = null,
+            [FromQuery] DateTime? from = null,
+            [FromQuery] DateTime? to = null,
+            [FromQuery] string? status = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int limit = 100)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Staff == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Staff.GetShifts(out var response, staffId, from, to, status, page, limit);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpGet]
+        [Route("api/staff/shifts/summary")]
+        public ActionResult<Dictionary<string, object>> GetShiftSummary([FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Staff == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Staff.GetShiftSummary(out var response, from, to);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPost]
+        [Route("api/staff/shifts")]
+        public ActionResult<Dictionary<string, object>> CreateShift([FromBody] Dictionary<string, object> shiftData)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Staff == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Staff.CreateShift(shiftData, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPut]
+        [Route("api/staff/shifts/{shiftId}")]
+        public ActionResult<Dictionary<string, object>> UpdateShift(long shiftId, [FromBody] Dictionary<string, object> shiftData)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Staff == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Staff.UpdateShift(shiftId, shiftData, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPost]
+        [Route("api/staff/shifts/{shiftId}/check-in")]
+        public ActionResult<Dictionary<string, object>> CheckInShift(long shiftId)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Staff == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Staff.CheckInShift(shiftId, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPost]
+        [Route("api/staff/shifts/{shiftId}/check-out")]
+        public ActionResult<Dictionary<string, object>> CheckOutShift(long shiftId)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Staff == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Staff.CheckOutShift(shiftId, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPost]
+        [Route("api/staff/shifts/{shiftId}/absent")]
+        public ActionResult<Dictionary<string, object>> MarkShiftAbsent(long shiftId)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Staff == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Staff.MarkShiftAbsent(shiftId, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPost]
+        [Route("api/staff/shifts/{shiftId}/cancel")]
+        public ActionResult<Dictionary<string, object>> CancelShift(long shiftId)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Staff == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Staff.CancelShift(shiftId, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
         [HttpDelete]
         [Route("api/staff/{staffId}")]
         public ActionResult<Dictionary<string, object>> DeleteStaff(long staffId)

@@ -39,6 +39,14 @@
 - **UI:** página **Finanzas** con pestañas Cuentas y Movimientos y conciliación; filtros por cuenta, estado y marca; importación CSV desde el navegador.
 - **Pruebas:** 105 automatizadas y validación en vivo de crear cuenta, importar CSV, conciliar, marcar y comprobar el resumen.
 
+### Fase 2C: turnos y asistencia de personal (2026-11-19)
+- **Turnos:** programación por empleado con fecha, hora de inicio y fin opcionales, notas y validación de solapamiento por horario.
+- **Asistencia:** entrada/salida con hora real, cálculo de minutos trabajados y retardos (más de 10 minutos), y marcado de ausencias.
+- **Estados:** programado, en turno, cerrado, ausencia y cancelado; edición solo en turnos programados; no se puede eliminar un empleado con turnos (se desactiva).
+- **Resumen:** programados, en turno, cerrados, ausencias, horas trabajadas y retardos por rango de fechas.
+- **UI:** pestaña **Turnos y asistencia** dentro de Personal con filtros por empleado, rango y estado; acciones Entrar, Salir, Falta, Editar y Cancelar.
+- **Pruebas:** 106 automatizadas y validación en vivo de programar, editar, entrar, salir, marcar falta, cancelar y filtrar.
+
 ### Fase 1: operación diaria (2026-11-19)
 - **Socios:** edición de datos y estado, cancelación de membresía con motivo e historial de membresías.
 - **Planes:** CRUD completo (precio, moneda, duración, beneficios, límite diario, activación) y página “Planes”.

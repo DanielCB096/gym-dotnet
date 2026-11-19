@@ -1227,5 +1227,38 @@
     </indexes>
 
   </object>
-</objectdb>
+  <object name="GYM_STAFF_SHIFTS" table="gym_staff_shifts" sequence="GYM_STAFF_SHIFTS_SEQ">
 
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="STAFF_ID" column="staff_id" type="int64" flag="not_null" />
+    <attribute name="SHIFT_DATE" column="shift_date" type="date" flag="not_null" />
+    <attribute name="SCHEDULED_START" column="scheduled_start" type="datetime2" flag="not_null" />
+    <attribute name="SCHEDULED_END" column="scheduled_end" type="datetime2" flag="null" />
+    <attribute name="CHECK_IN" column="check_in" type="datetime2" flag="null" />
+    <attribute name="CHECK_OUT" column="check_out" type="datetime2" flag="null" />
+    <attribute name="STATUS" column="status" type="string" flag="not_null" stringlength="20" default="scheduled" />
+    <attribute name="NOTES" column="notes" type="string" flag="null" stringlength="500" />
+
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_staff">
+        <column local="staff_id" external="id" />
+      </reference>
+    </references>
+
+    <indexes>
+      <index name="IX_GYM_STAFF_SHIFTS_STAFF_DATE" type="NON_UNIQUE">
+        <attribute name="STAFF_ID" />
+        <attribute name="SHIFT_DATE" />
+      </index>
+    </indexes>
+
+  </object>
+
+</objectdb>

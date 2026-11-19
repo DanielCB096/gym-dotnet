@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import api from '../services/api';
 import CrudPage from '../components/CrudPage';
 import StaffUsersPanel from '../components/StaffUsersPanel';
+import StaffShiftsPanel from '../components/StaffShiftsPanel';
 import PageHeader from '../components/ui/PageHeader';
 import Badge from '../components/ui/Badge';
 import { formatDate } from '../utils/format';
@@ -96,9 +97,20 @@ export default function Staff() {
         >
           Usuarios
         </button>
+        <button
+          type="button"
+          onClick={() => setTab('shifts')}
+          className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+            tab === 'shifts' ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50'
+          }`}
+        >
+          Turnos y asistencia
+        </button>
       </div>
 
-      {tab === 'employees' ? (
+      {tab === 'shifts' ? (
+        <StaffShiftsPanel />
+      ) : tab === 'employees' ? (
         <CrudPage
           hideHeader
           title="Empleado"
