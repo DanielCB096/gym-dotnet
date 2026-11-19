@@ -108,7 +108,7 @@ namespace GymService.Modules.Sales
                     }
 
                     var products = _tools.ExecuteQueryResultSet(
-                        "SELECT product_name, stock_quantity, is_active FROM gym_inventory WHERE id = ?", item.ProductId);
+                        "SELECT product_name, stock_quantity, is_active, price FROM gym_inventory WHERE id = ?", item.ProductId);
 
                     if (products == null || products.Rows.Count == 0)
                     {
@@ -121,6 +121,7 @@ namespace GymService.Modules.Sales
                     var name = Convert.ToString(GetRowValue(row, products, "product_name")) ?? $"Producto {item.ProductId}";
                     var stock = Convert.ToInt32(GetRowValue(row, products, "stock_quantity"));
                     var isActive = Convert.ToBoolean(GetRowValue(row, products, "is_active"));
+                    var catalogPrice = Convert.ToDecimal(GetRowValue(row, products, "price"));
 
                     if (!isActive)
                     {
@@ -138,7 +139,28 @@ namespace GymService.Modules.Sales
 
                     item.ProductName = name;
                     item.StockOnHand = stock;
+                    // El precio se toma del catálogo, no del cliente.
+                    item.Price = catalogPrice;
                 }
+
+                // El servidor calcula el subtotal y valida el IVA; nunca confía en totalAmount del cliente.
+                decimal subtotal = saleItems.Sum(item => item.Price * item.Quantity);
+
+                if (subtotal <= 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "El total de la venta debe ser mayor a cero.";
+                    return false;
+                }
+
+                if (taxAmount < 0 || taxAmount > subtotal)
+                {
+                    response["success"] = false;
+                    response["message"] = "El IVA no puede ser negativo ni mayor que el subtotal.";
+                    return false;
+                }
+
+                totalAmount = subtotal + taxAmount;
 
                 // sale_number is nvarchar(20): NEWID() would not fit, so build a compact unique code
                 var saleNumber = "V" + DateTime.Now.ToString("yyMMddHHmmssfff") + Random.Shared.Next(100, 1000);

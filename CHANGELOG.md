@@ -9,7 +9,8 @@
 ### Pruebas en vivo Fase 1 (2026-11-19)
 - **UI real:** creación/edición de plan, alta/edición de socio, renovación de cortesía, cancelación con motivo, historial/pagos/recibos, acceso manual y kiosco administrativo/PWA en `/kiosk-app/`.
 - **Correcciones encontradas:** una membresía cancelada se mostraba como “Vencida” (ahora “Cancelada”); la bitácora no mostraba el motivo del acceso manual (nueva columna “Motivo”).
-- **Hallazgo de entorno:** la validación de token/código del kiosco chocó con el rate limiting estricto al ejecutar varias pruebas concurrentes; no es un fallo funcional.
+- **Ventas:** el total y el precio unitario se toman del catálogo en el servidor, no de `totalAmount`/`price` enviados por el cliente; se valida el IVA. Evita ventas en $0 o manipuladas.
+- **Hallazgo de entorno:** la validación de token/código del kiosco chocó con el rate limiting estricto al ejecutar varias pruebas concurrentes; no es un fallo funcional. También se observó una colisión aislada de secuencia al arrancar dos procesos contra la misma base; en operación normal debe correr una sola instancia.
 
 ### Regla de pruebas en vivo (2026-11-19)
 - Se establece como obligatorio probar cada funcionalidad **en vivo** (API real y navegador cuando aplique) antes de darla por terminada. Documentado en `docs/pruebas-en-vivo.md`, `AGENTS.md` y `README.md`.

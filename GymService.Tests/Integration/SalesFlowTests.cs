@@ -45,7 +45,7 @@ public class SalesFlowTests
                 ["memberId"] = 0L,
                 ["paymentMethod"] = "cash",
                 ["isOffline"] = false,
-                ["totalAmount"] = 20m,
+                ["totalAmount"] = 999m,
                 ["taxAmount"] = 0m,
                 ["items"] = new List<object>
                 {
@@ -53,7 +53,7 @@ public class SalesFlowTests
                     {
                         ["productId"] = productId,
                         ["quantity"] = 2,
-                        ["price"] = 10m
+                        ["price"] = 999m
                     }
                 }
             }, out var response);
@@ -66,6 +66,9 @@ public class SalesFlowTests
             Assert.Equal(8, Convert.ToInt32(_fx.Scalar("SELECT STOCK_QUANTITY FROM GYM_INVENTORY WHERE ID = @id", ("@id", productId))));
             Assert.Equal("completed", Convert.ToString(_fx.Scalar("SELECT STATUS FROM GYM_SALES WHERE ID = @id", ("@id", saleId))));
             Assert.Equal(1, Convert.ToInt32(_fx.Scalar("SELECT COUNT(*) FROM GYM_SALE_ITEMS WHERE SALE_ID = @id", ("@id", saleId))));
+            // El servidor ignora total/price del cliente y usa el catálogo.
+            Assert.Equal(20m, Convert.ToDecimal(_fx.Scalar("SELECT TOTAL_AMOUNT FROM GYM_SALES WHERE ID = @id", ("@id", saleId))));
+            Assert.Equal(10m, Convert.ToDecimal(_fx.Scalar("SELECT UNIT_PRICE FROM GYM_SALE_ITEMS WHERE SALE_ID = @id", ("@id", saleId))));
             Assert.Equal(1L, Convert.ToInt64(_fx.Scalar("SELECT CREATED_BY FROM GYM_SALES WHERE ID = @id", ("@id", saleId))));
 
             Assert.True(sales.ReturnSale(saleId, out _));
