@@ -5,18 +5,24 @@ using AxLogger;
 using AxDatabase;
 using AxDatabase.Administration;
 using AxObjectOrientedDatabase;
-using GymService.Models;
 
 namespace GymService.Services
 {
     /// <summary>
-    /// Manages database schema creation and validation.
-    /// Converts ModelGym TableDefinitions to framework DatabaseTable objects
-    /// and uses DatabaseAdministrator to create them on SQL Server.
+    /// Crea y valida el esquema a partir del modelo de objetos de Anxo.
+    ///
+    /// El modelo es la unica fuente de verdad: Models/Generated contiene las entidades
+    /// (IDatabaseObject) y ModelGym.MappingObjects, generados desde Models/_ModelGym.xml
+    /// con AnxoDatabaseGenerator.
+    ///
+    /// El mantenimiento del esquema es ADITIVO e IDEMPOTENTE: solo crea tablas que faltan,
+    /// solo agrega indices/foreign keys que faltan y nunca elimina datos.
     /// </summary>
     public class DatabaseService
     {
-        private OODatabaseManager _dbManager;
+        private const string SubModule = "DATABASE_SERVICE";
+
+        private readonly OODatabaseManager _dbManager;
 
         public DatabaseService(OODatabaseManager dbManager)
         {
@@ -24,7 +30,7 @@ namespace GymService.Services
         }
 
         /// <summary>
-        /// Initialize database schema - create all tables defined in ModelGym
+        /// Crea/valida todas las tablas, indices y foreign keys del modelo.
         /// </summary>
         public void InitializeSchema()
         {
@@ -32,232 +38,174 @@ namespace GymService.Services
             Logger.AddInfo("Inicializando esquema de base de datos GymManager");
             Logger.AddInfo("========================================");
 
+            // Fuerza la construccion/registro de todos los MappingObject.
+            ModelGym.Register();
+
             var dba = _dbManager.DatabaseAdministrator;
 
-            // Si el esquema ya existe, no se recrean las tablas: hacerlo borraba todos los datos
-            // (usuarios, socios, ventas, etc.) en cada arranque del servicio.
-            bool schemaExists = dba.ExistTable("gym_users");
+            int created = 0;
+            int existing = 0;
+            int differences = 0;
 
-            // Create tables first (without foreign keys). Only missing tables are created.
-            int tableCount = 0;
-            int createdCount = 0;
-            foreach (var tableDef in ModelGym.TableDefinitions)
+            foreach (var mapping in ModelGym.MappingObjects)
             {
-                var dbTable = ConvertToDatabaseTable(tableDef);
-                if (CreateTableIfMissing(dba, dbTable))
-                    createdCount++;
-                tableCount++;
-                Logger.AddInfo($"  Tabla '{tableDef.TableName}' verificada");
+                var modelTable = BuildDatabaseTable(mapping);
+
+                if (!dba.ExistTable(modelTable))
+                {
+                    dba.CreateTable(modelTable);
+                    created++;
+                    Logger.AddInfo($"  Tabla '{modelTable.TableName}' creada");
+                }
+                else
+                {
+                    existing++;
+                    differences += ValidateTable(dba, modelTable);
+                }
+
+                EnsureIndexes(dba, modelTable);
+                EnsureForeignKeys(dba, modelTable);
             }
 
-            Logger.AddInfo($"Se procesaron {tableCount} tablas ({createdCount} creadas)");
-
-            if (schemaExists && createdCount == 0)
-            {
-                Logger.AddInfo("Esquema existente: se conservan las tablas y los datos; no se recrean foreign keys");
-                Logger.AddInfo("Esquema de base de datos verificado correctamente");
-                return;
-            }
-
-            // Add foreign keys only when the schema is fresh (no data to protect).
-            int fkCount = 0;
-            foreach (var fkDef in ModelGym.ForeignKeyDefinitions)
-            {
-                AddForeignKey(dba, fkDef);
-                fkCount++;
-            }
-
-            Logger.AddInfo($"Se agregaron {fkCount} foreign keys");
-            Logger.AddInfo("Esquema de base de datos inicializado correctamente");
+            Logger.AddInfo($"Esquema de base de datos verificado. Tablas nuevas:{created} existentes:{existing} con diferencias:{differences}");
         }
 
         /// <summary>
-        /// Create a table only when it does not exist. Existing tables and their data are kept.
-        /// Returns true when the table was created.
+        /// Construye la DatabaseTable del mapping. GetDatabaseTable ya incluye
+        /// columnas, indices y foreign keys del modelo.
         /// </summary>
-        private bool CreateTableIfMissing(DatabaseAdministrator dba, DatabaseTable table)
+        private DatabaseTable BuildDatabaseTable(MappingObject mapping)
+        {
+            return mapping.GetDatabaseTable();
+        }
+
+        /// <summary>
+        /// Compara la tabla existente con el modelo. Devuelve 1 si hay diferencias.
+        /// Si Database:MatchStructure=true, intenta igualar la estructura (puede borrar
+        /// columnas que no esten en el modelo: usar solo en entornos controlados).
+        /// </summary>
+        private int ValidateTable(DatabaseAdministrator dba, DatabaseTable modelTable)
         {
             try
             {
-                if (dba.ExistTable(table.TableName))
+                var validation = dba.ValidateTableStructureEx(modelTable);
+
+                switch (validation)
                 {
-                    Logger.AddDebugSubModule("DatabaseService", $"Tabla '{table.TableName}' ya existe, se conserva");
-                    return false;
-                }
+                    case DatabaseAdministrator.TableValidation.Equal:
+                        Logger.AddDebugSubModule(SubModule, $"  Tabla '{modelTable.TableName}' igual al modelo");
+                        return 0;
 
-                dba.CreateTable(table);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Logger.AddErrorSubModule("DatabaseService", $"Error al crear tabla '{table.TableName}': {ex.Message}");
-                throw;
-            }
-        }
+                    case DatabaseAdministrator.TableValidation.Compatible:
+                        Logger.AddWarningSubModule(SubModule, $"  Tabla '{modelTable.TableName}' es compatible pero no identica al modelo");
+                        return 0;
 
-        /// <summary>
-        /// Convert a ModelGym TableDefinition to a framework DatabaseTable
-        /// </summary>
-        private DatabaseTable ConvertToDatabaseTable(TableDefinition tableDef)
-        {
-            var dbTable = new DatabaseTable(tableDef.TableName);
-
-            foreach (var colDef in tableDef.Columns)
-            {
-                var dbColumn = ConvertToDatabaseColumn(colDef);
-                dbTable.Columns.Add(dbColumn);
-            }
-
-            // Add composite primary key if defined
-            // Note: single-column PK is handled by ColumnType.PrimaryKey on the column itself
-            // Composite PKs are added as a Unique index (framework doesn't have IndexTypes.PrimaryKey)
-            if (tableDef.PrimaryKey != null && tableDef.PrimaryKey.Count > 0)
-            {
-                var index = new DatabaseIndex($"PK_{tableDef.TableName}", IndexTypes.Unique);
-                int seq = 1;
-                foreach (var pkCol in tableDef.PrimaryKey)
-                {
-                    var idxCol = new DatabaseIndexColumn(pkCol, seq);
-                    index.IndexColumns.Add(idxCol);
-                    seq++;
-                }
-                dbTable.Indexes.Add(index);
-            }
-
-            return dbTable;
-        }
-
-        /// <summary>
-        /// Convert a ModelGym ColumnDefinition to a framework DatabaseColumn
-        /// </summary>
-        private DatabaseColumn ConvertToDatabaseColumn(ColumnDefinition colDef)
-        {
-            // Determine column type
-            ColumnType colType = ColumnType.NotNull;
-            if (colDef.Nullable)
-            {
-                colType = ColumnType.Null;
-            }
-            if (colDef.PrimaryKey)
-            {
-                colType = ColumnType.PrimaryKey;
-            }
-
-            // Create column with appropriate size
-            DatabaseColumn dbColumn;
-            if (colDef.DataType == DataType.Decimal && colDef.Precision > 0)
-            {
-                dbColumn = new DatabaseColumn(colDef.Name, colDef.DataType, colType, colDef.Precision, colDef.Scale);
-            }
-            else if (colDef.Length > 0)
-            {
-                dbColumn = new DatabaseColumn(colDef.Name, colDef.DataType, colDef.Length, colType);
-            }
-            else
-            {
-                dbColumn = new DatabaseColumn(colDef.Name, colDef.DataType, colType);
-            }
-
-            // Set default value if specified
-            if (!string.IsNullOrEmpty(colDef.DefaultValue))
-            {
-                dbColumn.DefaultValue = colDef.DefaultValue;
-            }
-
-            // Set properties for Identity and Unique
-            var properties = new List<string>();
-            if (colDef.Identity)
-            {
-                properties.Add("IDENTITY");
-            }
-            if (colDef.Unique && !colDef.PrimaryKey)
-            {
-                properties.Add("UNIQUE");
-            }
-            if (properties.Count > 0)
-            {
-                dbColumn.Properties = string.Join(";", properties);
-            }
-
-            return dbColumn;
-        }
-
-        /// <summary>
-        /// Add a foreign key to an existing table
-        /// </summary>
-        private void AddForeignKey(DatabaseAdministrator dba, ForeignKeyDefinition fkDef)
-        {
-            try
-            {
-                var dbTable = dba.GetTableStructure(fkDef.Table);
-                if (dbTable == null)
-                {
-                    Logger.AddWarningSubModule("DatabaseService", $"No se encontró la tabla '{fkDef.Table}' para agregar foreign key");
-                    return;
-                }
-
-                // Check if foreign key already exists
-                bool exists = false;
-                foreach (var existingFk in dbTable.ForeignKeys)
-                {
-                    if (existingFk.ExternalTable.ToUpper() == fkDef.ReferencesTable.ToUpper())
-                    {
-                        foreach (var col in existingFk.ForeignKeyColumns)
+                    default:
+                        if (IsMatchStructureEnabled())
                         {
-                            if (col.LocalColumnName.ToUpper() == fkDef.Column.ToUpper() &&
-                                col.ExternalColumnName.ToUpper() == fkDef.ReferencesColumn.ToUpper())
-                            {
-                                exists = true;
-                                break;
-                            }
+                            Logger.AddWarningSubModule(SubModule, $"  Tabla '{modelTable.TableName}' diferente al modelo, aplicando MatchTableStructure");
+                            dba.MatchTableStructureEx(modelTable);
+                            return 0;
                         }
-                        if (exists) break;
-                    }
-                }
 
-                if (!exists)
-                {
-                    var fk = new DatabaseForeignKey(fkDef.ReferencesTable);
-                    fk.ForeignKeyName = $"FK_{fkDef.Table}_{fkDef.Column}";
-                    fk.ForeignKeyColumns.Add(new DatabaseForeignKeyColumn(fkDef.Column, fkDef.ReferencesColumn));
-                    dbTable.ForeignKeys.Add(fk);
-
-                    dba.CreateTable(dbTable);
-                    Logger.AddDebugSubModule("DatabaseService", $"Foreign key '{fk.ForeignKeyName}' agregada a '{fkDef.Table}'");
+                        Logger.AddWarningSubModule(SubModule, $"  Tabla '{modelTable.TableName}' diferente al modelo (no se modifica; Database:MatchStructure=false)");
+                        return 1;
                 }
             }
             catch (Exception ex)
             {
-                Logger.AddWarningSubModule("DatabaseService", $"Error al agregar foreign key '{fkDef.Table}.{fkDef.Column}': {ex.Message}");
+                Logger.AddWarningSubModule(SubModule, $"  No se pudo validar la tabla '{modelTable.TableName}': {ex.Message}");
+                return 1;
+            }
+        }
+
+        private static bool IsMatchStructureEnabled()
+        {
+            string value = DataCenter.Configuration?["Database:MatchStructure"];
+            return string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Crea los indices del modelo (UNIQUE incluidos) que aun no existan.
+        /// </summary>
+        private void EnsureIndexes(DatabaseAdministrator dba, DatabaseTable table)
+        {
+            foreach (var index in table.Indexes)
+            {
+                try
+                {
+                    if (IndexExists(index.IndexName, table.TableName))
+                        continue;
+
+                    dba.CreateIndex(table, index);
+                    Logger.AddInfo($"  Indice '{index.IndexName}' creado en '{table.TableName}'");
+                }
+                catch (Exception ex)
+                {
+                    Logger.AddWarningSubModule(SubModule,
+                        $"  No se pudo crear el indice '{index.IndexName}' en '{table.TableName}': {ex.Message}");
+                }
+            }
+        }
+
+        private bool IndexExists(string indexName, string tableName)
+        {
+            var result = _dbManager.Tools.ExecuteQueryResultSet(
+                "SELECT COUNT(*) AS CNT FROM sys.indexes WHERE name = ? AND object_id = OBJECT_ID(?)",
+                indexName, tableName);
+
+            return result != null && result.Rows.Count > 0 && Convert.ToInt32(result.Rows[0].GetObject(0)) > 0;
+        }
+
+        /// <summary>
+        /// Aplica las foreign keys del modelo. ApplyForeignKeys es idempotente:
+        /// compara contra las FK existentes y solo crea las que faltan.
+        /// </summary>
+        private void EnsureForeignKeys(DatabaseAdministrator dba, DatabaseTable table)
+        {
+            if (table.ForeignKeys.Count == 0)
+                return;
+
+            try
+            {
+                dba.ApplyForeignKeys(table);
+            }
+            catch (Exception ex)
+            {
+                // Tipicamente: filas huerfanas en datos existentes que impiden crear la FK.
+                Logger.AddWarningSubModule(SubModule,
+                    $"  No se pudieron aplicar las foreign keys de '{table.TableName}': {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Create a specific table if it doesn't exist
+        /// Crea una tabla especifica si no existe (utilidad para herramientas).
         /// </summary>
         public void CreateTableIfNotExists(MappingObject mapping)
         {
             var dba = _dbManager.DatabaseAdministrator;
-            var dbTable = mapping.GetDatabaseTable();
+            var dbTable = BuildDatabaseTable(mapping);
 
             if (!dba.ExistTable(dbTable))
             {
                 dba.CreateTable(dbTable);
+                EnsureIndexes(dba, dbTable);
+                EnsureForeignKeys(dba, dbTable);
                 Logger.AddInfo($"Tabla '{dbTable.TableName}' creada desde MappingObject");
             }
         }
 
         /// <summary>
-        /// Drop all tables (for testing/development only)
+        /// Elimina todas las tablas del modelo (SOLO para desarrollo/tests).
         /// </summary>
         public void DropAllTables()
         {
-            Logger.AddWarningSubModule("DatabaseService", "Eliminando todas las tablas del esquema GymManager");
+            Logger.AddWarningSubModule(SubModule, "Eliminando todas las tablas del esquema GymManager");
 
             var dba = _dbManager.DatabaseAdministrator;
 
-            // Drop in reverse order to respect foreign key constraints
-            var tables = ModelGym.TableDefinitions.Select(t => t.TableName).Reverse().ToList();
+            // En orden inverso para respetar las foreign keys.
+            var tables = ModelGym.MappingObjects.Select(m => m.TableName).Reverse().ToList();
 
             foreach (var tableName in tables)
             {
@@ -266,12 +214,12 @@ namespace GymService.Services
                     if (dba.ExistTable(tableName))
                     {
                         dba.DropTable(tableName);
-                        Logger.AddDebugSubModule("DatabaseService", $"Tabla '{tableName}' eliminada");
+                        Logger.AddDebugSubModule(SubModule, $"Tabla '{tableName}' eliminada");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Logger.AddWarningSubModule("DatabaseService", $"Error al eliminar tabla '{tableName}': {ex.Message}");
+                    Logger.AddWarningSubModule(SubModule, $"Error al eliminar tabla '{tableName}': {ex.Message}");
                 }
             }
 

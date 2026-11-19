@@ -17,8 +17,8 @@ Todos los errores de compilación encontrados se deben a que el código original
 
 ### Obstáculo 2: Target Framework incompatible
 
-**Error:** `GymService.csproj` usaba `net8.0` pero `AnxoServiceTools` requiere `net8.0-windows7.0`.
-**Solución:** `<TargetFramework>net8.0-windows7.0</TargetFramework>`
+**Error:** `GymService.csproj` debe usar un TFM compatible con las ANXO Libraries.
+**Solución:** `<TargetFramework>net10.0-windows7.0</TargetFramework>` (AnxoLibrary/AnxoDatabase/AnxoObjectDatabaseManager son `net10.0` y AnxoServiceTools es `net10.0-windows`).
 
 ### Obstáculo 3: API de Query inventada (~458 errores)
 
@@ -192,11 +192,27 @@ DataType.Geography // 17
 DataType.DateTime2 // 18
 ```
 
-### Obstáculo 10: DatabaseAdministrator API inventada
+### Obstáculo 10: API de DatabaseAdministrator
 
 **Error:** `admin.TableExists()`, `admin.CreateTableFromMappingObject()`, `admin.UpdateTableStructureFromMapping()` → NO EXISTEN.
 
-**Solución:** DatabaseService debe implementarse con SQL raw o usar la API correcta de DatabaseAdministrator (que requiere investigación adicional).
+**API REAL (usada en `Services/DatabaseService.cs`):**
+
+```csharp
+var dba = dbManager.DatabaseAdministrator;
+
+bool exists = dba.ExistTable("TABLA");
+var structure = dba.GetTableStructure("TABLA");   // DatabaseTable (columnas, indices, FK)
+dba.CreateTable(databaseTable);                    // CREATE TABLE (no es idempotente: comprobar ExistTable antes)
+dba.ApplyForeignKeys(structure);                   // crea solo las FK que faltan
+dba.CreateIndex(databaseTable, index);             // indice nuevo
+dba.ExecuteRawCommand("ALTER TABLE ...");          // DDL suelto
+```
+
+Notas:
+- `DatabaseColumn.Properties` solo soporta `IDENTITY` y `ROWGUIDCOL` (el DDL parte por comas).
+- `IndexTypes` solo tiene `Unique` y `NonUnique`: no hay PK compuesta. Para claves compuestas se usa una PK surrogate + indice UNIQUE.
+- Los indices UNIQUE de columnas nullable se crean filtrados (`WHERE col IS NOT NULL`) porque SQL Server solo admite un NULL por indice UNIQUE.
 
 ### Obstáculo 11: LogLevel ambiguo
 
@@ -224,11 +240,51 @@ OODatabaseManager (DataCenter.DatabaseManager)
     └── .Tools → DatabaseTools (LocalDatabaseTools)
             ├── ExecuteQueryResultSet(sql, params) → ResultSet
             ├── ExecuteQueryObjectCount(sql, params) → long
-            ├── CreateSession(string logstring) → Session
-            │       ├── ExecuteTransaction(string sql, params)
+            ├── ExecuteReportObject<T>(obj) / ExecuteReportObjects<T>(...) → entidades
+            ├── CreateSession(log, userId) → Session
+            │       ├── InsertObject(obj) / InsertObjectWithID(obj)
+            │       ├── UpdateObjectChanges(obj) / DeleteObject(obj)
             │       └── TryExecute() → ProcessResult
-            └── GenerateUniqueID(mappingObject, qty)
+            └── GenerateUniqueID(mappingObject, qty) → SequenceManager
 ```
+
+### Modelo de objetos (OBLIGATORIO para escrituras)
+
+Las entidades están en `GymService/Models/Generated/GYM_*.cs` (namespace `AxDatabase`, clase = tabla).
+Las PK ya NO son IDENTITY: las asigna Anxo con secuencias.
+
+```csharp
+// INSERT
+var s = tools.CreateSession("MODULO", userId);
+var obj = new GYM_MEMBERS { FIRST_NAME = "Ana", LAST_NAME = "Pérez", STATUS = "active" };
+s.InsertObject(obj);
+if (s.TryExecute().IsError) { /* manejar */ }
+long newId = obj.ID;                       // asignado por la secuencia
+
+// UPDATE parcial (solo las propiedades asignadas)
+var s2 = tools.CreateSession("MODULO", userId);
+s2.UpdateObjectChanges(new GYM_MEMBERS { ID = newId, STATUS = "inactive" });
+s2.TryExecute();
+
+// DELETE
+var s3 = tools.CreateSession("MODULO", userId);
+s3.DeleteObject(new GYM_MEMBERS { ID = newId });
+s3.TryExecute();
+
+// Cabecera + detalle en UNA transacción (ID conocido antes de insertar)
+var seq = tools.GenerateUniqueID(GYM_SALES.DatabaseMappingObject, 1);
+long saleId = seq.GetInt64UniqueId();
+var s4 = tools.CreateSession("MODULO", userId);
+s4.InsertObjectWithID(new GYM_SALES { ID = saleId, SALE_NUMBER = "V1", ... });
+s4.InsertObject(new GYM_SALE_ITEMS { SALE_ID = saleId, PRODUCT_ID = p, QUANTITY = 1, ... });
+s4.TryExecute();
+```
+
+Reglas:
+- NUNCA escribir `id`, `created_at`, `updated_at`, `object_version` ni `created_by` en SQL:
+  Anxo los rellena (`created_by`/auditoría vienen de `Session.UserID`).
+- Los SELECT de listados/reportes pueden seguir en SQL parametrizado con `?`.
+- Los nombres de propiedad son las columnas en MAYÚSCULAS; las columnas nullable generan tipos nullable.
 
 ### Patrón de servicio (Windows Service)
 
@@ -275,11 +331,14 @@ public class MyModule(DatabaseTools tools)
 8. **NUNCA** usar `row["column"]` — usa `row.GetObject(index)` con el índice de columna.
 9. **NUNCA** usar `DataType.BigInt`, `DataType.NVarChar`, `DataType.Bit`, `DataType.Int` — usa `DataType.Int64`, `DataType.String`, `DataType.Boolean`, `DataType.Int32`.
 10. Los parámetros SQL usan `?` como placeholder y se pasan como argumentos adicionales.
-11. Para INSERT/UPDATE/DELETE, usa `tools.CreateSession()` + `session.ExecuteTransaction()` + `session.TryExecute()`.
+11. Para INSERT/UPDATE/DELETE usa SIEMPRE objetos: `tools.CreateSession(log, userId)` + `InsertObject`/`UpdateObjectChanges`/`DeleteObject` + `TryExecute()`.
 12. ServiceDefinition usa strings simples: `StartType = "auto"`, `ServiceAccount = "localsystem"`.
 13. ServiceConsole.Execute requiere 3 args: `(args, serviceDefinition, serviceImplementation)`.
 14. Logger.ConfigLogger requiere: `(name, level, localtime, logToConsole, filePerSubModule, defaultPath)`.
 15. Los módulos de negocio reciben `DatabaseTools`, no `OODatabaseManager`.
+16. NUNCA escribas `id`, `created_at`, `updated_at`, `object_version` ni `created_by`: Anxo los gestiona.
+17. Si necesitas el ID antes de insertar (cabecera+detalle), usa `GenerateUniqueID(ENTIDAD.DatabaseMappingObject, 1)` + `InsertObjectWithID`.
+18. Las entidades se regeneran desde `Models/_ModelGym.xml` con `AnxoDatabaseGenerator`; no se editan a mano.
 
 ---
 
@@ -329,10 +388,7 @@ ilspycmd --type ClassName "path\to\assembly.dll" | Select-String -Pattern 'publi
 
 ## Estado actual del proyecto
 
-- **Compilación:** ✓ Exitosa (0 errores, 6 warnings de NuGet)
-- **IdentityModule:** ✓ Implementado con API correcta
-- **Otros módulos:** Stubs vacíos (pendiente de implementación)
-- **DatabaseService:** Stub (API de DatabaseAdministrator requiere investigación)
-- **WebServerService:** ✓ Corregido
-- **Program.cs:** ✓ Corregido
-- **DataCenter.cs:** ✓ Corregido
+- **Compilación:** ✓ Exitosa (0 errores)
+- **IdentityModule:** ✓ Implementado (PBKDF2, MFA AES-256, bootstrap atómico)
+- **Modulos de negocio:** ✓ Implementados sobre `DatabaseTools`/`Session` + SQL parametrizado
+- **DatabaseService:** ✓ Implementado con `DatabaseAdministrator` (tablas, columnas, indices UNIQUE y FK aditivos)

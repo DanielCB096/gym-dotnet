@@ -56,8 +56,16 @@ namespace GymService.Modules.Billing
                     invoiceNumber = "INV-" + DateTime.Now.ToString("yyyyMMddHHmmss");
                 }
 
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("INSERT INTO gym_invoices (member_id, invoice_number, amount, status, invoice_date) VALUES (?, ?, ?, ?, ?)", memberId, invoiceNumber, amount, status, DateTime.Now);
+                var session = _tools.CreateSession(SubModule);
+                session.InsertObject(new GYM_INVOICES
+                {
+                    MEMBER_ID = memberId,
+                    INVOICE_NUMBER = invoiceNumber,
+                    AMOUNT = amount,
+                    TAX_AMOUNT = 0m,
+                    STATUS = status,
+                    INVOICE_DATE = DateTime.Now
+                });
 
                 if (!session.TryExecute().IsError)
                 {
@@ -91,8 +99,12 @@ namespace GymService.Modules.Billing
 
             try
             {
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("UPDATE gym_invoices SET status = ? WHERE id = ?", status, invoiceId);
+                var session = _tools.CreateSession(SubModule);
+                session.UpdateObjectChanges(new GYM_INVOICES
+                {
+                    ID = invoiceId,
+                    STATUS = status
+                });
 
                 if (!session.TryExecute().IsError)
                 {
@@ -125,8 +137,8 @@ namespace GymService.Modules.Billing
 
             try
             {
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("DELETE FROM gym_invoices WHERE id = ?", invoiceId);
+                var session = _tools.CreateSession(SubModule);
+                session.DeleteObject(new GYM_INVOICES { ID = invoiceId });
 
                 if (!session.TryExecute().IsError)
                 {

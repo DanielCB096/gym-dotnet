@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using AxLogger;
+using AxLibraries;
 using AxDatabase;
 using AxObjectOrientedDatabase;
 using GymService.Tools;
@@ -19,6 +20,22 @@ namespace GymService.Modules.Identity
     public class IdentityModule
     {
         private const string SubModule = "IDENTITY_MODULE";
+
+        // Formato de contraseñas: pbkdf2-sha256$<iteraciones>$<salBase64>$<hashBase64>
+        private const string Pbkdf2PasswordPrefix = "pbkdf2-sha256$";
+        private const int Pbkdf2Iterations = 210_000;
+        private const int Pbkdf2SaltSize = 16;
+        private const int Pbkdf2KeySize = 32;
+
+        // Prefijo del formato antiguo (en realidad SHA-256(sal + password)).
+        private const string LegacyPasswordPrefix = "argon2id$";
+
+        // Prefijo de los secretos MFA cifrados con AES-256.
+        private const string MfaEncryptedPrefix = "enc:";
+
+        // Prefijo de los códigos de respaldo hasheados con SHA-256 (hexadecimal).
+        private const string BackupCodeHashPrefix = "sha256:";
+
         private DatabaseTools _tools;
         private IConfiguration _configuration;
 
@@ -26,16 +43,6 @@ namespace GymService.Modules.Identity
         {
             _tools = tools;
             _configuration = configuration;
-        }
-
-        private object GetCellValue(Row row, string columnName)
-        {
-            var rs = _tools.ExecuteQueryResultSet("SELECT 1");
-            var columns = rs.Columns;
-            // We need the ResultSet from the actual query, not a dummy one.
-            // This helper is called from within a method that has the ResultSet.
-            // Instead, we'll use a different approach: pass the column index map.
-            return null;
         }
 
         private int GetColumnIndex(ResultSet result, string columnName)
@@ -91,8 +98,8 @@ namespace GymService.Modules.Identity
                     return false;
                 }
 
-                // Verify password (Argon2 verification - simplified)
-                if (!VerifyPassword(password, storedHash))
+                // Verify password (PBKDF2-SHA256, con migración transparente del formato antiguo)
+                if (!VerifyPassword(password, storedHash, userId))
                 {
                     response["success"] = false;
                     response["message"] = "Usuario o contraseña inválidos";
@@ -116,16 +123,22 @@ namespace GymService.Modules.Identity
 
                 // Store session
                 var session = _tools.CreateSession(SubModule);
-                session.ExecuteTransaction(
-                    "INSERT INTO gym_sessions (user_id, token_hash, device_info, ip_address, expires_at, is_active) VALUES (?, ?, ?, ?, ?, 1)",
-                    userId, tokenHash, deviceInfo, ipAddress, expiresAt
-                );
+                session.InsertObject(new GYM_SESSIONS
+                {
+                    USER_ID = userId,
+                    TOKEN_HASH = tokenHash,
+                    DEVICE_INFO = deviceInfo,
+                    IP_ADDRESS = ipAddress,
+                    EXPIRES_AT = expiresAt,
+                    IS_ACTIVE = true
+                });
 
                 // Update last login
-                session.ExecuteTransaction(
-                    "UPDATE gym_users SET last_login = GETDATE() WHERE id = ?",
-                    userId
-                );
+                session.UpdateObjectChanges(new GYM_USERS
+                {
+                    ID = userId,
+                    LAST_LOGIN = DateTime.Now
+                });
 
                 if (session.TryExecute().IsError)
                 {
@@ -209,11 +222,23 @@ namespace GymService.Modules.Identity
             {
                 var tokenHash = SecurityValidation.Sha256Hash(token);
 
-                var session = _tools.CreateSession(SubModule);
-                session.ExecuteTransaction(
-                    "UPDATE gym_sessions SET is_active = 0 WHERE token_hash = ?",
+                // El token no es la PK: se resuelve el ID de la sesión antes de actualizar el objeto.
+                var result = _tools.ExecuteQueryResultSet(
+                    "SELECT id FROM gym_sessions WHERE token_hash = ?",
                     tokenHash
                 );
+
+                if (result == null || result.Rows.Count == 0)
+                    return true;
+
+                var sessionId = Convert.ToInt64(GetRowValue(result.Rows[0], result, "id"));
+
+                var session = _tools.CreateSession(SubModule);
+                session.UpdateObjectChanges(new GYM_SESSIONS
+                {
+                    ID = sessionId,
+                    IS_ACTIVE = false
+                });
                 session.TryExecute();
 
                 return true;
@@ -234,6 +259,16 @@ namespace GymService.Modules.Identity
 
             try
             {
+                // El secreto TOTP debe cifrarse con una clave configurada.
+                var cipher = CreateMfaCipher();
+                if (cipher == null)
+                {
+                    Logger.AddErrorSubModule(SubModule, "Authentication:MfaEncryptionKey no está configurada; no se puede cifrar el secreto MFA");
+                    response["success"] = false;
+                    response["message"] = "La configuración de cifrado de MFA no está disponible";
+                    return false;
+                }
+
                 // Generate secret
                 var bytes = new byte[20];
                 using var rng = RandomNumberGenerator.Create();
@@ -251,14 +286,17 @@ namespace GymService.Modules.Identity
                     backupCodes.Add(SecurityValidation.GenerateOtp(8));
                 }
 
-                // Encrypt and store secret (simplified - in production use proper encryption)
-                var encryptedSecret = Convert.ToBase64String(Encoding.UTF8.GetBytes(secret));
+                // Encrypt secret (AES-256) and hash backup codes before storing them
+                var encryptedSecret = MfaEncryptedPrefix + cipher.EncryptAsBASE64(secret);
+                var hashedBackupCodes = backupCodes.Select(HashBackupCode);
 
                 var session = _tools.CreateSession(SubModule);
-                session.ExecuteTransaction(
-                    "UPDATE gym_users SET mfa_secret_encrypted = ?, mfa_backup_codes = ? WHERE id = ?",
-                    encryptedSecret, string.Join(",", backupCodes), userId
-                );
+                session.UpdateObjectChanges(new GYM_USERS
+                {
+                    ID = userId,
+                    MFA_SECRET_ENCRYPTED = encryptedSecret,
+                    MFA_BACKUP_CODES = string.Join(",", hashedBackupCodes)
+                });
 
                 if (session.TryExecute().IsError)
                 {
@@ -293,6 +331,16 @@ namespace GymService.Modules.Identity
 
             try
             {
+                // El secreto TOTP está cifrado: se necesita la clave de configuración.
+                var cipher = CreateMfaCipher();
+                if (cipher == null)
+                {
+                    Logger.AddErrorSubModule(SubModule, "Authentication:MfaEncryptionKey no está configurada; no se puede verificar MFA");
+                    response["success"] = false;
+                    response["message"] = "La configuración de cifrado de MFA no está disponible";
+                    return false;
+                }
+
                 // Get stored secret
                 var result = _tools.ExecuteQueryResultSet(
                     "SELECT mfa_secret_encrypted, mfa_backup_codes FROM gym_users WHERE id = ?",
@@ -310,27 +358,45 @@ namespace GymService.Modules.Identity
                 var encryptedSecret = Convert.ToString(GetRowValue(row, result, "mfa_secret_encrypted")) ?? string.Empty;
                 var backupCodes = Convert.ToString(GetRowValue(row, result, "mfa_backup_codes")) ?? string.Empty;
 
-                // Decrypt secret
-                var secret = Encoding.UTF8.GetString(Convert.FromBase64String(encryptedSecret));
+                if (string.IsNullOrEmpty(encryptedSecret))
+                {
+                    response["success"] = false;
+                    response["message"] = "MFA no configurado";
+                    return false;
+                }
+
+                // Decrypt secret (soporta tanto "enc:" como el Base64 legacy)
+                string secret;
+                try
+                {
+                    secret = DecryptMfaSecret(encryptedSecret, cipher);
+                }
+                catch (Exception ex)
+                {
+                    Logger.AddErrorSubModule(SubModule, $"Error al descifrar el secreto MFA: {ex.Message}");
+                    response["success"] = false;
+                    response["message"] = "No se pudo descifrar la configuración MFA";
+                    return false;
+                }
 
                 // Verify TOTP code (simple implementation)
                 var isValid = VerifyTotpCode(secret, code);
 
-                // Or check backup codes
+                // Or check backup codes (hasheados con "sha256:" o legacy en texto plano)
                 if (!isValid)
                 {
-                    var codesList = backupCodes.Split(',');
-                    isValid = codesList.Contains(code);
+                    isValid = VerifyBackupCode(code, backupCodes);
                 }
 
                 if (isValid)
                 {
                     // Enable MFA
                     var session = _tools.CreateSession(SubModule);
-                    session.ExecuteTransaction(
-                        "UPDATE gym_users SET mfa_enabled = 1 WHERE id = ?",
-                        userId
-                    );
+                    session.UpdateObjectChanges(new GYM_USERS
+                    {
+                        ID = userId,
+                        MFA_ENABLED = true
+                    });
                     session.TryExecute();
 
                     response["success"] = true;
@@ -365,11 +431,14 @@ namespace GymService.Modules.Identity
                 var expiryMinutes = int.Parse(_configuration["Authentication:OtpExpiryMinutes"] ?? "10");
 
                 var session = _tools.CreateSession(SubModule);
-                session.ExecuteTransaction(@"
-                    INSERT INTO gym_otp_codes (email, code_hash, purpose, expires_at, used) 
-                    VALUES (?, ?, ?, DATEADD(MINUTE, ?, GETDATE()), 0)",
-                    email, otpHash, purpose, expiryMinutes
-                );
+                session.InsertObject(new GYM_OTP_CODES
+                {
+                    EMAIL = email,
+                    CODE_HASH = otpHash,
+                    PURPOSE = purpose,
+                    EXPIRES_AT = DateTime.Now.AddMinutes(expiryMinutes),
+                    USED = false
+                });
 
                 if (session.TryExecute().IsError)
                 {
@@ -434,10 +503,11 @@ namespace GymService.Modules.Identity
                 // Mark as used
                 var otpId = Convert.ToInt64(GetRowValue(row, result, "id"));
                 var session = _tools.CreateSession(SubModule);
-                session.ExecuteTransaction(
-                    "UPDATE gym_otp_codes SET used = 1 WHERE id = ?",
-                    otpId
-                );
+                session.UpdateObjectChanges(new GYM_OTP_CODES
+                {
+                    ID = otpId,
+                    USED = true
+                });
                 session.TryExecute();
 
                 response["success"] = true;
@@ -461,27 +531,35 @@ namespace GymService.Modules.Identity
 
             try
             {
-                // Check if owner already exists
-                long count = _tools.ExecuteQueryObjectCount(
+                // Hash password
+                var passwordHash = HashPassword(password);
+
+                // Solo puede existir un usuario dueño.
+                long existingOwners = _tools.ExecuteQueryObjectCount(
                     "SELECT COUNT(*) FROM gym_users WHERE is_owner = 1"
                 );
 
-                if (count > 0)
+                if (existingOwners > 0)
                 {
+                    Logger.AddWarningSubModule(SubModule, "Intento de crear un segundo usuario dueño");
                     response["success"] = false;
                     response["message"] = "Ya existe un usuario dueño";
                     return false;
                 }
 
-                // Hash password
-                var passwordHash = HashPassword(password);
+                var usuario = new GYM_USERS
+                {
+                    USERNAME = username,
+                    EMAIL = email,
+                    PASSWORD_HASH = passwordHash,
+                    ROLE = "OWNER",
+                    FULL_NAME = fullName,
+                    IS_ACTIVE = true,
+                    IS_OWNER = true
+                };
 
                 var session = _tools.CreateSession(SubModule);
-                session.ExecuteTransaction(@"
-                    INSERT INTO gym_users (username, email, password_hash, role, full_name, is_active, is_owner, created_at) 
-                    VALUES (?, ?, ?, 'OWNER', ?, 1, 1, GETDATE())",
-                    username, email, passwordHash, fullName
-                );
+                session.InsertObject(usuario);
 
                 if (session.TryExecute().IsError)
                 {
@@ -490,6 +568,8 @@ namespace GymService.Modules.Identity
                     response["message"] = "Error interno del servidor";
                     return false;
                 }
+
+                Logger.AddInfoSubModule(SubModule, $"Usuario dueño creado con ID {usuario.ID}");
 
                 // Seed default permissions
                 SeedDefaultPermissions();
@@ -543,6 +623,9 @@ namespace GymService.Modules.Identity
                 ("admin.settings", "Configuración", "admin")
             };
 
+            // Inserta en una sola transacción los permisos que aún no existen.
+            var newPermissions = new List<GYM_PERMISSIONS>();
+
             foreach (var (code, name, module) in permissions)
             {
                 long count = _tools.ExecuteQueryObjectCount(
@@ -552,27 +635,47 @@ namespace GymService.Modules.Identity
 
                 if (count == 0)
                 {
-                    var session = _tools.CreateSession(SubModule);
-                    session.ExecuteTransaction(
-                        "INSERT INTO gym_permissions (permission_code, permission_name, module, description) VALUES (?, ?, ?, ?)",
-                        code, name, module, name
-                    );
-                    session.TryExecute();
+                    newPermissions.Add(new GYM_PERMISSIONS
+                    {
+                        PERMISSION_CODE = code,
+                        PERMISSION_NAME = name,
+                        MODULE = module,
+                        DESCRIPTION = name
+                    });
+                }
+            }
+
+            if (newPermissions.Count > 0)
+            {
+                var permissionSession = _tools.CreateSession(SubModule);
+                foreach (var permission in newPermissions)
+                {
+                    permissionSession.InsertObject(permission);
+                }
+
+                if (permissionSession.TryExecute().IsError)
+                {
+                    Logger.AddErrorSubModule(SubModule, "Error al insertar los permisos por defecto");
+                    return;
                 }
             }
 
             // Grant all permissions to OWNER role
             var allPermsResult = _tools.ExecuteQueryResultSet("SELECT id FROM gym_permissions");
-            if (allPermsResult != null)
+            if (allPermsResult != null && allPermsResult.Rows.Count > 0)
             {
                 var session = _tools.CreateSession(SubModule);
                 foreach (var row in allPermsResult.Rows)
                 {
                     var permId = Convert.ToInt64(GetRowValue(row, allPermsResult, "id"));
-                    session.ExecuteTransaction(
-                        "INSERT INTO gym_role_permissions (role, permission_id, granted) VALUES ('OWNER', ?, 1)",
-                        permId
-                    );
+
+                    // GYM_ROLE_PERMISSIONS tiene PK surrogate: la asigna la secuencia Anxo.
+                    session.InsertObject(new GYM_ROLE_PERMISSIONS
+                    {
+                        ROLE = "OWNER",
+                        PERMISSION_ID = permId,
+                        GRANTED = true
+                    });
                 }
                 session.TryExecute();
             }
@@ -614,53 +717,127 @@ namespace GymService.Modules.Identity
         }
 
         /// <summary>
-        /// Hash password using Argon2 (simplified - use Argon2 library in production)
+        /// Hash password using PBKDF2-SHA256.
+        /// Formato: pbkdf2-sha256$&lt;iteraciones&gt;$&lt;salBase64&gt;$&lt;hashBase64&gt;
         /// </summary>
         private string HashPassword(string password)
         {
-            // Simplified hash - in production use Argon2
-            using var sha256 = SHA256.Create();
-            var salt = new byte[16];
-            using var rng = RandomNumberGenerator.Create();
-            rng.GetBytes(salt);
+            var salt = new byte[Pbkdf2SaltSize];
+            RandomNumberGenerator.Fill(salt);
+
+            var hash = Rfc2898DeriveBytes.Pbkdf2(password, salt, Pbkdf2Iterations, HashAlgorithmName.SHA256, Pbkdf2KeySize);
+
+            return Pbkdf2PasswordPrefix
+                + Pbkdf2Iterations.ToString()
+                + "$" + Convert.ToBase64String(salt)
+                + "$" + Convert.ToBase64String(hash);
+        }
+
+        /// <summary>
+        /// Verify password against hash. Si el hash guardado usa el formato antiguo
+        /// (argon2id$... en realidad SHA-256), lo verifica y migra la fila a PBKDF2.
+        /// </summary>
+        private bool VerifyPassword(string password, string hash, long userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(password) || string.IsNullOrEmpty(hash))
+                    return false;
+
+                if (hash.StartsWith(Pbkdf2PasswordPrefix, StringComparison.Ordinal))
+                    return VerifyPbkdf2Password(password, hash);
+
+                if (hash.StartsWith(LegacyPasswordPrefix, StringComparison.Ordinal))
+                {
+                    if (!VerifyLegacySha256Password(password, hash))
+                        return false;
+
+                    // Migración transparente: re-hashear con PBKDF2 y actualizar la fila.
+                    TryRehashPassword(userId, password);
+                    return true;
+                }
+
+                // Formato desconocido: no se acepta.
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Verify a PBKDF2-SHA256 password hash.
+        /// </summary>
+        private bool VerifyPbkdf2Password(string password, string hash)
+        {
+            var parts = hash.Split('$');
+            if (parts.Length != 4)
+                return false;
+
+            if (!int.TryParse(parts[1], out var iterations) || iterations <= 0)
+                return false;
+
+            var salt = Convert.FromBase64String(parts[2]);
+            var storedHash = Convert.FromBase64String(parts[3]);
+
+            if (salt.Length == 0 || storedHash.Length == 0)
+                return false;
+
+            var computedHash = Rfc2898DeriveBytes.Pbkdf2(
+                password, salt, iterations, HashAlgorithmName.SHA256, storedHash.Length);
+
+            return CryptographicOperations.FixedTimeEquals(computedHash, storedHash);
+        }
+
+        /// <summary>
+        /// Verify a legacy "argon2id$..." hash, which was really SHA-256(salt + password).
+        /// </summary>
+        private bool VerifyLegacySha256Password(string password, string hash)
+        {
+            var parts = hash.Split('$');
+            if (parts.Length < 5)
+                return false;
+
+            var salt = Convert.FromBase64String(parts[3]);
+            var storedHash = Convert.FromBase64String(parts[4]);
 
             var passwordBytes = Encoding.UTF8.GetBytes(password);
             var combined = new byte[salt.Length + passwordBytes.Length];
             Array.Copy(salt, 0, combined, 0, salt.Length);
             Array.Copy(passwordBytes, 0, combined, salt.Length, passwordBytes.Length);
 
-            var hash = sha256.ComputeHash(combined);
-            return "argon2id$v=19$m=65536,t=3,p=4$" + Convert.ToBase64String(salt) + "$" + Convert.ToBase64String(hash);
+            using var sha256 = SHA256.Create();
+            var computedHash = sha256.ComputeHash(combined);
+
+            return CryptographicOperations.FixedTimeEquals(computedHash, storedHash);
         }
 
         /// <summary>
-        /// Verify password against hash
+        /// Re-hash a password with PBKDF2 after a successful legacy verification.
         /// </summary>
-        private bool VerifyPassword(string password, string hash)
+        private void TryRehashPassword(long userId, string password)
         {
             try
             {
-                // Simplified verification - in production use Argon2
-                var parts = hash.Split('$');
-                if (parts.Length < 5)
-                    return false;
+                var newHash = HashPassword(password);
 
-                var salt = Convert.FromBase64String(parts[3]);
-                var storedHash = Convert.FromBase64String(parts[4]);
+                var session = _tools.CreateSession(SubModule);
+                session.UpdateObjectChanges(new GYM_USERS
+                {
+                    ID = userId,
+                    PASSWORD_HASH = newHash
+                });
 
-                using var sha256 = SHA256.Create();
-                var passwordBytes = Encoding.UTF8.GetBytes(password);
-                var combined = new byte[salt.Length + passwordBytes.Length];
-                Array.Copy(salt, 0, combined, 0, salt.Length);
-                Array.Copy(passwordBytes, 0, combined, salt.Length, passwordBytes.Length);
-
-                var computedHash = sha256.ComputeHash(combined);
-
-                return computedHash.SequenceEqual(storedHash);
+                var rc = session.TryExecute();
+                if (rc.IsError)
+                    Logger.AddWarningSubModule(SubModule, "No se pudo migrar el hash de contraseña a PBKDF2");
+                else
+                    Logger.AddInfoSubModule(SubModule, "Hash de contraseña migrado a PBKDF2");
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                Logger.AddWarningSubModule(SubModule, $"Error al migrar el hash de contraseña: {ex.Message}");
             }
         }
 
@@ -675,18 +852,30 @@ namespace GymService.Modules.Identity
             {
                 var passwordHash = HashPassword(newPassword);
 
-                var session = _tools.CreateSession(SubModule);
-                session.ExecuteTransaction(
-                    "UPDATE gym_users SET password_hash = ? WHERE is_owner = 1",
-                    passwordHash
+                // La fila se identifica por IS_OWNER (no es PK): se resuelven los IDs primero.
+                var ownersResult = _tools.ExecuteQueryResultSet(
+                    "SELECT id FROM gym_users WHERE is_owner = 1"
                 );
 
-                if (session.TryExecute().IsError)
+                if (ownersResult != null && ownersResult.Rows.Count > 0)
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al resetear contraseña del dueño");
-                    response["success"] = false;
-                    response["message"] = "Error interno del servidor";
-                    return false;
+                    var session = _tools.CreateSession(SubModule);
+                    foreach (var row in ownersResult.Rows)
+                    {
+                        session.UpdateObjectChanges(new GYM_USERS
+                        {
+                            ID = Convert.ToInt64(GetRowValue(row, ownersResult, "id")),
+                            PASSWORD_HASH = passwordHash
+                        });
+                    }
+
+                    if (session.TryExecute().IsError)
+                    {
+                        Logger.AddErrorSubModule(SubModule, "Error al resetear contraseña del dueño");
+                        response["success"] = false;
+                        response["message"] = "Error interno del servidor";
+                        return false;
+                    }
                 }
 
                 response["success"] = true;
@@ -716,6 +905,80 @@ namespace GymService.Modules.Identity
                 return Convert.ToString(GetRowValue(result.Rows[0], result, "email")) ?? string.Empty;
 
             return string.Empty;
+        }
+
+        /// <summary>
+        /// Create the AES-256 cipher used for MFA secrets, or null if no key is configured.
+        /// </summary>
+        private SecuritySymmetricEncryption? CreateMfaCipher()
+        {
+            var key = _configuration["Authentication:MfaEncryptionKey"];
+            if (string.IsNullOrWhiteSpace(key))
+                return null;
+
+            return new SecuritySymmetricEncryption(key!, SecuritySymmetricEncryption.Algorithm.AES, 256);
+        }
+
+        /// <summary>
+        /// Decrypt a stored MFA secret. Values with the "enc:" prefix are AES-encrypted;
+        /// anything else is the legacy Base64-encoded plaintext secret.
+        /// </summary>
+        private static string DecryptMfaSecret(string storedValue, SecuritySymmetricEncryption cipher)
+        {
+            if (storedValue.StartsWith(MfaEncryptedPrefix, StringComparison.Ordinal))
+                return cipher.DecryptAsBASE64(storedValue.Substring(MfaEncryptedPrefix.Length));
+
+            return Encoding.UTF8.GetString(Convert.FromBase64String(storedValue));
+        }
+
+        /// <summary>
+        /// Hash a backup code for storage: "sha256:&lt;hex&gt;".
+        /// </summary>
+        private static string HashBackupCode(string code)
+        {
+            return BackupCodeHashPrefix + Sha256Hex(code);
+        }
+
+        /// <summary>
+        /// Verify a backup code against the stored list. Supports hashed entries
+        /// ("sha256:&lt;hex&gt;") and legacy plaintext entries.
+        /// </summary>
+        private static bool VerifyBackupCode(string code, string storedBackupCodes)
+        {
+            if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(storedBackupCodes))
+                return false;
+
+            var codeHashHex = Sha256Hex(code);
+
+            foreach (var entry in storedBackupCodes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                if (entry.StartsWith(BackupCodeHashPrefix, StringComparison.Ordinal))
+                {
+                    var storedHex = entry.Substring(BackupCodeHashPrefix.Length);
+                    if (FixedTimeEqualsStrings(storedHex, codeHashHex))
+                        return true;
+                }
+                else if (FixedTimeEqualsStrings(entry, code))
+                {
+                    // Compatibilidad con códigos de respaldo antiguos en texto plano.
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string Sha256Hex(string value)
+        {
+            var bytes = Encoding.UTF8.GetBytes(value);
+            return Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+        }
+
+        private static bool FixedTimeEqualsStrings(string a, string b)
+        {
+            var bytesA = Encoding.UTF8.GetBytes(a ?? string.Empty);
+            var bytesB = Encoding.UTF8.GetBytes(b ?? string.Empty);
+            return CryptographicOperations.FixedTimeEquals(bytesA, bytesB);
         }
 
         /// <summary>

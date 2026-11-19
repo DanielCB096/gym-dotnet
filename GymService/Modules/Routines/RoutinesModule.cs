@@ -49,7 +49,7 @@ namespace GymService.Modules.Routines
                 var planName = Convert.ToString(routineData.GetValueOrDefault("planName", "")) ?? "";
                 var description = Convert.ToString(routineData.GetValueOrDefault("description", "")) ?? "";
                 var difficulty = Convert.ToString(routineData.GetValueOrDefault("difficulty", "beginner")) ?? "beginner";
-                var durationMinutes = routineData.ContainsKey("durationMinutes") ? Convert.ToInt32(routineData["durationMinutes"]) : 30;
+                var durationMinutes = routineData.ContainsKey("durationMinutes") ? Convert.ToInt32(routineData["durationMinutes"]) : 45;
 
                 if (string.IsNullOrEmpty(planName))
                 {
@@ -58,8 +58,18 @@ namespace GymService.Modules.Routines
                     return false;
                 }
 
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("INSERT INTO gym_routine_plans (plan_name, description, difficulty, duration_minutes, is_active) VALUES (?, ?, ?, ?, 1)", planName, description, difficulty, durationMinutes);
+                var session = _tools.CreateSession(SubModule);
+                long newRoutineId = _tools.GenerateUniqueID(GYM_ROUTINE_PLANS.DatabaseMappingObject, 1).GetInt64UniqueId();
+
+                session.InsertObjectWithID(new GYM_ROUTINE_PLANS
+                {
+                    ID = newRoutineId,
+                    PLAN_NAME = planName,
+                    DESCRIPTION = description,
+                    DIFFICULTY = difficulty,
+                    DURATION_MINUTES = durationMinutes,
+                    IS_ACTIVE = true
+                });
 
                 if (!session.TryExecute().IsError)
                 {
@@ -95,10 +105,17 @@ namespace GymService.Modules.Routines
                 var planName = Convert.ToString(routineData.GetValueOrDefault("planName", "")) ?? "";
                 var description = Convert.ToString(routineData.GetValueOrDefault("description", "")) ?? "";
                 var difficulty = Convert.ToString(routineData.GetValueOrDefault("difficulty", "beginner")) ?? "beginner";
-                var durationMinutes = routineData.ContainsKey("durationMinutes") ? Convert.ToInt32(routineData["durationMinutes"]) : 30;
+                var durationMinutes = routineData.ContainsKey("durationMinutes") ? Convert.ToInt32(routineData["durationMinutes"]) : 45;
 
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("UPDATE gym_routine_plans SET plan_name = ?, description = ?, difficulty = ?, duration_minutes = ? WHERE id = ?", planName, description, difficulty, durationMinutes, routineId);
+                var session = _tools.CreateSession(SubModule);
+                session.UpdateObjectChanges(new GYM_ROUTINE_PLANS
+                {
+                    ID = routineId,
+                    PLAN_NAME = planName,
+                    DESCRIPTION = description,
+                    DIFFICULTY = difficulty,
+                    DURATION_MINUTES = durationMinutes
+                });
 
                 if (!session.TryExecute().IsError)
                 {
@@ -131,8 +148,8 @@ namespace GymService.Modules.Routines
 
             try
             {
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("DELETE FROM gym_routine_plans WHERE id = ?", routineId);
+                var session = _tools.CreateSession(SubModule);
+                session.DeleteObject(new GYM_ROUTINE_PLANS { ID = routineId });
 
                 if (!session.TryExecute().IsError)
                 {

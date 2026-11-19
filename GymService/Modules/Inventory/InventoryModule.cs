@@ -59,8 +59,16 @@ namespace GymService.Modules.Inventory
                     return false;
                 }
 
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("INSERT INTO gym_inventory (product_name, category, price, stock_quantity, min_stock, is_active) VALUES (?, ?, ?, ?, ?, 1)", productName, category, price, stock, minStock);
+                var session = _tools.CreateSession(SubModule);
+                session.InsertObject(new GYM_INVENTORY
+                {
+                    PRODUCT_NAME = productName,
+                    CATEGORY = category,
+                    PRICE = price,
+                    STOCK_QUANTITY = stock,
+                    MIN_STOCK = minStock,
+                    IS_ACTIVE = true
+                });
 
                 if (!session.TryExecute().IsError)
                 {
@@ -93,8 +101,12 @@ namespace GymService.Modules.Inventory
 
             try
             {
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("UPDATE gym_inventory SET stock_quantity = ? WHERE id = ?", newStock, productId);
+                var session = _tools.CreateSession(SubModule);
+                session.UpdateObjectChanges(new GYM_INVENTORY
+                {
+                    ID = productId,
+                    STOCK_QUANTITY = newStock
+                });
 
                 if (!session.TryExecute().IsError)
                 {
@@ -127,8 +139,8 @@ namespace GymService.Modules.Inventory
 
             try
             {
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("DELETE FROM gym_inventory WHERE id = ?", productId);
+                var session = _tools.CreateSession(SubModule);
+                session.DeleteObject(new GYM_INVENTORY { ID = productId });
 
                 if (!session.TryExecute().IsError)
                 {

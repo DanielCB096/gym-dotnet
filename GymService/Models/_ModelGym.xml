@@ -1,0 +1,907 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<objectdb>
+
+  <database_generator model_name="ModelGym" />
+
+  <object name="GYM_USERS" table="gym_users" sequence="GYM_USERS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="USERNAME" column="username" type="string" flag="not_null" stringlength="100" />
+    <attribute name="EMAIL" column="email" type="string" flag="not_null" stringlength="200" />
+    <attribute name="PASSWORD_HASH" column="password_hash" type="string" flag="not_null" stringlength="255" />
+    <attribute name="ROLE" column="role" type="string" flag="not_null" stringlength="50" />
+    <attribute name="FULL_NAME" column="full_name" type="string" flag="null" stringlength="200" />
+    <attribute name="IS_ACTIVE" column="is_active" type="bit" flag="not_null" default="1" />
+    <attribute name="IS_OWNER" column="is_owner" type="bit" flag="not_null" default="0" />
+    <attribute name="MFA_ENABLED" column="mfa_enabled" type="bit" flag="not_null" default="0" />
+    <attribute name="MFA_SECRET_ENCRYPTED" column="mfa_secret_encrypted" type="string" flag="null" stringlength="500" />
+    <attribute name="MFA_BACKUP_CODES" column="mfa_backup_codes" type="string" flag="null" stringlength="2000" />
+    <attribute name="LAST_LOGIN" column="last_login" type="datetime2" flag="null" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <indexes>
+      <index name="UX_GYM_USERS_USERNAME" type="UNIQUE"><attribute name="USERNAME" /></index>
+      <index name="UX_GYM_USERS_EMAIL" type="UNIQUE"><attribute name="EMAIL" /></index>
+    </indexes>
+
+  </object>
+
+  <object name="GYM_PERMISSIONS" table="gym_permissions" sequence="GYM_PERMISSIONS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="PERMISSION_CODE" column="permission_code" type="string" flag="not_null" stringlength="100" />
+    <attribute name="PERMISSION_NAME" column="permission_name" type="string" flag="not_null" stringlength="200" />
+    <attribute name="MODULE" column="module" type="string" flag="not_null" stringlength="50" />
+    <attribute name="DESCRIPTION" column="description" type="string" flag="null" stringlength="500" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <indexes>
+      <index name="UX_GYM_PERMISSIONS_PERMISSION_CODE" type="UNIQUE"><attribute name="PERMISSION_CODE" /></index>
+    </indexes>
+
+  </object>
+
+  <object name="GYM_ROLE_PERMISSIONS" table="gym_role_permissions" sequence="GYM_ROLE_PERMISSIONS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="ROLE" column="role" type="string" flag="not_null" stringlength="50" />
+    <attribute name="PERMISSION_ID" column="permission_id" type="int64" flag="not_null" />
+    <attribute name="GRANTED" column="granted" type="bit" flag="not_null" default="1" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_permissions">
+        <column local="permission_id" external="id" />
+      </reference>
+    </references>
+
+    <indexes>
+      <index name="UX_GYM_ROLE_PERMISSIONS_ROLE_PERMISSION_ID" type="UNIQUE">
+        <attribute name="ROLE" />
+        <attribute name="PERMISSION_ID" />
+      </index>
+    </indexes>
+
+  </object>
+
+  <object name="GYM_SESSIONS" table="gym_sessions" sequence="GYM_SESSIONS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="USER_ID" column="user_id" type="int64" flag="not_null" />
+    <attribute name="TOKEN_HASH" column="token_hash" type="string" flag="not_null" stringlength="128" />
+    <attribute name="DEVICE_INFO" column="device_info" type="string" flag="null" stringlength="500" />
+    <attribute name="IP_ADDRESS" column="ip_address" type="string" flag="null" stringlength="45" />
+    <attribute name="EXPIRES_AT" column="expires_at" type="datetime2" flag="not_null" />
+    <attribute name="IS_ACTIVE" column="is_active" type="bit" flag="not_null" default="1" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <indexes>
+      <index name="UX_GYM_SESSIONS_TOKEN_HASH" type="UNIQUE"><attribute name="TOKEN_HASH" /></index>
+    </indexes>
+
+    <references>
+      <reference external_table="gym_users">
+        <column local="user_id" external="id" />
+      </reference>
+    </references>
+
+  </object>
+
+  <object name="GYM_OTP_CODES" table="gym_otp_codes" sequence="GYM_OTP_CODES_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="EMAIL" column="email" type="string" flag="not_null" stringlength="200" />
+    <attribute name="CODE_HASH" column="code_hash" type="string" flag="not_null" stringlength="128" />
+    <attribute name="PURPOSE" column="purpose" type="string" flag="not_null" stringlength="50" />
+    <attribute name="EXPIRES_AT" column="expires_at" type="datetime2" flag="not_null" />
+    <attribute name="USED" column="used" type="bit" flag="not_null" default="0" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+  </object>
+
+  <object name="GYM_MEMBERS" table="gym_members" sequence="GYM_MEMBERS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="FIRST_NAME" column="first_name" type="string" flag="not_null" stringlength="100" />
+    <attribute name="LAST_NAME" column="last_name" type="string" flag="not_null" stringlength="100" />
+    <attribute name="EMAIL" column="email" type="string" flag="null" stringlength="200" />
+    <attribute name="PHONE" column="phone" type="string" flag="null" stringlength="20" />
+    <attribute name="CURP" column="curp" type="string" flag="null" stringlength="18" />
+    <attribute name="RFC" column="rfc" type="string" flag="null" stringlength="13" />
+    <attribute name="ADDRESS" column="address" type="string" flag="null" stringlength="500" />
+    <attribute name="EMERGENCY_CONTACT" column="emergency_contact" type="string" flag="null" stringlength="200" />
+    <attribute name="EMERGENCY_PHONE" column="emergency_phone" type="string" flag="null" stringlength="20" />
+    <attribute name="STATUS" column="status" type="string" flag="not_null" stringlength="20" default="active" />
+    <attribute name="PHOTO_URL" column="photo_url" type="string" flag="null" stringlength="500" />
+    <attribute name="NOTES" column="notes" type="string" flag="null" stringlength="2000" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+  </object>
+
+  <object name="GYM_MEMBERSHIP_PLANS" table="gym_membership_plans" sequence="GYM_MEMBERSHIP_PLANS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="PLAN_NAME" column="plan_name" type="string" flag="not_null" stringlength="100" />
+    <attribute name="DESCRIPTION" column="description" type="string" flag="null" stringlength="500" />
+    <attribute name="PRICE" column="price" type="decimal" flag="not_null" precision="10" scale="2" />
+    <attribute name="CURRENCY" column="currency" type="string" flag="not_null" stringlength="3" default="MXN" />
+    <attribute name="DURATION_DAYS" column="duration_days" type="int32" flag="not_null" />
+    <attribute name="MAX_DAILY_ENTRIES" column="max_daily_entries" type="int32" flag="not_null" default="-1" />
+    <attribute name="INCLUDES_CLASSES" column="includes_classes" type="bit" flag="not_null" default="0" />
+    <attribute name="INCLUDES_PREMIUM_CLASSES" column="includes_premium_classes" type="bit" flag="not_null" default="0" />
+    <attribute name="IS_ACTIVE" column="is_active" type="bit" flag="not_null" default="1" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+  </object>
+
+  <object name="GYM_MEMBERSHIPS" table="gym_memberships" sequence="GYM_MEMBERSHIPS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="MEMBER_ID" column="member_id" type="int64" flag="not_null" />
+    <attribute name="PLAN_ID" column="plan_id" type="int64" flag="not_null" />
+    <attribute name="START_DATE" column="start_date" type="date" flag="not_null" />
+    <attribute name="END_DATE" column="end_date" type="date" flag="not_null" />
+    <attribute name="STATUS" column="status" type="string" flag="not_null" stringlength="20" default="active" />
+    <attribute name="AUTO_RENEW" column="auto_renew" type="bit" flag="not_null" default="0" />
+    <attribute name="FREEZE_START" column="freeze_start" type="date" flag="null" />
+    <attribute name="FREEZE_END" column="freeze_end" type="date" flag="null" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_members">
+        <column local="member_id" external="id" />
+      </reference>
+      <reference external_table="gym_membership_plans">
+        <column local="plan_id" external="id" />
+      </reference>
+    </references>
+
+  </object>
+
+  <object name="GYM_PAYMENTS" table="gym_payments" sequence="GYM_PAYMENTS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="MEMBER_ID" column="member_id" type="int64" flag="not_null" />
+    <attribute name="MEMBERSHIP_ID" column="membership_id" type="int64" flag="null" />
+    <attribute name="AMOUNT" column="amount" type="decimal" flag="not_null" precision="10" scale="2" />
+    <attribute name="CURRENCY" column="currency" type="string" flag="not_null" stringlength="3" default="MXN" />
+    <attribute name="PAYMENT_METHOD" column="payment_method" type="string" flag="not_null" stringlength="50" />
+    <attribute name="PAYMENT_DATE" column="payment_date" type="datetime2" flag="not_null" default="GETDATE()" />
+    <attribute name="REFERENCE" column="reference" type="string" flag="null" stringlength="100" />
+    <attribute name="NOTES" column="notes" type="string" flag="null" stringlength="500" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_members">
+        <column local="member_id" external="id" />
+      </reference>
+      <reference external_table="gym_memberships">
+        <column local="membership_id" external="id" />
+      </reference>
+    </references>
+
+  </object>
+
+  <object name="GYM_ACCESS_CODES" table="gym_access_codes" sequence="GYM_ACCESS_CODES_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="MEMBER_ID" column="member_id" type="int64" flag="not_null" />
+    <attribute name="CODE_HASH" column="code_hash" type="string" flag="not_null" stringlength="128" />
+    <attribute name="HMAC_KEY" column="hmac_key" type="string" flag="not_null" stringlength="128" />
+    <attribute name="GENERATED_AT" column="generated_at" type="datetime2" flag="not_null" default="GETDATE()" />
+    <attribute name="EXPIRES_AT" column="expires_at" type="datetime2" flag="not_null" />
+    <attribute name="USED" column="used" type="bit" flag="not_null" default="0" />
+    <attribute name="USED_AT" column="used_at" type="datetime2" flag="null" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_members">
+        <column local="member_id" external="id" />
+      </reference>
+    </references>
+
+  </object>
+
+  <object name="GYM_ACCESS_LOG" table="gym_access_log" sequence="GYM_ACCESS_LOG_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="MEMBER_ID" column="member_id" type="int64" flag="not_null" />
+    <attribute name="ACCESS_TYPE" column="access_type" type="string" flag="not_null" stringlength="20" />
+    <attribute name="ACCESS_RESULT" column="access_result" type="string" flag="not_null" stringlength="20" />
+    <attribute name="DEVICE_ID" column="device_id" type="string" flag="null" stringlength="100" />
+    <attribute name="REASON" column="reason" type="string" flag="null" stringlength="500" />
+    <attribute name="ACCESSED_AT" column="accessed_at" type="datetime2" flag="not_null" default="GETDATE()" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_members">
+        <column local="member_id" external="id" />
+      </reference>
+    </references>
+
+  </object>
+
+  <object name="GYM_KIOSK_DEVICES" table="gym_kiosk_devices" sequence="GYM_KIOSK_DEVICES_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="DEVICE_NAME" column="device_name" type="string" flag="not_null" stringlength="100" />
+    <attribute name="DEVICE_TOKEN_HASH" column="device_token_hash" type="string" flag="not_null" stringlength="128" />
+    <attribute name="IS_ACTIVE" column="is_active" type="bit" flag="not_null" default="1" />
+    <attribute name="LAST_SEEN" column="last_seen" type="datetime2" flag="null" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <indexes>
+      <index name="UX_GYM_KIOSK_DEVICES_DEVICE_TOKEN_HASH" type="UNIQUE"><attribute name="DEVICE_TOKEN_HASH" /></index>
+    </indexes>
+
+  </object>
+
+  <object name="GYM_INVENTORY" table="gym_inventory" sequence="GYM_INVENTORY_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="PRODUCT_NAME" column="product_name" type="string" flag="not_null" stringlength="200" />
+    <attribute name="DESCRIPTION" column="description" type="string" flag="null" stringlength="500" />
+    <attribute name="SKU" column="sku" type="string" flag="null" stringlength="50" />
+    <attribute name="CATEGORY" column="category" type="string" flag="null" stringlength="100" />
+    <attribute name="PRICE" column="price" type="decimal" flag="not_null" precision="10" scale="2" />
+    <attribute name="COST" column="cost" type="decimal" flag="null" precision="10" scale="2" />
+    <attribute name="STOCK_QUANTITY" column="stock_quantity" type="int32" flag="not_null" default="0" />
+    <attribute name="MIN_STOCK" column="min_stock" type="int32" flag="not_null" default="5" />
+    <attribute name="IS_ACTIVE" column="is_active" type="bit" flag="not_null" default="1" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <indexes>
+      <index name="UX_GYM_INVENTORY_SKU" type="UNIQUE"><attribute name="SKU" /></index>
+    </indexes>
+
+  </object>
+
+  <object name="GYM_SALES" table="gym_sales" sequence="GYM_SALES_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="SALE_NUMBER" column="sale_number" type="string" flag="not_null" stringlength="20" />
+    <attribute name="MEMBER_ID" column="member_id" type="int64" flag="null" />
+    <attribute name="TOTAL_AMOUNT" column="total_amount" type="decimal" flag="not_null" precision="10" scale="2" />
+    <attribute name="TAX_AMOUNT" column="tax_amount" type="decimal" flag="not_null" precision="10" scale="2" default="0" />
+    <attribute name="PAYMENT_METHOD" column="payment_method" type="string" flag="not_null" stringlength="50" />
+    <attribute name="SALE_DATE" column="sale_date" type="datetime2" flag="not_null" default="GETDATE()" />
+    <attribute name="IS_OFFLINE" column="is_offline" type="bit" flag="not_null" default="0" />
+    <attribute name="STATUS" column="status" type="string" flag="not_null" stringlength="20" default="completed" />
+    <attribute name="RETURNED_AT" column="returned_at" type="datetime2" flag="null" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <indexes>
+      <index name="UX_GYM_SALES_SALE_NUMBER" type="UNIQUE"><attribute name="SALE_NUMBER" /></index>
+    </indexes>
+
+  </object>
+
+  <object name="GYM_SALE_ITEMS" table="gym_sale_items" sequence="GYM_SALE_ITEMS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="SALE_ID" column="sale_id" type="int64" flag="not_null" />
+    <attribute name="PRODUCT_ID" column="product_id" type="int64" flag="not_null" />
+    <attribute name="QUANTITY" column="quantity" type="int32" flag="not_null" />
+    <attribute name="UNIT_PRICE" column="unit_price" type="decimal" flag="not_null" precision="10" scale="2" />
+    <attribute name="TOTAL_PRICE" column="total_price" type="decimal" flag="not_null" precision="10" scale="2" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_sales">
+        <column local="sale_id" external="id" />
+      </reference>
+      <reference external_table="gym_inventory">
+        <column local="product_id" external="id" />
+      </reference>
+    </references>
+
+  </object>
+
+  <object name="GYM_SUPPLIERS" table="gym_suppliers" sequence="GYM_SUPPLIERS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="SUPPLIER_NAME" column="supplier_name" type="string" flag="not_null" stringlength="200" />
+    <attribute name="CONTACT_NAME" column="contact_name" type="string" flag="null" stringlength="200" />
+    <attribute name="EMAIL" column="email" type="string" flag="null" stringlength="200" />
+    <attribute name="PHONE" column="phone" type="string" flag="null" stringlength="20" />
+    <attribute name="ADDRESS" column="address" type="string" flag="null" stringlength="500" />
+    <attribute name="RFC" column="rfc" type="string" flag="null" stringlength="13" />
+    <attribute name="IS_ACTIVE" column="is_active" type="bit" flag="not_null" default="1" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+  </object>
+
+  <object name="GYM_PURCHASE_ORDERS" table="gym_purchase_orders" sequence="GYM_PURCHASE_ORDERS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="ORDER_NUMBER" column="order_number" type="string" flag="not_null" stringlength="20" />
+    <attribute name="SUPPLIER_ID" column="supplier_id" type="int64" flag="not_null" />
+    <attribute name="ORDER_DATE" column="order_date" type="datetime2" flag="not_null" default="GETDATE()" />
+    <attribute name="STATUS" column="status" type="string" flag="not_null" stringlength="20" default="pending" />
+    <attribute name="TOTAL_AMOUNT" column="total_amount" type="decimal" flag="not_null" precision="10" scale="2" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <indexes>
+      <index name="UX_GYM_PURCHASE_ORDERS_ORDER_NUMBER" type="UNIQUE"><attribute name="ORDER_NUMBER" /></index>
+    </indexes>
+
+  </object>
+
+  <object name="GYM_CLASS_TYPES" table="gym_class_types" sequence="GYM_CLASS_TYPES_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="TYPE_NAME" column="type_name" type="string" flag="not_null" stringlength="100" />
+    <attribute name="DESCRIPTION" column="description" type="string" flag="null" stringlength="500" />
+    <attribute name="MAX_CAPACITY" column="max_capacity" type="int32" flag="not_null" />
+    <attribute name="DURATION_MINUTES" column="duration_minutes" type="int32" flag="not_null" />
+    <attribute name="IS_PREMIUM" column="is_premium" type="bit" flag="not_null" default="0" />
+    <attribute name="PREMIUM_PRICE" column="premium_price" type="decimal" flag="null" precision="10" scale="2" />
+    <attribute name="IS_ACTIVE" column="is_active" type="bit" flag="not_null" default="1" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+  </object>
+
+  <object name="GYM_CLASS_SESSIONS" table="gym_class_sessions" sequence="GYM_CLASS_SESSIONS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="CLASS_TYPE_ID" column="class_type_id" type="int64" flag="not_null" />
+    <attribute name="INSTRUCTOR_ID" column="instructor_id" type="int64" flag="null" />
+    <attribute name="ROOM" column="room" type="string" flag="null" stringlength="100" />
+    <attribute name="START_TIME" column="start_time" type="datetime2" flag="not_null" />
+    <attribute name="END_TIME" column="end_time" type="datetime2" flag="not_null" />
+    <attribute name="STATUS" column="status" type="string" flag="not_null" stringlength="20" default="scheduled" />
+    <attribute name="SPOTS_RESERVED" column="spots_reserved" type="int32" flag="not_null" default="0" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_class_types">
+        <column local="class_type_id" external="id" />
+      </reference>
+    </references>
+
+  </object>
+
+  <object name="GYM_CLASS_RESERVATIONS" table="gym_class_reservations" sequence="GYM_CLASS_RESERVATIONS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="SESSION_ID" column="session_id" type="int64" flag="not_null" />
+    <attribute name="MEMBER_ID" column="member_id" type="int64" flag="not_null" />
+    <attribute name="STATUS" column="status" type="string" flag="not_null" stringlength="20" default="confirmed" />
+    <attribute name="ATTENDED" column="attended" type="bit" flag="not_null" default="0" />
+    <attribute name="RESERVED_AT" column="reserved_at" type="datetime2" flag="not_null" default="GETDATE()" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_class_sessions">
+        <column local="session_id" external="id" />
+      </reference>
+      <reference external_table="gym_members">
+        <column local="member_id" external="id" />
+      </reference>
+    </references>
+
+  </object>
+
+  <object name="GYM_ROUTINE_PLANS" table="gym_routine_plans" sequence="GYM_ROUTINE_PLANS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="PLAN_NAME" column="plan_name" type="string" flag="not_null" stringlength="100" />
+    <attribute name="DESCRIPTION" column="description" type="string" flag="null" stringlength="500" />
+    <attribute name="DIFFICULTY" column="difficulty" type="string" flag="null" stringlength="20" default="beginner" />
+    <attribute name="DURATION_MINUTES" column="duration_minutes" type="int32" flag="not_null" default="0" />
+    <attribute name="IS_ACTIVE" column="is_active" type="bit" flag="not_null" default="1" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+  </object>
+
+  <object name="GYM_EXERCISES" table="gym_exercises" sequence="GYM_EXERCISES_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="EXERCISE_NAME" column="exercise_name" type="string" flag="not_null" stringlength="200" />
+    <attribute name="DESCRIPTION" column="description" type="string" flag="null" stringlength="500" />
+    <attribute name="MUSCLE_GROUP" column="muscle_group" type="string" flag="null" stringlength="100" />
+    <attribute name="EQUIPMENT" column="equipment" type="string" flag="null" stringlength="100" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+  </object>
+
+  <object name="GYM_ROUTINE_ASSIGNMENTS" table="gym_routine_assignments" sequence="GYM_ROUTINE_ASSIGNMENTS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="MEMBER_ID" column="member_id" type="int64" flag="not_null" />
+    <attribute name="PLAN_ID" column="plan_id" type="int64" flag="not_null" />
+    <attribute name="ASSIGNED_BY" column="assigned_by" type="int64" flag="null" />
+    <attribute name="ASSIGNED_AT" column="assigned_at" type="datetime2" flag="not_null" default="GETDATE()" />
+    <attribute name="IS_ACTIVE" column="is_active" type="bit" flag="not_null" default="1" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_members">
+        <column local="member_id" external="id" />
+      </reference>
+      <reference external_table="gym_routine_plans">
+        <column local="plan_id" external="id" />
+      </reference>
+    </references>
+
+  </object>
+
+  <object name="GYM_WORKOUTS" table="gym_workouts" sequence="GYM_WORKOUTS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="MEMBER_ID" column="member_id" type="int64" flag="not_null" />
+    <attribute name="EXERCISE_ID" column="exercise_id" type="int64" flag="not_null" />
+    <attribute name="SETS" column="sets" type="int32" flag="not_null" />
+    <attribute name="REPS" column="reps" type="int32" flag="not_null" />
+    <attribute name="WEIGHT" column="weight" type="decimal" flag="null" precision="6" scale="2" />
+    <attribute name="DURATION_MINUTES" column="duration_minutes" type="int32" flag="null" />
+    <attribute name="WORKOUT_DATE" column="workout_date" type="datetime2" flag="not_null" default="GETDATE()" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_members">
+        <column local="member_id" external="id" />
+      </reference>
+      <reference external_table="gym_exercises">
+        <column local="exercise_id" external="id" />
+      </reference>
+    </references>
+
+  </object>
+
+  <object name="GYM_MEASUREMENTS" table="gym_measurements" sequence="GYM_MEASUREMENTS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="MEMBER_ID" column="member_id" type="int64" flag="not_null" />
+    <attribute name="MEASUREMENT_TYPE" column="measurement_type" type="string" flag="not_null" stringlength="50" />
+    <attribute name="VALUE" column="value" type="decimal" flag="not_null" precision="6" scale="2" />
+    <attribute name="UNIT" column="unit" type="string" flag="not_null" stringlength="20" />
+    <attribute name="MEASURED_AT" column="measured_at" type="datetime2" flag="not_null" default="GETDATE()" />
+    <attribute name="MEASURED_BY" column="measured_by" type="int64" flag="null" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_members">
+        <column local="member_id" external="id" />
+      </reference>
+    </references>
+
+  </object>
+
+  <object name="GYM_FISIO_PACKAGES" table="gym_fisio_packages" sequence="GYM_FISIO_PACKAGES_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="NAME" column="name" type="string" flag="not_null" stringlength="100" default="Paquete" />
+    <attribute name="MEMBER_ID" column="member_id" type="int64" flag="null" />
+    <attribute name="SESSIONS_TOTAL" column="sessions_total" type="int32" flag="not_null" />
+    <attribute name="SESSIONS_USED" column="sessions_used" type="int32" flag="not_null" default="0" />
+    <attribute name="PRICE" column="price" type="decimal" flag="not_null" precision="10" scale="2" />
+    <attribute name="START_DATE" column="start_date" type="date" flag="not_null" />
+    <attribute name="END_DATE" column="end_date" type="date" flag="not_null" />
+    <attribute name="IS_ACTIVE" column="is_active" type="bit" flag="not_null" default="1" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_members">
+        <column local="member_id" external="id" />
+      </reference>
+    </references>
+
+  </object>
+
+  <object name="GYM_FISIO_APPOINTMENTS" table="gym_fisio_appointments" sequence="GYM_FISIO_APPOINTMENTS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="MEMBER_ID" column="member_id" type="int64" flag="not_null" />
+    <attribute name="PACKAGE_ID" column="package_id" type="int64" flag="null" />
+    <attribute name="APPOINTMENT_DATE" column="appointment_date" type="datetime2" flag="not_null" />
+    <attribute name="STATUS" column="status" type="string" flag="not_null" stringlength="20" default="scheduled" />
+    <attribute name="NOTES" column="notes" type="string" flag="null" stringlength="2000" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_members">
+        <column local="member_id" external="id" />
+      </reference>
+      <reference external_table="gym_fisio_packages">
+        <column local="package_id" external="id" />
+      </reference>
+    </references>
+
+  </object>
+
+  <object name="GYM_EQUIPMENT" table="gym_equipment" sequence="GYM_EQUIPMENT_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="EQUIPMENT_NAME" column="equipment_name" type="string" flag="not_null" stringlength="200" />
+    <attribute name="CATEGORY" column="category" type="string" flag="null" stringlength="100" />
+    <attribute name="LOCATION" column="location" type="string" flag="null" stringlength="200" />
+    <attribute name="STATUS" column="status" type="string" flag="not_null" stringlength="20" default="operational" />
+    <attribute name="PURCHASE_DATE" column="purchase_date" type="date" flag="null" />
+    <attribute name="WARRANTY_END" column="warranty_end" type="date" flag="null" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+  </object>
+
+  <object name="GYM_MAINTENANCE_TICKETS" table="gym_maintenance_tickets" sequence="GYM_MAINTENANCE_TICKETS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="EQUIPMENT_ID" column="equipment_id" type="int64" flag="not_null" />
+    <attribute name="TICKET_NUMBER" column="ticket_number" type="string" flag="not_null" stringlength="20" />
+    <attribute name="DESCRIPTION" column="description" type="string" flag="not_null" stringlength="2000" />
+    <attribute name="PRIORITY" column="priority" type="string" flag="not_null" stringlength="20" default="medium" />
+    <attribute name="STATUS" column="status" type="string" flag="not_null" stringlength="20" default="open" />
+    <attribute name="RESOLVED_AT" column="resolved_at" type="datetime2" flag="null" />
+    <attribute name="RESOLVED_BY" column="resolved_by" type="int64" flag="null" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <indexes>
+      <index name="UX_GYM_MAINTENANCE_TICKETS_TICKET_NUMBER" type="UNIQUE"><attribute name="TICKET_NUMBER" /></index>
+    </indexes>
+
+    <references>
+      <reference external_table="gym_equipment">
+        <column local="equipment_id" external="id" />
+      </reference>
+    </references>
+
+  </object>
+
+  <object name="GYM_INVOICES" table="gym_invoices" sequence="GYM_INVOICES_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="INVOICE_NUMBER" column="invoice_number" type="string" flag="not_null" stringlength="50" />
+    <attribute name="MEMBER_ID" column="member_id" type="int64" flag="not_null" />
+    <attribute name="AMOUNT" column="amount" type="decimal" flag="not_null" precision="10" scale="2" />
+    <attribute name="TAX_AMOUNT" column="tax_amount" type="decimal" flag="not_null" precision="10" scale="2" />
+    <attribute name="INVOICE_DATE" column="invoice_date" type="datetime2" flag="not_null" />
+    <attribute name="STATUS" column="status" type="string" flag="not_null" stringlength="20" default="issued" />
+    <attribute name="UUID" column="uuid" type="string" flag="null" stringlength="38" />
+    <attribute name="PDF_URL" column="pdf_url" type="string" flag="null" stringlength="500" />
+    <attribute name="XML_URL" column="xml_url" type="string" flag="null" stringlength="500" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <indexes>
+      <index name="UX_GYM_INVOICES_INVOICE_NUMBER" type="UNIQUE"><attribute name="INVOICE_NUMBER" /></index>
+    </indexes>
+
+    <references>
+      <reference external_table="gym_members">
+        <column local="member_id" external="id" />
+      </reference>
+    </references>
+
+  </object>
+
+  <object name="GYM_BANK_ACCOUNTS" table="gym_bank_accounts" sequence="GYM_BANK_ACCOUNTS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="BANK_NAME" column="bank_name" type="string" flag="not_null" stringlength="100" />
+    <attribute name="ACCOUNT_NUMBER" column="account_number" type="string" flag="not_null" stringlength="50" />
+    <attribute name="CLABE" column="clabe" type="string" flag="null" stringlength="18" />
+    <attribute name="BALANCE" column="balance" type="decimal" flag="not_null" precision="18" scale="2" default="0" />
+    <attribute name="CURRENCY" column="currency" type="string" flag="not_null" stringlength="3" default="MXN" />
+    <attribute name="IS_ACTIVE" column="is_active" type="bit" flag="not_null" default="1" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+  </object>
+
+  <object name="GYM_BANK_TRANSACTIONS" table="gym_bank_transactions" sequence="GYM_BANK_TRANSACTIONS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="ACCOUNT_ID" column="account_id" type="int64" flag="not_null" />
+    <attribute name="TRANSACTION_TYPE" column="transaction_type" type="string" flag="not_null" stringlength="20" default="deposit" />
+    <attribute name="TRANSACTION_DATE" column="transaction_date" type="datetime2" flag="not_null" />
+    <attribute name="DESCRIPTION" column="description" type="string" flag="null" stringlength="500" />
+    <attribute name="AMOUNT" column="amount" type="decimal" flag="not_null" precision="12" scale="2" />
+    <attribute name="REFERENCE" column="reference" type="string" flag="null" stringlength="100" />
+    <attribute name="RECONCILED" column="reconciled" type="bit" flag="not_null" default="0" />
+    <attribute name="RECONCILED_WITH_ID" column="reconciled_with_id" type="int64" flag="null" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_bank_accounts">
+        <column local="account_id" external="id" />
+      </reference>
+    </references>
+
+  </object>
+
+  <object name="GYM_SCHEDULED_REPORTS" table="gym_scheduled_reports" sequence="GYM_SCHEDULED_REPORTS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="REPORT_NAME" column="report_name" type="string" flag="not_null" stringlength="200" />
+    <attribute name="REPORT_TYPE" column="report_type" type="string" flag="not_null" stringlength="50" />
+    <attribute name="SCHEDULE" column="schedule" type="string" flag="not_null" stringlength="50" />
+    <attribute name="EMAIL_RECIPIENTS" column="email_recipients" type="string" flag="not_null" stringlength="1000" />
+    <attribute name="IS_ACTIVE" column="is_active" type="bit" flag="not_null" default="1" />
+    <attribute name="LAST_RUN" column="last_run" type="datetime2" flag="null" />
+    <attribute name="NEXT_RUN" column="next_run" type="datetime2" flag="null" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+  </object>
+
+  <object name="GYM_STAFF" table="gym_staff" sequence="GYM_STAFF_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="USER_ID" column="user_id" type="int64" flag="not_null" />
+    <attribute name="EMPLOYEE_NAME" column="employee_name" type="string" flag="not_null" stringlength="200" />
+    <attribute name="POSITION" column="position" type="string" flag="null" stringlength="100" />
+    <attribute name="DEPARTMENT" column="department" type="string" flag="null" stringlength="100" />
+    <attribute name="HIRE_DATE" column="hire_date" type="date" flag="not_null" />
+    <attribute name="IS_ACTIVE" column="is_active" type="bit" flag="not_null" default="1" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_users">
+        <column local="user_id" external="id" />
+      </reference>
+    </references>
+
+  </object>
+
+  <object name="GYM_PUSH_SUBSCRIPTIONS" table="gym_push_subscriptions" sequence="GYM_PUSH_SUBSCRIPTIONS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="USER_ID" column="user_id" type="int64" flag="not_null" />
+    <attribute name="ENDPOINT" column="endpoint" type="string" flag="not_null" stringlength="1000" />
+    <attribute name="P256DH" column="p256dh" type="string" flag="not_null" stringlength="200" />
+    <attribute name="AUTH" column="auth" type="string" flag="not_null" stringlength="100" />
+    <attribute name="BROWSER" column="browser" type="string" flag="null" stringlength="50" />
+
+    <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_users">
+        <column local="user_id" external="id" />
+      </reference>
+    </references>
+
+  </object>
+
+</objectdb>
+

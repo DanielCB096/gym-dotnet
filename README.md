@@ -72,7 +72,17 @@ gimnasio-dotnet/
 
 ## Base de Datos
 
-35 tablas SQL Server definidas en `Models/ModelGym.cs`:
+35 tablas SQL Server gestionadas por el modelo de objetos de Anxo. La fuente de verdad es
+`GymService/Models/_ModelGym.xml`; las entidades (`IDatabaseObject`) y el registro
+`ModelGym.MappingObjects` se generan en `GymService/Models/Generated/`.
+
+- Las PK son `BIGINT` **sin IDENTITY**: las asigna Anxo con secuencias (`ANXO_SEQUENCES`).
+- Auditoría automática en todas las tablas: `CREATED_AT`, `UPDATED_AT`, `CREATED_BY`,
+  `LAST_UPDATED_BY`, `LAST_UPDATE_LOG`, `OBJECT_VERSION`.
+- El esquema se crea/valida al arrancar (`Services/DatabaseService.cs`) de forma aditiva:
+  crea tablas, índices y FK que falten; nunca borra datos.
+
+Tablas:
 
 - `gym_users` - Usuarios del sistema
 - `gym_permissions` - Permisos RBAC
@@ -110,6 +120,20 @@ gimnasio-dotnet/
 - `gym_staff` - Personal
 - `gym_push_subscriptions` - Suscripciones Web Push
 
+### Regenerar el modelo y las entidades
+
+Tras editar `Models/_ModelGym.xml`:
+
+```powershell
+cd C:\proyectos\gimnasio-dotnet\GymService\Models\Generated
+dotnet run --project "C:\proyectos\gimnasio-dotnet\Tools\AnxoModelGenerator\AnxoModelGenerator.csproj" -- ..\_ModelGym.xml
+```
+
+`Tools/AnxoModelGenerator` es un envoltorio **del repo del gimnasio**: compila los fuentes del
+generador de Anxo contra `net10.0` sin modificar `C:\repositorios\pilot`.
+El generador sobreescribe `GYM_*.cs` y `_ModelGym.cs` en el directorio actual.
+No edites esos archivos a mano.
+
 ## API REST
 
 ### Autenticación
@@ -141,9 +165,18 @@ Edita `appsettings.json`:
   "WebServer": {
     "Port": 5000,
     "Urls": "http://localhost:5000"
+  },
+  "Authentication": {
+    "MfaEncryptionKey": "clave_aleatoria_de_32_bytes_en_base64",
+    "AdminResetToken": ""
   }
 }
 ```
+
+> `appsettings.json` está en `.gitignore`: usa `appsettings.example.json` como plantilla.
+> `MfaEncryptionKey` es obligatoria para MFA (sin ella el setup/verify devuelve error controlado).
+> Si `AdminResetToken` está vacío, `/api/auth/reset-admin-password` queda deshabilitado (404); para usarlo, define un token y envíalo en el header `X-Admin-Reset-Token`.
+> En producción no uses `sa`: crea un login SQL con permisos mínimos sobre la base de datos del gimnasio.
 
 ## Compilación
 
@@ -157,6 +190,12 @@ dotnet build
 ```powershell
 cd C:\proyectos\gimnasio-dotnet\GymService
 dotnet run
+```
+
+Modo headless (CI/contenedor, sin esperar Enter):
+
+```powershell
+.\GymService.exe -console -daemon
 ```
 
 ## Instalación como servicio Windows
@@ -183,13 +222,14 @@ dotnet run
 ## Estado del Proyecto
 
 - ✅ Estructura del proyecto .NET 10
-- ✅ Servicio Windows con AnxoServiceTools
+- ✅ Servicio Windows con AnxoServiceTools (`AssemblyName` correcto para `-install`)
 - ✅ Conexión a SQL Server con AnxoDatabase
 - ✅ Servidor Kestrel con ASP.NET Core
-- ✅ 35 tablas SQL Server definidas con 26 foreign keys
+- ✅ 35 tablas SQL Server definidas, con índices UNIQUE y foreign keys aplicadas
 - ✅ 15 controllers REST con ~67 endpoints operativos
 - ✅ Módulo Identity completo (login, MFA, OTP, RBAC)
 - ✅ AuthController con endpoints REST
+- ✅ Seguridad: PBKDF2-SHA256, MFA cifrado AES-256, SQL parametrizado, endpoints de personal autenticados
 - ✅ Frontend React 19 + Vite + Tailwind CSS 4 con 14 páginas
 - ⏳ Tests automatizados
 - ⏳ Instalador WiX

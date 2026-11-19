@@ -6,6 +6,19 @@
 
 ## Backend (.NET)
 
+### Migración al modelo de objetos Anxo (2026-11-19)
+- **Cambio:** El esquema pasó a estar definido por `GymService/Models/_ModelGym.xml` y las entidades generadas (`Models/Generated/GYM_*.cs`). Las PK ya no son `IDENTITY`: las asigna Anxo con secuencias (`ANXO_SEQUENCES`).
+- **Cambio:** Todas las escrituras de los módulos usan `Session.InsertObject` / `InsertObjectWithID` / `UpdateObjectChanges` / `DeleteObject` (una transacción por operación). Los SELECT de listados siguen en SQL parametrizado con `?`.
+- **Cambio:** Auditoría automática en todas las tablas (`CREATED_AT`, `UPDATED_AT`, `CREATED_BY`, `LAST_UPDATED_BY`, `LAST_UPDATE_LOG`, `OBJECT_VERSION`).
+- **Bug corregido:** las FK nunca se aplicaban porque se llamaba `CreateTable` sobre tablas existentes. Ahora se usa `ApplyForeignKeys` (26 FK creadas).
+- **Bug corregido:** los índices UNIQUE de columnas (`username`, `email`, `token_hash`, `sale_number`, etc.) no se creaban; ahora se crean de forma idempotente.
+- **Bug corregido:** `gym_role_permissions` no tenía primary key; se añadió `id` surrogate + UNIQUE `(role, permission_id)`.
+- **Bug corregido:** `-install` registraba el servicio apuntando a `AnxoServiceTools.dll`; se definió `AssemblyName = "GymService.exe"`.
+- **Bug corregido:** la ruta de logs relativa se resolvía contra `C:\Windows\System32` al correr como servicio; ahora se ancla al directorio del ejecutable.
+- **Bug corregido:** NLS no resolvía mensajes porque el código de assembly es un hash del nombre; ahora se calcula con `NlsTools.GetPersistenceHashCode`.
+- **Nuevo:** modo `-console -daemon` para ejecución headless (CI/contenedores).
+- **Herramienta:** `Tools/AnxoModelGenerator` compila el generador de Anxo contra `net10.0` desde el repo del gimnasio, sin modificar `C:\repositorios\pilot`.
+
 ### Program.cs
 - **Bug:** El servicio se "trababa" al iniciar con `-console` porque `ServiceConsole` abre un shell interactivo que espera que escribas `start` manualmente y no llamaba automáticamente al método `Start()`.
 - **Solución:** Modificado para que en modo consola se inicie automáticamente sin esperar comandos interactivos.

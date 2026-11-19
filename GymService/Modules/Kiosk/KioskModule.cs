@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using AxLogger;
@@ -50,11 +50,15 @@ namespace GymService.Modules.Kiosk
                 var token = SecurityValidation.GenerateToken(64);
                 var tokenHash = SecurityValidation.Sha256Hash(token);
 
+                var device = new GYM_KIOSK_DEVICES
+                {
+                    DEVICE_NAME = deviceName,
+                    DEVICE_TOKEN_HASH = tokenHash,
+                    IS_ACTIVE = true
+                };
+
                 var session = _tools.CreateSession(SubModule);
-                session.ExecuteTransaction(
-                    "INSERT INTO gym_kiosk_devices (device_name, device_token_hash, is_active, created_at) VALUES (?, ?, 1, GETDATE())",
-                    deviceName, tokenHash
-                );
+                session.InsertObject(device);
 
                 if (session.TryExecute().IsError)
                 {
@@ -97,7 +101,7 @@ namespace GymService.Modules.Kiosk
                 if (result == null || result.Rows.Count == 0)
                 {
                     response["success"] = false;
-                    response["message"] = "Token de dispositivo inválido";
+                    response["message"] = "Token de dispositivo invÃ¡lido";
                     return false;
                 }
 
@@ -126,7 +130,7 @@ namespace GymService.Modules.Kiosk
             try
             {
                 var result = _tools.ExecuteQueryResultSet(
-                    "SELECT e.* FROM gym_equipment e WHERE e.status = 'maintenance' ORDER BY e.name"
+                    "SELECT e.* FROM gym_equipment e WHERE e.status = 'maintenance' ORDER BY e.equipment_name"
                 );
 
                 var equipment = new List<Dictionary<string, object>>();
@@ -207,11 +211,14 @@ namespace GymService.Modules.Kiosk
 
             try
             {
+                var device = new GYM_KIOSK_DEVICES
+                {
+                    ID = deviceId,
+                    IS_ACTIVE = false
+                };
+
                 var session = _tools.CreateSession(SubModule);
-                session.ExecuteTransaction(
-                    "UPDATE gym_kiosk_devices SET is_active = 0 WHERE id = ?",
-                    deviceId
-                );
+                session.UpdateObjectChanges(device);
 
                 if (session.TryExecute().IsError)
                 {
@@ -235,3 +242,4 @@ namespace GymService.Modules.Kiosk
         }
     }
 }
+

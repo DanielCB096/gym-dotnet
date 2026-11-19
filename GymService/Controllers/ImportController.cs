@@ -128,6 +128,9 @@ namespace GymService.Controllers
         [Route("api/import/templates/members/csv")]
         public ActionResult DownloadMembersCsvTemplate()
         {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
             var service = GetImportService();
             var bytes = service.GenerateMembersCsvTemplate();
 
@@ -141,6 +144,9 @@ namespace GymService.Controllers
         [Route("api/import/templates/members/excel")]
         public ActionResult DownloadMembersExcelTemplate()
         {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
             var service = GetImportService();
             var bytes = service.GenerateMembersExcelTemplate();
 
@@ -154,6 +160,9 @@ namespace GymService.Controllers
         [Route("api/import/templates/inventory/csv")]
         public ActionResult DownloadInventoryCsvTemplate()
         {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
             var service = GetImportService();
             var bytes = service.GenerateInventoryCsvTemplate();
 
@@ -167,6 +176,9 @@ namespace GymService.Controllers
         [Route("api/import/templates/inventory/excel")]
         public ActionResult DownloadInventoryExcelTemplate()
         {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
             var service = GetImportService();
             var bytes = service.GenerateInventoryExcelTemplate();
 

@@ -144,39 +144,14 @@ namespace GymService.Modules.Members
                 var phone = memberData.ContainsKey("phone") ? Convert.ToString(memberData["phone"]) : "";
                 var membershipType = memberData.ContainsKey("membershipType") ? Convert.ToString(memberData["membershipType"]) : "monthly";
 
-                var session = _tools.CreateSession(SubModule);
-                session.ExecuteTransaction(
-                    "INSERT INTO gym_members (first_name, last_name, email, phone, status, created_at) VALUES (?, ?, ?, ?, 'active', GETDATE())",
-                    firstName, lastName, email, phone
-                );
-
-                if (session.TryExecute().IsError)
+                // Look up plan_id by membershipType (plan_name) before opening the transaction
+                long planId = 0;
+                int durationDays = 30;
+                if (!string.IsNullOrEmpty(membershipType))
                 {
-                    Logger.AddErrorSubModule(SubModule, "Error al crear el socio");
-                    response["success"] = false;
-                    response["message"] = "Error al crear el socio";
-                    return false;
-                }
-
-                // Get the newly created member ID. SCOPE_IDENTITY() no sirve aquí porque la consulta
-                // se ejecuta en otra conexión; se busca la fila recién insertada por sus datos.
-                var lastResult = _tools.ExecuteQueryResultSet(
-                    "SELECT ISNULL(MAX(id), 0) AS id FROM gym_members WHERE first_name = ? AND last_name = ? AND ISNULL(email, '') = ?",
-                    firstName, lastName, email ?? ""
-                );
-                var memberId = lastResult != null && lastResult.Rows.Count > 0
-                    ? Convert.ToInt64(lastResult.Rows[0].GetObject(0))
-                    : 0;
-
-                // Create membership if type specified
-                if (!string.IsNullOrEmpty(membershipType) && memberId > 0)
-                {
-                    // Look up plan_id by membershipType (plan_name)
                     var planResult = _tools.ExecuteQueryResultSet(
                         "SELECT id, duration_days FROM gym_membership_plans WHERE plan_name = ? AND is_active = 1", membershipType
                     );
-                    long planId = 0;
-                    int durationDays = 30;
                     if (planResult != null && planResult.Rows.Count > 0)
                     {
                         planId = Convert.ToInt64(planResult.Rows[0].GetObject(0));
@@ -184,24 +159,49 @@ namespace GymService.Modules.Members
                         if (durationValue != null && durationValue != DBNull.Value)
                             durationDays = Convert.ToInt32(durationValue);
                     }
-                    if (planId > 0)
-                    {
-                        var endDate = DateTime.Now.AddDays(durationDays > 0 ? durationDays : 30);
-                        session = _tools.CreateSession(SubModule);
-                        session.ExecuteTransaction(
-                            "INSERT INTO gym_memberships (member_id, plan_id, start_date, end_date, status, created_at) VALUES (?, ?, GETDATE(), ?, 'active', GETDATE())",
-                            memberId, planId, endDate
-                        );
-
-                        if (session.TryExecute().IsError)
-                        {
-                            Logger.AddErrorSubModule(SubModule, "Error al crear la membresía");
-                        }
-                    }
                     else
                     {
                         Logger.AddWarningSubModule(SubModule, $"Plan '{membershipType}' no encontrado, membresía no creada");
                     }
+                }
+
+                // Pre-generate the IDs so the member and its membership are inserted in the same transaction
+                long memberId = _tools.GenerateUniqueID(GYM_MEMBERS.DatabaseMappingObject, 1).GetInt64UniqueId();
+
+                var session = _tools.CreateSession(SubModule);
+                session.InsertObjectWithID(new GYM_MEMBERS
+                {
+                    ID = memberId,
+                    FIRST_NAME = firstName ?? "",
+                    LAST_NAME = lastName ?? "",
+                    EMAIL = email,
+                    PHONE = phone,
+                    STATUS = "active"
+                });
+
+                // Create membership if type specified
+                if (planId > 0)
+                {
+                    var endDate = DateTime.Now.AddDays(durationDays > 0 ? durationDays : 30);
+                    long membershipId = _tools.GenerateUniqueID(GYM_MEMBERSHIPS.DatabaseMappingObject, 1).GetInt64UniqueId();
+                    session.InsertObjectWithID(new GYM_MEMBERSHIPS
+                    {
+                        ID = membershipId,
+                        MEMBER_ID = memberId,
+                        PLAN_ID = planId,
+                        START_DATE = DateTime.Now,
+                        END_DATE = endDate,
+                        STATUS = "active",
+                        AUTO_RENEW = false
+                    });
+                }
+
+                if (session.TryExecute().IsError)
+                {
+                    Logger.AddErrorSubModule(SubModule, "Error al crear el socio");
+                    response["success"] = false;
+                    response["message"] = "Error al crear el socio";
+                    return false;
                 }
 
                 response["success"] = true;
@@ -276,10 +276,13 @@ namespace GymService.Modules.Members
             try
             {
                 var session = _tools.CreateSession(SubModule);
-                session.ExecuteTransaction(
-                    "UPDATE gym_memberships SET status = 'frozen', freeze_start = ?, freeze_end = ? WHERE id = ?",
-                    freezeStart, freezeEnd, membershipId
-                );
+                session.UpdateObjectChanges(new GYM_MEMBERSHIPS
+                {
+                    ID = membershipId,
+                    STATUS = "frozen",
+                    FREEZE_START = freezeStart,
+                    FREEZE_END = freezeEnd
+                });
 
                 if (session.TryExecute().IsError)
                 {
@@ -312,10 +315,13 @@ namespace GymService.Modules.Members
             try
             {
                 var session = _tools.CreateSession(SubModule);
-                session.ExecuteTransaction(
-                    "UPDATE gym_memberships SET status = 'active', freeze_start = NULL, freeze_end = NULL WHERE id = ?",
-                    membershipId
-                );
+                session.UpdateObjectChanges(new GYM_MEMBERSHIPS
+                {
+                    ID = membershipId,
+                    STATUS = "active",
+                    FREEZE_START = null,
+                    FREEZE_END = null
+                });
 
                 if (session.TryExecute().IsError)
                 {
@@ -347,22 +353,15 @@ namespace GymService.Modules.Members
 
             try
             {
-                var session = _tools.CreateSession(SubModule);
-
-                if (membershipId.HasValue)
+                // The session user fills CREATED_BY automatically
+                var session = _tools.CreateSession(SubModule, createdBy);
+                session.InsertObject(new GYM_PAYMENTS
                 {
-                    session.ExecuteTransaction(
-                        "INSERT INTO gym_payments (member_id, membership_id, amount, payment_method, status, created_by, created_at) VALUES (?, ?, ?, ?, 'completed', ?, GETDATE())",
-                        memberId, membershipId.Value, amount, paymentMethod, createdBy
-                    );
-                }
-                else
-                {
-                    session.ExecuteTransaction(
-                        "INSERT INTO gym_payments (member_id, amount, payment_method, status, created_by, created_at) VALUES (?, ?, ?, 'completed', ?, GETDATE())",
-                        memberId, amount, paymentMethod, createdBy
-                    );
-                }
+                    MEMBER_ID = memberId,
+                    MEMBERSHIP_ID = membershipId,
+                    AMOUNT = amount,
+                    PAYMENT_METHOD = paymentMethod
+                });
 
                 if (session.TryExecute().IsError)
                 {

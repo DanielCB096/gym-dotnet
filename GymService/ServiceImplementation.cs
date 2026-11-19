@@ -45,7 +45,7 @@ namespace GymService
                 {
                     Logger.AddErrorSubModule("ServiceImplementation", "No se pudo conectar a la base de datos. El servicio no puede iniciar.");
                     result.Code = ProcessResult.GenericError;
-                    result.ErrorMessage("No se pudo conectar a la base de datos");
+                    result.ErrorMessage(AxNLS.Data(DataCenter.NLS_ASSEMBLY_CODE, 2004, "No se pudo conectar a la base de datos"));
                     return result;
                 }
 
@@ -58,7 +58,7 @@ namespace GymService
                 // Start web server (Kestrel)
                 StartWebServer();
 
-                Logger.AddInfo("GymService iniciado correctamente");
+                Logger.AddInfo(AxNLS.Data(DataCenter.NLS_ASSEMBLY_CODE, 2002, "GymService iniciado correctamente"));
             }
             catch (Exception ex)
             {
@@ -98,7 +98,7 @@ namespace GymService
                 // Reset data center
                 DataCenter.Reset();
 
-                Logger.AddInfo("GymService detenido correctamente");
+                Logger.AddInfo(AxNLS.Data(DataCenter.NLS_ASSEMBLY_CODE, 2003, "GymService detenido correctamente"));
             }
             catch (Exception ex)
             {

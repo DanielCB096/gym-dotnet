@@ -58,8 +58,18 @@ namespace GymService.Modules.Classes
                     return false;
                 }
 
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("INSERT INTO gym_class_types (type_name, description, duration_minutes, max_participants, is_active) VALUES (?, ?, ?, ?, 1)", typeName, description, durationMinutes, maxParticipants);
+                var session = _tools.CreateSession(SubModule);
+                long newClassTypeId = _tools.GenerateUniqueID(GYM_CLASS_TYPES.DatabaseMappingObject, 1).GetInt64UniqueId();
+
+                session.InsertObjectWithID(new GYM_CLASS_TYPES
+                {
+                    ID = newClassTypeId,
+                    TYPE_NAME = typeName,
+                    DESCRIPTION = description,
+                    MAX_CAPACITY = maxParticipants,
+                    DURATION_MINUTES = durationMinutes,
+                    IS_ACTIVE = true
+                });
 
                 if (!session.TryExecute().IsError)
                 {
@@ -97,8 +107,15 @@ namespace GymService.Modules.Classes
                 var durationMinutes = classData.ContainsKey("durationMinutes") ? Convert.ToInt32(classData["durationMinutes"]) : 60;
                 var maxParticipants = classData.ContainsKey("maxParticipants") ? Convert.ToInt32(classData["maxParticipants"]) : 30;
 
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("UPDATE gym_class_types SET type_name = ?, description = ?, duration_minutes = ?, max_participants = ? WHERE id = ?", typeName, description, durationMinutes, maxParticipants, classTypeId);
+                var session = _tools.CreateSession(SubModule);
+                session.UpdateObjectChanges(new GYM_CLASS_TYPES
+                {
+                    ID = classTypeId,
+                    TYPE_NAME = typeName,
+                    DESCRIPTION = description,
+                    MAX_CAPACITY = maxParticipants,
+                    DURATION_MINUTES = durationMinutes
+                });
 
                 if (!session.TryExecute().IsError)
                 {
@@ -131,8 +148,8 @@ namespace GymService.Modules.Classes
 
             try
             {
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("DELETE FROM gym_class_types WHERE id = ?", classTypeId);
+                var session = _tools.CreateSession(SubModule);
+                session.DeleteObject(new GYM_CLASS_TYPES { ID = classTypeId });
 
                 if (!session.TryExecute().IsError)
                 {
@@ -180,7 +197,7 @@ namespace GymService.Modules.Classes
                             ["typeName"] = Convert.ToString(GetRowValue(row, result, "type_name")) ?? "",
                             ["description"] = Convert.ToString(GetRowValue(row, result, "description")) ?? "",
                             ["durationMinutes"] = Convert.ToInt32(GetRowValue(row, result, "duration_minutes")),
-                            ["maxParticipants"] = Convert.ToInt32(GetRowValue(row, result, "max_participants"))
+                            ["maxParticipants"] = Convert.ToInt32(GetRowValue(row, result, "max_capacity"))
                         });
                     }
                 }

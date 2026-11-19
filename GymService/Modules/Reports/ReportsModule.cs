@@ -57,8 +57,17 @@ namespace GymService.Modules.Reports
                     return false;
                 }
 
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("INSERT INTO gym_scheduled_reports (report_name, report_type, schedule, is_active) VALUES (?, ?, ?, 1)", reportName, reportType, schedule);
+                var report = new GYM_SCHEDULED_REPORTS
+                {
+                    REPORT_NAME = reportName,
+                    REPORT_TYPE = reportType,
+                    SCHEDULE = schedule,
+                    EMAIL_RECIPIENTS = "",
+                    IS_ACTIVE = true
+                };
+
+                var session = _tools.CreateSession(SubModule);
+                session.InsertObject(report);
 
                 if (!session.TryExecute().IsError)
                 {
@@ -91,8 +100,10 @@ namespace GymService.Modules.Reports
 
             try
             {
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("DELETE FROM gym_scheduled_reports WHERE id = ?", reportId);
+                var report = new GYM_SCHEDULED_REPORTS { ID = reportId };
+
+                var session = _tools.CreateSession(SubModule);
+                session.DeleteObject(report);
 
                 if (!session.TryExecute().IsError)
                 {

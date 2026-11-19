@@ -46,6 +46,20 @@ namespace GymService.Controllers
             return success ? Ok(response) : BadRequest(response);
         }
 
+        [HttpPost]
+        [Route("api/sales/{saleId}/return")]
+        public ActionResult<Dictionary<string, object>> ReturnSale(long saleId)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Sales == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Sales.ReturnSale(saleId, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
         [HttpDelete]
         [Route("api/sales/{saleId}")]
         public ActionResult<Dictionary<string, object>> DeleteSale(long saleId)

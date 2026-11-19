@@ -58,8 +58,15 @@ namespace GymService.Modules.Finance
                     return false;
                 }
 
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("INSERT INTO gym_bank_accounts (bank_name, account_number, balance, currency, is_active) VALUES (?, ?, ?, ?, 1)", bankName, accountNumber, balance, currency);
+                var session = _tools.CreateSession(SubModule);
+                session.InsertObject(new GYM_BANK_ACCOUNTS
+                {
+                    BANK_NAME = bankName,
+                    ACCOUNT_NUMBER = accountNumber,
+                    BALANCE = balance,
+                    CURRENCY = currency,
+                    IS_ACTIVE = true
+                });
 
                 if (!session.TryExecute().IsError)
                 {
@@ -94,11 +101,18 @@ namespace GymService.Modules.Finance
             {
                 var accountId = transactionData.ContainsKey("accountId") ? Convert.ToInt64(transactionData["accountId"]) : 0L;
                 var amount = transactionData.ContainsKey("amount") ? Convert.ToDecimal(transactionData["amount"]) : 0m;
-                var transactionType = Convert.ToString(transactionData.GetValueOrDefault("transactionType", "deposit")) ?? "deposit";
                 var description = Convert.ToString(transactionData.GetValueOrDefault("description", "")) ?? "";
+                var transactionType = Convert.ToString(transactionData.GetValueOrDefault("transactionType", "deposit")) ?? "deposit";
 
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("INSERT INTO gym_bank_transactions (account_id, amount, transaction_type, description, transaction_date) VALUES (?, ?, ?, ?, ?)", accountId, amount, transactionType, description, DateTime.Now);
+                var session = _tools.CreateSession(SubModule);
+                session.InsertObject(new GYM_BANK_TRANSACTIONS
+                {
+                    ACCOUNT_ID = accountId,
+                    TRANSACTION_TYPE = transactionType,
+                    AMOUNT = amount,
+                    DESCRIPTION = description,
+                    TRANSACTION_DATE = DateTime.Now
+                });
 
                 if (!session.TryExecute().IsError)
                 {
@@ -131,8 +145,8 @@ namespace GymService.Modules.Finance
 
             try
             {
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("DELETE FROM gym_bank_accounts WHERE id = ?", accountId);
+                var session = _tools.CreateSession(SubModule);
+                session.DeleteObject(new GYM_BANK_ACCOUNTS { ID = accountId });
 
                 if (!session.TryExecute().IsError)
                 {

@@ -115,12 +115,18 @@ namespace GymService.Services
         {
             try
             {
-                var whereClause = string.IsNullOrEmpty(status) ? "" : $"WHERE m.status = '{status}'";
+                var whereParts = new List<string>();
+                if (!string.IsNullOrEmpty(status)) whereParts.Add("m.status = ?");
+                var whereClause = whereParts.Count > 0 ? "WHERE " + string.Join(" AND ", whereParts) : "";
+
                 var sql = $"SELECT m.*, mem.status as membership_status, mem.end_date " +
                     $"FROM gym_members m LEFT JOIN gym_memberships mem ON m.id = mem.member_id AND mem.status = 'active' " +
                     $"{whereClause} ORDER BY m.last_name, m.first_name";
 
-                var result = _tools.ExecuteQueryResultSet(sql);
+                var parameters = new List<object>();
+                if (!string.IsNullOrEmpty(status)) parameters.Add(status);
+
+                var result = _tools.ExecuteQueryResultSet(sql, parameters.ToArray());
 
                 using var workbook = new XLWorkbook();
                 var worksheet = workbook.Worksheets.Add("Miembros");

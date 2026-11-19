@@ -58,8 +58,17 @@ namespace GymService.Modules.Staff
                     return false;
                 }
 
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("INSERT INTO gym_staff (user_id, employee_name, position, department, is_active) VALUES (?, ?, ?, ?, 1)", userId, employeeName, position, department);
+                var newStaff = new GYM_STAFF
+                {
+                    USER_ID = userId,
+                    EMPLOYEE_NAME = employeeName,
+                    POSITION = position,
+                    DEPARTMENT = string.IsNullOrWhiteSpace(department) ? null : department,
+                    IS_ACTIVE = true
+                };
+
+                var session = _tools.CreateSession(SubModule);
+                session.InsertObject(newStaff);
 
                 if (!session.TryExecute().IsError)
                 {
@@ -96,8 +105,16 @@ namespace GymService.Modules.Staff
                 var position = Convert.ToString(staffData.GetValueOrDefault("position", "")) ?? "";
                 var department = Convert.ToString(staffData.GetValueOrDefault("department", "")) ?? "";
 
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("UPDATE gym_staff SET employee_name = ?, position = ?, department = ? WHERE id = ?", employeeName, position, department, staffId);
+                var staff = new GYM_STAFF
+                {
+                    ID = staffId,
+                    EMPLOYEE_NAME = employeeName,
+                    POSITION = position,
+                    DEPARTMENT = string.IsNullOrWhiteSpace(department) ? null : department
+                };
+
+                var session = _tools.CreateSession(SubModule);
+                session.UpdateObjectChanges(staff);
 
                 if (!session.TryExecute().IsError)
                 {
@@ -130,8 +147,10 @@ namespace GymService.Modules.Staff
 
             try
             {
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("DELETE FROM gym_staff WHERE id = ?", staffId);
+                var staff = new GYM_STAFF { ID = staffId };
+
+                var session = _tools.CreateSession(SubModule);
+                session.DeleteObject(staff);
 
                 if (!session.TryExecute().IsError)
                 {

@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Extensions.Configuration;
+using AxLibraries;
 using AxServiceTools;
 using AxDatabase;
 using AxObjectOrientedDatabase;
@@ -13,11 +14,21 @@ namespace GymService
     /// </summary>
     public static class DataCenter
     {
+        /// <summary>
+        /// Nombre de assembly usado por el mecanismo NLS de Anxo.
+        /// El codigo NO es arbitrario: NlsTools lo calcula como hash del nombre del assembly.
+        /// </summary>
+        public const string NLS_ASSEMBLY_NAME = "GymService";
+        public static readonly int NLS_ASSEMBLY_CODE = NlsTools.GetPersistenceHashCode(NLS_ASSEMBLY_NAME);
+
         // Service definition
         public static readonly ServiceDefinition SERVICE_DATA = new ServiceDefinition
         {
             ServiceName = "anxogymmservice",
             ServiceDisplayName = "Anxo Gym Manager Service",
+            // Sin AssemblyName, ServiceConsole usa Assembly.GetExecutingAssembly() (la DLL de
+            // AnxoServiceTools) al hacer -install y el servicio quedaria mal registrado.
+            AssemblyName = "GymService.exe",
             StartType = "auto",
             ServiceAccount = "localsystem"
         };
@@ -48,6 +59,23 @@ namespace GymService
             ConnectionData = null;
             WebServer = null;
             DatabaseService = null;
+
+            // Los modulos guardan un DatabaseTools ligado al manager desconectado:
+            // hay que soltarlos para que no se reutilicen tras un Stop().
+            BusinessProcess.Identity = null;
+            BusinessProcess.Members = null;
+            BusinessProcess.Access = null;
+            BusinessProcess.Sales = null;
+            BusinessProcess.Inventory = null;
+            BusinessProcess.Classes = null;
+            BusinessProcess.Routines = null;
+            BusinessProcess.Fisio = null;
+            BusinessProcess.Maintenance = null;
+            BusinessProcess.Billing = null;
+            BusinessProcess.Finance = null;
+            BusinessProcess.Reports = null;
+            BusinessProcess.Kiosk = null;
+            BusinessProcess.Staff = null;
         }
     }
 

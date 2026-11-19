@@ -50,6 +50,8 @@ namespace GymService.Modules.Fisio
                 var sessions = packageData.ContainsKey("sessions") ? Convert.ToInt32(packageData["sessions"]) : 10;
                 var price = packageData.ContainsKey("price") ? Convert.ToDecimal(packageData["price"]) : 0m;
                 var startDate = packageData.ContainsKey("startDate") ? Convert.ToDateTime(packageData["startDate"]) : DateTime.Now;
+                var memberId = packageData.ContainsKey("memberId") ? Convert.ToInt64(packageData["memberId"]) : 0L;
+                var endDate = packageData.ContainsKey("endDate") ? Convert.ToDateTime(packageData["endDate"]) : startDate.AddMonths(1);
 
                 if (string.IsNullOrEmpty(name))
                 {
@@ -58,8 +60,22 @@ namespace GymService.Modules.Fisio
                     return false;
                 }
 
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("INSERT INTO gym_fisio_packages (name, sessions, price, start_date, is_active) VALUES (?, ?, ?, ?, 1)", name, sessions, price, startDate);
+                var session = _tools.CreateSession(SubModule);
+                long newPackageId = _tools.GenerateUniqueID(GYM_FISIO_PACKAGES.DatabaseMappingObject, 1).GetInt64UniqueId();
+
+                session.InsertObjectWithID(new GYM_FISIO_PACKAGES
+                {
+                    ID = newPackageId,
+                    NAME = name,
+                    // El paquete puede ser general (sin socio asignado).
+                    MEMBER_ID = memberId > 0 ? memberId : (long?)null,
+                    SESSIONS_TOTAL = sessions,
+                    SESSIONS_USED = 0,
+                    PRICE = price,
+                    START_DATE = startDate.Date,
+                    END_DATE = endDate.Date,
+                    IS_ACTIVE = true
+                });
 
                 if (!session.TryExecute().IsError)
                 {
@@ -97,8 +113,18 @@ namespace GymService.Modules.Fisio
                 var appointmentDate = appointmentData.ContainsKey("appointmentDate") ? Convert.ToDateTime(appointmentData["appointmentDate"]) : DateTime.Now;
                 var notes = Convert.ToString(appointmentData.GetValueOrDefault("notes", "")) ?? "";
 
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("INSERT INTO gym_fisio_appointments (member_id, package_id, appointment_date, notes, status) VALUES (?, ?, ?, ?, 'scheduled')", memberId, packageId, appointmentDate, notes);
+                var session = _tools.CreateSession(SubModule);
+                long newAppointmentId = _tools.GenerateUniqueID(GYM_FISIO_APPOINTMENTS.DatabaseMappingObject, 1).GetInt64UniqueId();
+
+                session.InsertObjectWithID(new GYM_FISIO_APPOINTMENTS
+                {
+                    ID = newAppointmentId,
+                    MEMBER_ID = memberId,
+                    PACKAGE_ID = packageId > 0 ? packageId : (long?)null,
+                    APPOINTMENT_DATE = appointmentDate,
+                    STATUS = "scheduled",
+                    NOTES = notes
+                });
 
                 if (!session.TryExecute().IsError)
                 {
@@ -131,8 +157,8 @@ namespace GymService.Modules.Fisio
 
             try
             {
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("DELETE FROM gym_fisio_packages WHERE id = ?", packageId);
+                var session = _tools.CreateSession(SubModule);
+                session.DeleteObject(new GYM_FISIO_PACKAGES { ID = packageId });
 
                 if (!session.TryExecute().IsError)
                 {
@@ -178,7 +204,7 @@ namespace GymService.Modules.Fisio
                         {
                             ["id"] = Convert.ToInt64(GetRowValue(row, result, "id")),
                             ["name"] = Convert.ToString(GetRowValue(row, result, "name")) ?? "",
-                            ["sessions"] = Convert.ToInt32(GetRowValue(row, result, "sessions")),
+                            ["sessions"] = Convert.ToInt32(GetRowValue(row, result, "sessions_total")),
                             ["price"] = Convert.ToDecimal(GetRowValue(row, result, "price")),
                             ["startDate"] = GetRowValue(row, result, "start_date") != null ? Convert.ToDateTime(GetRowValue(row, result, "start_date")) : (DateTime?)null
                         });

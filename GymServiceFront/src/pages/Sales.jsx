@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertCircle, Plus, ShoppingCart, Trash2 } from 'lucide-react';
+import { AlertCircle, Plus, RotateCcw, ShoppingCart, Trash2 } from 'lucide-react';
 import api from '../services/api';
 import CrudPage from '../components/CrudPage';
 import Badge from '../components/ui/Badge';
@@ -75,6 +75,16 @@ function NewSaleButton({ onDone }) {
     return product ? Number(product.price) : 0;
   };
 
+  const stockOf = (productId) => {
+    const product = products.find((item) => String(item.id) === String(productId));
+    return product ? Number(product.stock ?? 0) : 0;
+  };
+
+  const nameOf = (productId) => {
+    const product = products.find((item) => String(item.id) === String(productId));
+    return product?.productName || `Producto ${productId}`;
+  };
+
   const subtotal = form.items.reduce(
     (sum, item) => sum + priceOf(item.productId) * (Number(item.quantity) || 0),
     0
@@ -94,6 +104,14 @@ function NewSaleButton({ onDone }) {
 
     if (items.length === 0) {
       setError('Agrega al menos un producto con cantidad mayor a cero.');
+      return;
+    }
+
+    const withoutStock = items.find((item) => item.quantity > stockOf(item.productId));
+    if (withoutStock) {
+      setError(
+        `Stock insuficiente de '${nameOf(withoutStock.productId)}': disponible ${stockOf(withoutStock.productId)}, solicitado ${withoutStock.quantity}.`
+      );
       return;
     }
 
@@ -287,7 +305,35 @@ export default function Sales() {
             </Badge>
           ),
         },
+        {
+          key: 'status',
+          label: 'Estado',
+          render: (row) => {
+            const returned = row.status === 'returned';
+            return (
+              <Badge variant={returned ? 'danger' : 'success'} dot>
+                {returned ? 'Devuelta' : 'Completada'}
+              </Badge>
+            );
+          },
+        },
         { key: 'saleDate', label: 'Fecha', render: (row) => formatDateTime(row.saleDate) },
+      ]}
+      actions={[
+        {
+          label: 'Registrar devolución',
+          icon: RotateCcw,
+          variant: 'danger',
+          confirm:
+            'Se repondrá el inventario de todos los productos de la venta y quedará marcada como devuelta. ¿Continuar?',
+          confirmLabel: 'Registrar devolución',
+          hidden: (row) => row.status === 'returned',
+          onClick: async (row, { reload, notify }) => {
+            const response = await api.post(`/sales/${row.id}/return`);
+            notify('success', response.data?.message || 'Devolución registrada.');
+            reload();
+          },
+        },
       ]}
       toolbar={({ reload, notify }) => (
         <NewSaleButton

@@ -12,6 +12,9 @@ namespace GymService.Controllers
         [Route("api/members")]
         public ActionResult<Dictionary<string, object>> GetMembers([FromQuery] long? id, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int limit = 50)
         {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
             if (DataCenter.BusinessProcess.Members == null)
                 return BadRequest(new { success = false, message = "Servicio no disponible" });
 

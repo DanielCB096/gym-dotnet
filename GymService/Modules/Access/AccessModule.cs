@@ -53,10 +53,15 @@ namespace GymService.Modules.Access
                 var expiresAt = DateTime.Now.AddMinutes(10);
 
                 var session = _tools.CreateSession(SubModule);
-                session.ExecuteTransaction(
-                    "INSERT INTO gym_access_codes (member_id, code_hash, hmac_key, generated_at, expires_at, used) VALUES (?, ?, ?, GETDATE(), ?, 0)",
-                    memberId, codeHash, hmacKey, expiresAt
-                );
+                session.InsertObject(new GYM_ACCESS_CODES
+                {
+                    MEMBER_ID = memberId,
+                    CODE_HASH = codeHash,
+                    HMAC_KEY = hmacKey,
+                    GENERATED_AT = DateTime.Now,
+                    EXPIRES_AT = expiresAt,
+                    USED = false
+                });
 
                 if (session.TryExecute().IsError)
                 {
@@ -112,16 +117,23 @@ namespace GymService.Modules.Access
                 var memberId = Convert.ToInt64(GetRowValue(row, result, "member_id"));
                 var memberName = $"{GetRowValue(row, result, "first_name")} {GetRowValue(row, result, "last_name")}";
 
-                // Mark as used and log access
+                // Mark as used and log the access in a single transaction.
+                // Nota: con objetos no se puede condicionar el UPDATE a USED = 0, se conserva el flujo actual.
                 var session = _tools.CreateSession(SubModule);
-                session.ExecuteTransaction(
-                    "UPDATE gym_access_codes SET used = 1, used_at = GETDATE() WHERE id = ?",
-                    accessCodeId
-                );
-                session.ExecuteTransaction(
-                    "INSERT INTO gym_access_log (member_id, access_type, access_result, device_id, accessed_at) VALUES (?, 'code', 'granted', ?, GETDATE())",
-                    memberId, deviceId
-                );
+                session.UpdateObjectChanges(new GYM_ACCESS_CODES
+                {
+                    ID = accessCodeId,
+                    USED = true,
+                    USED_AT = DateTime.Now
+                });
+                session.InsertObject(new GYM_ACCESS_LOG
+                {
+                    MEMBER_ID = memberId,
+                    ACCESS_TYPE = "code",
+                    ACCESS_RESULT = "granted",
+                    DEVICE_ID = deviceId,
+                    ACCESSED_AT = DateTime.Now
+                });
 
                 if (session.TryExecute().IsError)
                 {
@@ -248,17 +260,38 @@ namespace GymService.Modules.Access
             {
                 var cutoffDate = DateTime.Now.AddDays(-daysOld);
 
-                var session = _tools.CreateSession(SubModule);
-                session.ExecuteTransaction(
-                    "DELETE FROM gym_access_codes WHERE generated_at < ? AND used = 0",
+                // Reads stay as parameterized SQL; deletes are performed through Anxo objects by primary key
+                var codesResult = _tools.ExecuteQueryResultSet(
+                    "SELECT id FROM gym_access_codes WHERE generated_at < ? AND used = 0",
                     cutoffDate
                 );
-                session.ExecuteTransaction(
-                    "DELETE FROM gym_access_log WHERE accessed_at < ?",
+                var logsResult = _tools.ExecuteQueryResultSet(
+                    "SELECT id FROM gym_access_log WHERE accessed_at < ?",
                     cutoffDate
                 );
 
-                if (session.TryExecute().IsError)
+                var session = _tools.CreateSession(SubModule);
+                bool hasOperations = false;
+
+                if (codesResult != null && codesResult.Rows.Count > 0)
+                {
+                    foreach (Row row in codesResult.Rows)
+                    {
+                        session.DeleteObject(new GYM_ACCESS_CODES { ID = Convert.ToInt64(row.GetObject(0)) });
+                        hasOperations = true;
+                    }
+                }
+
+                if (logsResult != null && logsResult.Rows.Count > 0)
+                {
+                    foreach (Row row in logsResult.Rows)
+                    {
+                        session.DeleteObject(new GYM_ACCESS_LOG { ID = Convert.ToInt64(row.GetObject(0)) });
+                        hasOperations = true;
+                    }
+                }
+
+                if (hasOperations && session.TryExecute().IsError)
                 {
                     Logger.AddErrorSubModule(SubModule, "Error al limpiar registros antiguos de acceso");
                     response["success"] = false;

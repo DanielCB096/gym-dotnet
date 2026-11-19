@@ -130,9 +130,20 @@ namespace GymService.Controllers
         [Route("api/auth/reset-admin-password")]
         public ActionResult<Dictionary<string, object>> ResetAdminPassword([FromBody] Dictionary<string, string> request)
         {
+            var expectedToken = DataCenter.Configuration?["Authentication:AdminResetToken"];
+
+            // Endpoint deshabilitado si no hay token configurado.
+            if (string.IsNullOrWhiteSpace(expectedToken))
+                return NotFound(new { success = false, message = "No disponible" });
+
             // Endpoint de recuperación: solo se permite desde la misma máquina.
             var remote = HttpContext.Connection.RemoteIpAddress;
             if (remote != null && !System.Net.IPAddress.IsLoopback(remote))
+                return NotFound(new { success = false, message = "No disponible" });
+
+            // Además del loopback, se exige el token compartido en la cabecera.
+            var providedToken = Request.Headers["X-Admin-Reset-Token"].ToString();
+            if (!FixedTimeEquals(providedToken, expectedToken))
                 return NotFound(new { success = false, message = "No disponible" });
 
             var newPassword = request.GetValueOrDefault("password", "");
@@ -147,6 +158,13 @@ namespace GymService.Controllers
 
             var success = DataCenter.BusinessProcess.Identity.ResetOwnerPassword(newPassword, out var response);
             return success ? Ok(response) : BadRequest(response);
+        }
+
+        private static bool FixedTimeEquals(string? a, string? b)
+        {
+            var bytesA = System.Text.Encoding.UTF8.GetBytes(a ?? string.Empty);
+            var bytesB = System.Text.Encoding.UTF8.GetBytes(b ?? string.Empty);
+            return System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(bytesA, bytesB);
         }
 
         [HttpPost]

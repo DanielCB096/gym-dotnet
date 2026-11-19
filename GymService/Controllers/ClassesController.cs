@@ -11,6 +11,9 @@ namespace GymService.Controllers
         [Route("api/classes")]
         public ActionResult<Dictionary<string, object>> GetClassTypes()
         {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
             if (DataCenter.BusinessProcess.Classes == null)
                 return BadRequest(new { success = false, message = "Servicio no disponible" });
 

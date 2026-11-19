@@ -41,9 +41,8 @@
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="nls.xml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <!-- El NLS de Anxo se carga como recurso embebido (NlsTools.LoadAssemblyMessages). -->
+    <EmbeddedResource Include="nls.xml" />
   </ItemGroup>
 
 </Project>

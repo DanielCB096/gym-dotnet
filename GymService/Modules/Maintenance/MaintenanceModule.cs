@@ -49,7 +49,6 @@ namespace GymService.Modules.Maintenance
                 var equipmentId = ticketData.ContainsKey("equipmentId") ? Convert.ToInt64(ticketData["equipmentId"]) : 0L;
                 var description = Convert.ToString(ticketData.GetValueOrDefault("description", "")) ?? "";
                 var priority = Convert.ToString(ticketData.GetValueOrDefault("priority", "normal")) ?? "normal";
-                var assignedTo = ticketData.ContainsKey("assignedTo") ? Convert.ToInt64(ticketData["assignedTo"]) : (long?)null;
 
                 if (string.IsNullOrEmpty(description))
                 {
@@ -58,8 +57,19 @@ namespace GymService.Modules.Maintenance
                     return false;
                 }
 
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("INSERT INTO gym_maintenance_tickets (equipment_id, description, priority, status, assigned_to, created_date) VALUES (?, ?, ?, 'open', ?, ?)", equipmentId, description, priority, assignedTo ?? (object)DBNull.Value, DateTime.Now);
+                var session = _tools.CreateSession(SubModule);
+                long newTicketId = _tools.GenerateUniqueID(GYM_MAINTENANCE_TICKETS.DatabaseMappingObject, 1).GetInt64UniqueId();
+
+                // GYM_MAINTENANCE_TICKETS no expone columnas ASSIGNED_TO ni CREATED_DATE.
+                session.InsertObjectWithID(new GYM_MAINTENANCE_TICKETS
+                {
+                    ID = newTicketId,
+                    EQUIPMENT_ID = equipmentId,
+                    TICKET_NUMBER = $"TKT-{newTicketId:D10}",
+                    DESCRIPTION = description,
+                    PRIORITY = priority,
+                    STATUS = "open"
+                });
 
                 if (!session.TryExecute().IsError)
                 {
@@ -92,8 +102,8 @@ namespace GymService.Modules.Maintenance
 
             try
             {
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("UPDATE gym_maintenance_tickets SET status = ? WHERE id = ?", status, ticketId);
+                var session = _tools.CreateSession(SubModule);
+                session.UpdateObjectChanges(new GYM_MAINTENANCE_TICKETS { ID = ticketId, STATUS = status });
 
                 if (!session.TryExecute().IsError)
                 {
@@ -126,8 +136,8 @@ namespace GymService.Modules.Maintenance
 
             try
             {
-                var session = _tools.CreateSession();
-                session.ExecuteTransaction("DELETE FROM gym_maintenance_tickets WHERE id = ?", ticketId);
+                var session = _tools.CreateSession(SubModule);
+                session.DeleteObject(new GYM_MAINTENANCE_TICKETS { ID = ticketId });
 
                 if (!session.TryExecute().IsError)
                 {
