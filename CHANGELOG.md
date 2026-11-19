@@ -31,6 +31,14 @@
 - **Correcciones:** número de orden ajustado al límite de 20 caracteres; el borrado de productos limpia sus movimientos y bloquea si tiene órdenes de compra.
 - **Pruebas:** 104 automatizadas, incluyendo recepción, stock, kardex y cancelación.
 
+### Fase 2B: conciliación bancaria (2026-11-19)
+- **Movimientos bancarios:** importación desde CSV (fecha, tipo, monto, descripción y referencia) y registro manual por cuenta; los importados quedan marcados con origen “Importado” y no alteran el saldo interno de la cuenta.
+- **Conciliación:** conciliar/desconciliar con tipo de relación (manual, venta o pago), notas, usuario y fecha; validación de la venta o pago relacionado.
+- **Marcado:** marcar/desmarcar movimientos para revisión.
+- **Resumen:** totales de pendientes, conciliados y marcados, con importes, filtrables por cuenta.
+- **UI:** página **Finanzas** con pestañas Cuentas y Movimientos y conciliación; filtros por cuenta, estado y marca; importación CSV desde el navegador.
+- **Pruebas:** 105 automatizadas y validación en vivo de crear cuenta, importar CSV, conciliar, marcar y comprobar el resumen.
+
 ### Fase 1: operación diaria (2026-11-19)
 - **Socios:** edición de datos y estado, cancelación de membresía con motivo e historial de membresías.
 - **Planes:** CRUD completo (precio, moneda, duración, beneficios, límite diario, activación) y página “Planes”.

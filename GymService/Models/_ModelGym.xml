@@ -1000,6 +1000,12 @@
     <attribute name="RECONCILED_WITH_ID" column="reconciled_with_id" type="int64" flag="null" />
 
     <!-- RECORD TRACKING CHANGES (WHO) -->
+    <attribute name="RECONCILED_WITH_TYPE" column="reconciled_with_type" type="string" flag="null" stringlength="20" />
+    <attribute name="RECONCILED_AT" column="reconciled_at" type="datetime2" flag="null" />
+    <attribute name="RECONCILED_BY" column="reconciled_by" type="int64" flag="null" />
+    <attribute name="FLAGGED" column="flagged" type="bit" flag="not_null" default="0" />
+    <attribute name="SOURCE" column="source" type="string" flag="not_null" stringlength="20" default="manual" />
+    <attribute name="NOTES" column="notes" type="string" flag="null" stringlength="500" />
     <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
     <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
     <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />

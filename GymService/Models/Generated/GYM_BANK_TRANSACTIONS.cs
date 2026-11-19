@@ -44,12 +44,18 @@ namespace AxDatabase
                                      new MappingAttribute(6,"REFERENCE","REFERENCE",MappingAttribute.ColumnTypes.Null,DataType.String,100,20,8,String.Empty,String.Empty,false,false),
                                      new MappingAttribute(7,"RECONCILED","RECONCILED",MappingAttribute.ColumnTypes.NotNull,DataType.Boolean,250,20,8,"0",String.Empty,false,false),
                                      new MappingAttribute(8,"RECONCILED_WITH_ID","RECONCILED_WITH_ID",MappingAttribute.ColumnTypes.Null,DataType.Int64,250,20,8,String.Empty,String.Empty,false,false),
-                                     new MappingAttribute(9,"CREATION_DATETIME","CREATED_AT",MappingAttribute.ColumnTypes.InsertTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
-                                     new MappingAttribute(10,"LAST_UPDATED_DATETIME","UPDATED_AT",MappingAttribute.ColumnTypes.UpdateTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
-                                     new MappingAttribute(11,"CREATED_BY","CREATED_BY",MappingAttribute.ColumnTypes.InsertTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
-                                     new MappingAttribute(12,"LAST_UPDATED_BY","LAST_UPDATED_BY",MappingAttribute.ColumnTypes.UpdateTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
-                                     new MappingAttribute(13,"LAST_UPDATE_LOG","LAST_UPDATE_LOG",MappingAttribute.ColumnTypes.LogTracking,DataType.String,100,20,8,"[EMPTY]",String.Empty,false,false),
-                                     new MappingAttribute(14,"OBJECT_VERSION","OBJECT_VERSION",MappingAttribute.ColumnTypes.VersionTracking,DataType.Int32,250,20,8,"1",String.Empty,false,false)
+                                     new MappingAttribute(9,"RECONCILED_WITH_TYPE","RECONCILED_WITH_TYPE",MappingAttribute.ColumnTypes.Null,DataType.String,20,20,8,String.Empty,String.Empty,false,false),
+                                     new MappingAttribute(10,"RECONCILED_AT","RECONCILED_AT",MappingAttribute.ColumnTypes.Null,DataType.DateTime2,250,20,8,String.Empty,String.Empty,false,false),
+                                     new MappingAttribute(11,"RECONCILED_BY","RECONCILED_BY",MappingAttribute.ColumnTypes.Null,DataType.Int64,250,20,8,String.Empty,String.Empty,false,false),
+                                     new MappingAttribute(12,"FLAGGED","FLAGGED",MappingAttribute.ColumnTypes.NotNull,DataType.Boolean,250,20,8,"0",String.Empty,false,false),
+                                     new MappingAttribute(13,"SOURCE","SOURCE",MappingAttribute.ColumnTypes.NotNull,DataType.String,20,20,8,"manual",String.Empty,false,false),
+                                     new MappingAttribute(14,"NOTES","NOTES",MappingAttribute.ColumnTypes.Null,DataType.String,500,20,8,String.Empty,String.Empty,false,false),
+                                     new MappingAttribute(15,"CREATION_DATETIME","CREATED_AT",MappingAttribute.ColumnTypes.InsertTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
+                                     new MappingAttribute(16,"LAST_UPDATED_DATETIME","UPDATED_AT",MappingAttribute.ColumnTypes.UpdateTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
+                                     new MappingAttribute(17,"CREATED_BY","CREATED_BY",MappingAttribute.ColumnTypes.InsertTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
+                                     new MappingAttribute(18,"LAST_UPDATED_BY","LAST_UPDATED_BY",MappingAttribute.ColumnTypes.UpdateTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
+                                     new MappingAttribute(19,"LAST_UPDATE_LOG","LAST_UPDATE_LOG",MappingAttribute.ColumnTypes.LogTracking,DataType.String,100,20,8,"[EMPTY]",String.Empty,false,false),
+                                     new MappingAttribute(20,"OBJECT_VERSION","OBJECT_VERSION",MappingAttribute.ColumnTypes.VersionTracking,DataType.Int32,250,20,8,"1",String.Empty,false,false)
                                   },
                                   new MappingIndex[]
                                   { 
@@ -65,7 +71,7 @@ namespace AxDatabase
 
 
       private Boolean a_indatabase = false;
-      private Boolean[] a_attributeschanges = new Boolean[15];
+      private Boolean[] a_attributeschanges = new Boolean[21];
       private ReportList a_relateobjects = new ReportList();
       private Object a_tag = null;
 
@@ -79,6 +85,12 @@ namespace AxDatabase
       private String a_reference = null;
       private Boolean a_reconciled = false;
       private Int64? a_reconciled_with_id = null;
+      private String a_reconciled_with_type = null;
+      private DateTime? a_reconciled_at = null;
+      private Int64? a_reconciled_by = null;
+      private Boolean a_flagged = false;
+      private String a_source = "manual";
+      private String a_notes = null;
       private DateTime a_creation_datetime = DateTime.Now;
       private DateTime a_last_updated_datetime = DateTime.Now;
       private Int64 a_created_by = -1;
@@ -96,12 +108,18 @@ namespace AxDatabase
       public const Int32 AttributeID_REFERENCE = 6;
       public const Int32 AttributeID_RECONCILED = 7;
       public const Int32 AttributeID_RECONCILED_WITH_ID = 8;
-      public const Int32 AttributeID_CREATION_DATETIME = 9;
-      public const Int32 AttributeID_LAST_UPDATED_DATETIME = 10;
-      public const Int32 AttributeID_CREATED_BY = 11;
-      public const Int32 AttributeID_LAST_UPDATED_BY = 12;
-      public const Int32 AttributeID_LAST_UPDATE_LOG = 13;
-      public const Int32 AttributeID_OBJECT_VERSION = 14;
+      public const Int32 AttributeID_RECONCILED_WITH_TYPE = 9;
+      public const Int32 AttributeID_RECONCILED_AT = 10;
+      public const Int32 AttributeID_RECONCILED_BY = 11;
+      public const Int32 AttributeID_FLAGGED = 12;
+      public const Int32 AttributeID_SOURCE = 13;
+      public const Int32 AttributeID_NOTES = 14;
+      public const Int32 AttributeID_CREATION_DATETIME = 15;
+      public const Int32 AttributeID_LAST_UPDATED_DATETIME = 16;
+      public const Int32 AttributeID_CREATED_BY = 17;
+      public const Int32 AttributeID_LAST_UPDATED_BY = 18;
+      public const Int32 AttributeID_LAST_UPDATE_LOG = 19;
+      public const Int32 AttributeID_OBJECT_VERSION = 20;
 
 
 
@@ -222,6 +240,78 @@ namespace AxDatabase
       {
         get { return a_reconciled_with_id; }
         set { a_reconciled_with_id = value; TrackChanges(8); }
+      }
+
+
+      /// <summary>
+      /// Propiedad para SET o GET del atributo 'RECONCILED_WITH_TYPE' que representa la columna 'RECONCILED_WITH_TYPE' en la base de datos  
+      /// Generado por Anxo Code Generator 
+      /// </summary> 
+
+      public String RECONCILED_WITH_TYPE
+      {
+        get { return a_reconciled_with_type; }
+        set { a_reconciled_with_type = value; TrackChanges(9); }
+      }
+
+
+      /// <summary>
+      /// Propiedad para SET o GET del atributo 'RECONCILED_AT' que representa la columna 'RECONCILED_AT' en la base de datos  
+      /// Generado por Anxo Code Generator 
+      /// </summary> 
+
+      public DateTime? RECONCILED_AT
+      {
+        get { return a_reconciled_at; }
+        set { a_reconciled_at = value; TrackChanges(10); }
+      }
+
+
+      /// <summary>
+      /// Propiedad para SET o GET del atributo 'RECONCILED_BY' que representa la columna 'RECONCILED_BY' en la base de datos  
+      /// Generado por Anxo Code Generator 
+      /// </summary> 
+
+      public Int64? RECONCILED_BY
+      {
+        get { return a_reconciled_by; }
+        set { a_reconciled_by = value; TrackChanges(11); }
+      }
+
+
+      /// <summary>
+      /// Propiedad para SET o GET del atributo 'FLAGGED' que representa la columna 'FLAGGED' en la base de datos  
+      /// Generado por Anxo Code Generator 
+      /// </summary> 
+
+      public Boolean FLAGGED
+      {
+        get { return a_flagged; }
+        set { a_flagged = value; TrackChanges(12); }
+      }
+
+
+      /// <summary>
+      /// Propiedad para SET o GET del atributo 'SOURCE' que representa la columna 'SOURCE' en la base de datos  
+      /// Generado por Anxo Code Generator 
+      /// </summary> 
+
+      public String SOURCE
+      {
+        get { return a_source; }
+        set { a_source = value; TrackChanges(13); }
+      }
+
+
+      /// <summary>
+      /// Propiedad para SET o GET del atributo 'NOTES' que representa la columna 'NOTES' en la base de datos  
+      /// Generado por Anxo Code Generator 
+      /// </summary> 
+
+      public String NOTES
+      {
+        get { return a_notes; }
+        set { a_notes = value; TrackChanges(14); }
       }
 
 
@@ -349,28 +439,52 @@ namespace AxDatabase
                  TrackChanges(8);
                  break;
                case 9:
-                 a_creation_datetime= (DateTime) value;
+                 a_reconciled_with_type= (String) value;
                  TrackChanges(9);
                  break;
                case 10:
-                 a_last_updated_datetime= (DateTime) value;
+                 a_reconciled_at= (DateTime?) value;
                  TrackChanges(10);
                  break;
                case 11:
-                 a_created_by= (Int64) value;
+                 a_reconciled_by= (Int64?) value;
                  TrackChanges(11);
                  break;
                case 12:
-                 a_last_updated_by= (Int64) value;
+                 a_flagged= (Boolean) value;
                  TrackChanges(12);
                  break;
                case 13:
-                 a_last_update_log= (String) value;
+                 a_source= (String) value;
                  TrackChanges(13);
                  break;
                case 14:
-                 a_object_version= (Int32) value;
+                 a_notes= (String) value;
                  TrackChanges(14);
+                 break;
+               case 15:
+                 a_creation_datetime= (DateTime) value;
+                 TrackChanges(15);
+                 break;
+               case 16:
+                 a_last_updated_datetime= (DateTime) value;
+                 TrackChanges(16);
+                 break;
+               case 17:
+                 a_created_by= (Int64) value;
+                 TrackChanges(17);
+                 break;
+               case 18:
+                 a_last_updated_by= (Int64) value;
+                 TrackChanges(18);
+                 break;
+               case 19:
+                 a_last_update_log= (String) value;
+                 TrackChanges(19);
+                 break;
+               case 20:
+                 a_object_version= (Int32) value;
+                 TrackChanges(20);
                  break;
             }
          }
@@ -397,16 +511,28 @@ namespace AxDatabase
                case 8:
                  return a_reconciled_with_id;
                case 9:
-                 return a_creation_datetime;
+                 return a_reconciled_with_type;
                case 10:
-                 return a_last_updated_datetime;
+                 return a_reconciled_at;
                case 11:
-                 return a_created_by;
+                 return a_reconciled_by;
                case 12:
-                 return a_last_updated_by;
+                 return a_flagged;
                case 13:
-                 return a_last_update_log;
+                 return a_source;
                case 14:
+                 return a_notes;
+               case 15:
+                 return a_creation_datetime;
+               case 16:
+                 return a_last_updated_datetime;
+               case 17:
+                 return a_created_by;
+               case 18:
+                 return a_last_updated_by;
+               case 19:
+                 return a_last_update_log;
+               case 20:
                  return a_object_version;
             }
 
@@ -567,6 +693,12 @@ namespace AxDatabase
          objdata.a_reference = a_reference;
          objdata.a_reconciled = a_reconciled;
          objdata.a_reconciled_with_id = a_reconciled_with_id;
+         objdata.a_reconciled_with_type = a_reconciled_with_type;
+         objdata.a_reconciled_at = a_reconciled_at;
+         objdata.a_reconciled_by = a_reconciled_by;
+         objdata.a_flagged = a_flagged;
+         objdata.a_source = a_source;
+         objdata.a_notes = a_notes;
          objdata.a_creation_datetime = a_creation_datetime;
          objdata.a_last_updated_datetime = a_last_updated_datetime;
          objdata.a_created_by = a_created_by;

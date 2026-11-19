@@ -287,7 +287,7 @@ namespace GymService.Modules.Finance
         /// <summary>
         /// Get bank transactions, optionally filtered by account.
         /// </summary>
-        public bool GetTransactions(out Dictionary<string, object> response, long? accountId = null, int page = 1, int limit = 50)
+        public bool GetTransactions(out Dictionary<string, object> response, long? accountId = null, bool? reconciled = null, bool? flagged = null, int page = 1, int limit = 50)
         {
             response = new Dictionary<string, object>();
 
@@ -304,6 +304,18 @@ namespace GymService.Modules.Finance
                 {
                     whereParts.Add("t.account_id = ?");
                     parameters.Add(accountId.Value);
+                }
+
+                if (reconciled.HasValue)
+                {
+                    whereParts.Add("t.reconciled = ?");
+                    parameters.Add(reconciled.Value ? 1 : 0);
+                }
+
+                if (flagged.HasValue)
+                {
+                    whereParts.Add("t.flagged = ?");
+                    parameters.Add(flagged.Value ? 1 : 0);
                 }
 
                 string whereClause = whereParts.Count > 0 ? "WHERE " + string.Join(" AND ", whereParts) : "";
@@ -334,7 +346,15 @@ namespace GymService.Modules.Finance
                             ["amount"] = Convert.ToDecimal(GetRowValue(row, result, "amount")),
                             ["description"] = Convert.ToString(GetRowValue(row, result, "description")) ?? "",
                             ["transactionDate"] = GetRowValue(row, result, "transaction_date") != null ? Convert.ToDateTime(GetRowValue(row, result, "transaction_date")) : (DateTime?)null,
-                            ["reconciled"] = Convert.ToBoolean(GetRowValue(row, result, "reconciled"))
+                            ["reference"] = Convert.ToString(GetRowValue(row, result, "reference")) ?? "",
+                            ["reconciled"] = Convert.ToBoolean(GetRowValue(row, result, "reconciled")),
+                            ["reconciledWithType"] = Convert.ToString(GetRowValue(row, result, "reconciled_with_type")) ?? "",
+                            ["reconciledWithId"] = GetRowValue(row, result, "reconciled_with_id") != null ? Convert.ToInt64(GetRowValue(row, result, "reconciled_with_id")) : (long?)null,
+                            ["reconciledAt"] = GetRowValue(row, result, "reconciled_at") != null ? Convert.ToDateTime(GetRowValue(row, result, "reconciled_at")) : (DateTime?)null,
+                            ["reconciledBy"] = GetRowValue(row, result, "reconciled_by") != null ? Convert.ToInt64(GetRowValue(row, result, "reconciled_by")) : (long?)null,
+                            ["flagged"] = GetRowValue(row, result, "flagged") != null && Convert.ToBoolean(GetRowValue(row, result, "flagged")),
+                            ["source"] = Convert.ToString(GetRowValue(row, result, "source")) ?? "manual",
+                            ["notes"] = Convert.ToString(GetRowValue(row, result, "notes")) ?? ""
                         });
                     }
                 }
@@ -361,6 +381,299 @@ namespace GymService.Modules.Finance
                 response["message"] = "Error interno del servidor";
                 return false;
             }
+        }
+
+        public bool ReconcileTransaction(long transactionId, string withType, long? withId, string notes, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var transaction = GetTransactionState(transactionId);
+                if (transaction == null)
+                {
+                    response["success"] = false;
+                    response["message"] = "El movimiento no existe";
+                    return false;
+                }
+
+                withType = (withType ?? "").Trim().ToLowerInvariant();
+                if (withType != "" && withType != "sale" && withType != "payment" && withType != "manual")
+                {
+                    response["success"] = false;
+                    response["message"] = "Tipo de relación no válido";
+                    return false;
+                }
+
+                if (withType == "sale" && (!withId.HasValue || _tools.ExecuteQueryObjectCount("SELECT COUNT(*) FROM GYM_SALES WHERE ID = ?", withId.Value) == 0))
+                {
+                    response["success"] = false;
+                    response["message"] = "La venta relacionada no existe";
+                    return false;
+                }
+
+                if (withType == "payment" && (!withId.HasValue || _tools.ExecuteQueryObjectCount("SELECT COUNT(*) FROM GYM_PAYMENTS WHERE ID = ?", withId.Value) == 0))
+                {
+                    response["success"] = false;
+                    response["message"] = "El pago relacionado no existe";
+                    return false;
+                }
+
+                long auditUser = CurrentUser.ForAudit;
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                session.UpdateObjectChanges(new GYM_BANK_TRANSACTIONS
+                {
+                    ID = transactionId,
+                    RECONCILED = true,
+                    RECONCILED_WITH_TYPE = withType,
+                    RECONCILED_WITH_ID = withId,
+                    RECONCILED_AT = DateTime.Now,
+                    RECONCILED_BY = auditUser > 0 ? auditUser : (long?)null,
+                    FLAGGED = false,
+                    NOTES = notes ?? ""
+                });
+
+                if (session.TryExecute().IsError)
+                {
+                    response["success"] = false;
+                    response["message"] = "Error al conciliar el movimiento";
+                    return false;
+                }
+
+                response["success"] = true;
+                response["message"] = "Movimiento conciliado";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en ReconcileTransaction: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        public bool UnreconcileTransaction(long transactionId, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                if (GetTransactionState(transactionId) == null)
+                {
+                    response["success"] = false;
+                    response["message"] = "El movimiento no existe";
+                    return false;
+                }
+
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                session.UpdateObjectChanges(new GYM_BANK_TRANSACTIONS
+                {
+                    ID = transactionId,
+                    RECONCILED = false,
+                    RECONCILED_WITH_TYPE = "",
+                    RECONCILED_WITH_ID = null,
+                    RECONCILED_AT = null,
+                    RECONCILED_BY = null
+                });
+
+                if (session.TryExecute().IsError)
+                {
+                    response["success"] = false;
+                    response["message"] = "Error al desconciliar el movimiento";
+                    return false;
+                }
+
+                response["success"] = true;
+                response["message"] = "Movimiento desconciliado";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en UnreconcileTransaction: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        public bool FlagTransaction(long transactionId, bool flagged, string notes, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var current = GetTransactionState(transactionId);
+                if (current == null)
+                {
+                    response["success"] = false;
+                    response["message"] = "El movimiento no existe";
+                    return false;
+                }
+
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                session.UpdateObjectChanges(new GYM_BANK_TRANSACTIONS
+                {
+                    ID = transactionId,
+                    FLAGGED = flagged,
+                    NOTES = string.IsNullOrWhiteSpace(notes) ? current.Value.Notes : notes
+                });
+
+                if (session.TryExecute().IsError)
+                {
+                    response["success"] = false;
+                    response["message"] = "Error al marcar el movimiento";
+                    return false;
+                }
+
+                response["success"] = true;
+                response["message"] = flagged ? "Movimiento marcado para revisión" : "Marca retirada";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en FlagTransaction: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        public bool ImportMovements(long accountId, List<Dictionary<string, object>> movements, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                if (GetAccountState(accountId) == null)
+                {
+                    response["success"] = false;
+                    response["message"] = "La cuenta bancaria no existe";
+                    return false;
+                }
+
+                if (movements == null || movements.Count == 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "No hay movimientos para importar";
+                    return false;
+                }
+
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                int imported = 0;
+
+                foreach (var movement in movements)
+                {
+                    string type = (Convert.ToString(movement.GetValueOrDefault("transactionType", "deposit")) ?? "deposit").Trim().ToLowerInvariant();
+                    decimal amount = movement.ContainsKey("amount") ? Convert.ToDecimal(movement["amount"]) : 0m;
+
+                    if (type != "deposit" && type != "withdrawal") continue;
+                    if (amount <= 0) continue;
+
+                    DateTime date = movement.ContainsKey("transactionDate") &&
+                        DateTime.TryParse(Convert.ToString(movement["transactionDate"]), out var parsed)
+                        ? parsed
+                        : DateTime.Now;
+
+                    session.InsertObject(new GYM_BANK_TRANSACTIONS
+                    {
+                        ACCOUNT_ID = accountId,
+                        TRANSACTION_TYPE = type,
+                        TRANSACTION_DATE = date,
+                        DESCRIPTION = (Convert.ToString(movement.GetValueOrDefault("description", "")) ?? "").Trim(),
+                        AMOUNT = amount,
+                        REFERENCE = (Convert.ToString(movement.GetValueOrDefault("reference", "")) ?? "").Trim(),
+                        RECONCILED = false,
+                        FLAGGED = false,
+                        SOURCE = "import",
+                        NOTES = ""
+                    });
+
+                    imported++;
+                }
+
+                if (imported == 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "Ningún movimiento tiene datos válidos";
+                    return false;
+                }
+
+                if (session.TryExecute().IsError)
+                {
+                    response["success"] = false;
+                    response["message"] = "Error al importar los movimientos";
+                    return false;
+                }
+
+                response["success"] = true;
+                response["imported"] = imported;
+                response["message"] = $"{imported} movimiento(s) importados";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en ImportMovements: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        public bool GetReconciliationSummary(out Dictionary<string, object> response, long? accountId = null)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var where = accountId.HasValue ? "WHERE ACCOUNT_ID = ?" : "";
+                var parameters = accountId.HasValue ? new object[] { accountId.Value } : Array.Empty<object>();
+
+                var result = _tools.ExecuteQueryResultSet(
+                    "SELECT " +
+                    "COUNT(*) AS TOTAL, " +
+                    "SUM(CASE WHEN RECONCILED = 1 THEN 1 ELSE 0 END) AS RECONCILED_COUNT, " +
+                    "SUM(CASE WHEN RECONCILED = 0 THEN 1 ELSE 0 END) AS PENDING_COUNT, " +
+                    "SUM(CASE WHEN FLAGGED = 1 THEN 1 ELSE 0 END) AS FLAGGED_COUNT, " +
+                    "ISNULL(SUM(CASE WHEN RECONCILED = 0 THEN AMOUNT ELSE 0 END),0) AS PENDING_AMOUNT, " +
+                    "ISNULL(SUM(CASE WHEN RECONCILED = 1 THEN AMOUNT ELSE 0 END),0) AS RECONCILED_AMOUNT " +
+                    $"FROM GYM_BANK_TRANSACTIONS {where}", parameters);
+
+                var row = result.Rows[0];
+                response["success"] = true;
+                response["data"] = new Dictionary<string, object>
+                {
+                    ["total"] = Convert.ToInt64(row.GetObject(0)),
+                    ["reconciledCount"] = Convert.ToInt64(row.GetObject(1)),
+                    ["pendingCount"] = Convert.ToInt64(row.GetObject(2)),
+                    ["flaggedCount"] = Convert.ToInt64(row.GetObject(3)),
+                    ["pendingAmount"] = Convert.ToDecimal(row.GetObject(4)),
+                    ["reconciledAmount"] = Convert.ToDecimal(row.GetObject(5))
+                };
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en GetReconciliationSummary: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        private (long AccountId, string Notes)? GetTransactionState(long transactionId)
+        {
+            var result = _tools.ExecuteQueryResultSet(
+                "SELECT ACCOUNT_ID, NOTES FROM GYM_BANK_TRANSACTIONS WHERE ID = ?", transactionId);
+
+            if (result == null || result.Rows.Count == 0)
+                return null;
+
+            var row = result.Rows[0];
+            return (
+                Convert.ToInt64(GetRowValue(row, result, "account_id")),
+                Convert.ToString(GetRowValue(row, result, "notes")) ?? ""
+            );
         }
 
         private (decimal Balance, string Currency, bool IsActive)? GetAccountState(long accountId)
