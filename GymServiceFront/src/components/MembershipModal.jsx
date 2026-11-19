@@ -6,6 +6,7 @@ import Button from './ui/Button';
 import Input from './ui/Input';
 import Select from './ui/Select';
 import Badge from './ui/Badge';
+import ReceiptPreview from './ReceiptPreview';
 import { formatCurrency, formatDate, formatDateTime } from '../utils/format';
 
 const todayInput = () => new Date().toISOString().slice(0, 10);
@@ -44,6 +45,7 @@ export default function MembershipModal({ target, plans, onClose, onSaved }) {
   const [error, setError] = useState('');
   const [history, setHistory] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [receipt, setReceipt] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -107,30 +109,19 @@ export default function MembershipModal({ target, plans, onClose, onSaved }) {
   };
 
   const openReceipt = async (payment) => {
-    // Abre la pestaña antes del await para que el navegador no bloquee el popup.
-    const receiptWindow = window.open('', '_blank');
-
     try {
       const response = await api.get(`/members/${member.id}/payments/${payment.id}/receipt`, {
         responseType: 'text',
       });
-      const blob = new Blob([response.data], { type: 'text/html;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      if (receiptWindow) {
-        receiptWindow.document.open();
-        receiptWindow.document.write(response.data);
-        receiptWindow.document.close();
-      } else {
-        window.open(url, '_blank');
-      }
+      setReceipt({ html: response.data, title: `Recibo PAGO-${payment.id}` });
     } catch {
-      if (receiptWindow) receiptWindow.close();
       setError('No se pudo generar el recibo del pago.');
     }
   };
 
   return (
-    <Modal
+    <>
+      <Modal
       isOpen={!!member}
       onClose={() => !saving && onClose()}
       title={`Membresía · ${member?.firstName || ''} ${member?.lastName || ''}`.trim()}
@@ -294,6 +285,9 @@ export default function MembershipModal({ target, plans, onClose, onSaved }) {
           </div>
         </form>
       )}
-    </Modal>
+      </Modal>
+
+      <ReceiptPreview receipt={receipt} onClose={() => setReceipt(null)} />
+    </>
   );
 }

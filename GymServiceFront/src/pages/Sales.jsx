@@ -9,6 +9,7 @@ import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import { formatCurrency, formatDateTime, humanize } from '../utils/format';
 import { Printer } from 'lucide-react';
+import ReceiptPreview from '../components/ReceiptPreview';
 
 const TAX_RATE = 0.16;
 
@@ -276,8 +277,11 @@ function NewSaleButton({ onDone }) {
 }
 
 export default function Sales() {
+  const [receipt, setReceipt] = useState(null);
+
   return (
-    <CrudPage
+    <>
+      <CrudPage
       title="Ventas"
       subtitle="Historial de ventas de mostrador"
       endpoint="/sales"
@@ -325,17 +329,8 @@ export default function Sales() {
           label: 'Recibo',
           icon: Printer,
           onClick: async (row) => {
-            const receiptWindow = window.open('', '_blank');
             const response = await api.get(`/sales/${row.id}/receipt`, { responseType: 'text' });
-            const blob = new Blob([response.data], { type: 'text/html;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            if (receiptWindow) {
-              receiptWindow.document.open();
-              receiptWindow.document.write(response.data);
-              receiptWindow.document.close();
-            } else {
-              window.open(url, '_blank');
-            }
+            setReceipt({ html: response.data, title: `Recibo ${row.saleNumber || row.id}` });
           },
         },
         {
@@ -361,6 +356,9 @@ export default function Sales() {
           }}
         />
       )}
-    />
+      />
+
+      <ReceiptPreview receipt={receipt} onClose={() => setReceipt(null)} />
+    </>
   );
 }

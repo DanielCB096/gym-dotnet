@@ -19,6 +19,7 @@
 
 ### Pendientes menores Fase 1 (2026-11-19)
 - **Recibos de membresía:** listado de pagos recientes del socio y recibo HTML imprimible (`PAGO-{id}`) con plan, periodo, importe, método, referencia y notas; botón “Recibo” en el modal de membresía.
+- **Recibos en el panel:** tanto el recibo de membresía como el de venta se muestran ahora en una **vista previa dentro del panel** (iframe + botón Imprimir), sin abrir pestañas nuevas ni depender del bloqueador de popups.
 - **Kiosco/PWA:** botón “Abrir kiosco” en el panel, indicador en línea/offline, reloj, validación y vencimiento del token, anti doble envío, teclado físico, equipos no disponibles con refresco y estados accesibles.
 - **Pruebas:** 103 automatizadas.
 
