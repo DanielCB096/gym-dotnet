@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Envoltorio SOLO para el proyecto del gimnasio.
+
+    Las ANXO Libraries están en C:\repositorios\pilot y no se modifican: el generador
+    original (AnxoDatabaseGenerator) declara net8.0 y no puede compilar contra las
+    librerías net10.0, así que aquí compilamos sus mismos fuentes en un ejecutable net10.0.
+
+    Uso (desde GymService\Models\Generated):
+      dotnet run (project) <ruta a este csproj> [separador] ..\_ModelGym.xml
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AssemblyName>AnxoModelGenerator</AssemblyName>
+    <RootNamespace>AnxoDatabaseGenerator</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\..\..\repositorios\pilot\ANXO LIBRARIES\AnxoDatabaseGenerator\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\repositorios\pilot\ANXO LIBRARIES\AnxoLibrary\AnxoLibrary.csproj" />
+    <ProjectReference Include="..\..\..\..\repositorios\pilot\ANXO LIBRARIES\AnxoDatabase\AnxoDatabase.csproj" />
+    <ProjectReference Include="..\..\..\..\repositorios\pilot\ANXO LIBRARIES\AnxoObjectDatabaseManager\AnxoObjectDatabaseManager.csproj" />
+  </ItemGroup>
+
+</Project>
