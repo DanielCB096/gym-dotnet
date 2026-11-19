@@ -4,6 +4,7 @@ using System.Linq;
 using AxLogger;
 using AxDatabase;
 using AxObjectOrientedDatabase;
+using GymService.Modules.Inventory;
 
 namespace GymService.Modules.Sales
 {
@@ -206,6 +207,10 @@ namespace GymService.Modules.Sales
                     });
                 }
 
+                var soldQuantityByProduct = saleItems
+                    .GroupBy(item => item.ProductId)
+                    .ToDictionary(group => group.Key, group => group.Sum(item => item.Quantity));
+
                 foreach (var stock in newStockByProduct)
                 {
                     session.UpdateObjectChanges(new GYM_INVENTORY
@@ -213,6 +218,10 @@ namespace GymService.Modules.Sales
                         ID = stock.Key,
                         STOCK_QUANTITY = stock.Value
                     });
+
+                    int sold = soldQuantityByProduct[stock.Key];
+                    InventoryModule.RecordMovement(session, stock.Key, "sale", -sold, stock.Value + sold, stock.Value,
+                        "sale", saleId, $"Venta {saleNumber}");
                 }
 
                 if (session.TryExecute().IsError)
@@ -287,6 +296,7 @@ namespace GymService.Modules.Sales
                 if (items != null)
                 {
                     var restoredStock = new Dictionary<long, int>();
+                    var returnedByProduct = new Dictionary<long, int>();
                     foreach (Row row in items.Rows)
                     {
                         var productId = Convert.ToInt64(GetRowValue(row, items, "product_id"));
@@ -298,6 +308,7 @@ namespace GymService.Modules.Sales
                             newStock = currentStock;
 
                         restoredStock[productId] = newStock + quantity;
+                        returnedByProduct[productId] = returnedByProduct.GetValueOrDefault(productId) + quantity;
                     }
 
                     foreach (var stock in restoredStock)
@@ -307,6 +318,10 @@ namespace GymService.Modules.Sales
                             ID = stock.Key,
                             STOCK_QUANTITY = stock.Value
                         });
+
+                        int returned = returnedByProduct[stock.Key];
+                        InventoryModule.RecordMovement(session, stock.Key, "return", returned, stock.Value - returned, stock.Value,
+                            "sale_return", saleId, $"Devolución venta {saleNumber}");
                     }
                 }
 

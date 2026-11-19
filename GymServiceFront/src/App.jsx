@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Members from './pages/Members';
 import Plans from './pages/Plans';
 import Inventory from './pages/Inventory';
+import Procurement from './pages/Procurement';
 import Sales from './pages/Sales';
 import Cash from './pages/Cash';
 import Classes from './pages/Classes';
@@ -63,6 +64,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Inventory />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchases"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Procurement />
                 </Layout>
               </ProtectedRoute>
             }

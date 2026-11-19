@@ -70,12 +70,18 @@ public class SalesFlowTests
             Assert.Equal(20m, Convert.ToDecimal(_fx.Scalar("SELECT TOTAL_AMOUNT FROM GYM_SALES WHERE ID = @id", ("@id", saleId))));
             Assert.Equal(10m, Convert.ToDecimal(_fx.Scalar("SELECT UNIT_PRICE FROM GYM_SALE_ITEMS WHERE SALE_ID = @id", ("@id", saleId))));
             Assert.Equal(1L, Convert.ToInt64(_fx.Scalar("SELECT CREATED_BY FROM GYM_SALES WHERE ID = @id", ("@id", saleId))));
+            Assert.Equal(-2, Convert.ToInt32(_fx.Scalar(
+                "SELECT TOP 1 QUANTITY_DELTA FROM GYM_INVENTORY_MOVEMENTS WHERE PRODUCT_ID = @p AND MOVEMENT_TYPE = 'sale' ORDER BY ID DESC",
+                ("@p", productId))));
 
             Assert.True(sales.ReturnSale(saleId, out _));
 
             Assert.Equal(10, Convert.ToInt32(_fx.Scalar("SELECT STOCK_QUANTITY FROM GYM_INVENTORY WHERE ID = @id", ("@id", productId))));
             Assert.Equal("returned", Convert.ToString(_fx.Scalar("SELECT STATUS FROM GYM_SALES WHERE ID = @id", ("@id", saleId))));
             Assert.NotNull(_fx.Scalar("SELECT RETURNED_AT FROM GYM_SALES WHERE ID = @id", ("@id", saleId)));
+            Assert.Equal(2, Convert.ToInt32(_fx.Scalar(
+                "SELECT TOP 1 QUANTITY_DELTA FROM GYM_INVENTORY_MOVEMENTS WHERE PRODUCT_ID = @p AND MOVEMENT_TYPE = 'return' ORDER BY ID DESC",
+                ("@p", productId))));
 
             // Segunda devolución: debe fallar y no reponer stock dos veces.
             Assert.False(sales.ReturnSale(saleId, out var secondResponse));

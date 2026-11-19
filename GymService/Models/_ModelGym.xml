@@ -1145,5 +1145,81 @@
     </indexes>
 
   </object>
+
+  <object name="GYM_PURCHASE_ORDER_ITEMS" table="gym_purchase_order_items" sequence="GYM_PURCHASE_ORDER_ITEMS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="PURCHASE_ORDER_ID" column="purchase_order_id" type="int64" flag="not_null" />
+    <attribute name="PRODUCT_ID" column="product_id" type="int64" flag="not_null" />
+    <attribute name="QUANTITY" column="quantity" type="int32" flag="not_null" />
+    <attribute name="UNIT_COST" column="unit_cost" type="decimal" flag="not_null" default="0" />
+    <attribute name="TOTAL_COST" column="total_cost" type="decimal" flag="not_null" default="0" />
+
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_purchase_orders">
+        <column local="purchase_order_id" external="id" />
+      </reference>
+      <reference external_table="gym_inventory">
+        <column local="product_id" external="id" />
+      </reference>
+    </references>
+
+    <indexes>
+      <index name="IX_GYM_PURCHASE_ORDER_ITEMS_ORDER" type="NON_UNIQUE">
+        <attribute name="PURCHASE_ORDER_ID" />
+      </index>
+      <index name="IX_GYM_PURCHASE_ORDER_ITEMS_PRODUCT" type="NON_UNIQUE">
+        <attribute name="PRODUCT_ID" />
+      </index>
+    </indexes>
+
+  </object>
+
+  <object name="GYM_INVENTORY_MOVEMENTS" table="gym_inventory_movements" sequence="GYM_INVENTORY_MOVEMENTS_SEQ">
+
+    <attribute name="ID" column="id" type="int64" flag="primarykey" />
+    <attribute name="PRODUCT_ID" column="product_id" type="int64" flag="not_null" />
+    <attribute name="MOVEMENT_TYPE" column="movement_type" type="string" flag="not_null" stringlength="30" />
+    <attribute name="QUANTITY_DELTA" column="quantity_delta" type="int32" flag="not_null" />
+    <attribute name="PREVIOUS_STOCK" column="previous_stock" type="int32" flag="not_null" />
+    <attribute name="NEW_STOCK" column="new_stock" type="int32" flag="not_null" />
+    <attribute name="REFERENCE_TYPE" column="reference_type" type="string" flag="null" stringlength="30" />
+    <attribute name="REFERENCE_ID" column="reference_id" type="int64" flag="null" />
+    <attribute name="NOTES" column="notes" type="string" flag="null" stringlength="300" />
+    <attribute name="MOVEMENT_DATE" column="movement_date" type="datetime2" flag="not_null" default="GETDATE()" />
+
+    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
+    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
+    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
+    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
+    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
+    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
+
+    <references>
+      <reference external_table="gym_inventory">
+        <column local="product_id" external="id" />
+      </reference>
+    </references>
+
+    <indexes>
+      <index name="IX_GYM_INVENTORY_MOVEMENTS_PRODUCT" type="NON_UNIQUE">
+        <attribute name="PRODUCT_ID" />
+      </index>
+      <index name="IX_GYM_INVENTORY_MOVEMENTS_DATE" type="NON_UNIQUE">
+        <attribute name="MOVEMENT_DATE" />
+      </index>
+      <index name="IX_GYM_INVENTORY_MOVEMENTS_TYPE" type="NON_UNIQUE">
+        <attribute name="MOVEMENT_TYPE" />
+      </index>
+    </indexes>
+
+  </object>
 </objectdb>
 

@@ -23,6 +23,14 @@
 - **Kiosco/PWA:** botón “Abrir kiosco” en el panel, indicador en línea/offline, reloj, validación y vencimiento del token, anti doble envío, teclado físico, equipos no disponibles con refresco y estados accesibles.
 - **Pruebas:** 103 automatizadas.
 
+### Fase 2A: proveedores, compras y kardex (2026-11-19)
+- **Proveedores:** CRUD con contacto, email, teléfono, RFC y dirección; activación/desactivación.
+- **Órdenes de compra:** creación con varios productos, costo unitario y total; estados borrador/enviada/recibida/cancelada; envío, recepción (suma stock) y cancelación.
+- **Kardex:** movimientos por producto con tipo, delta, stock anterior/nuevo, referencia y notas; se registran compras, ventas, devoluciones, ajustes manuales y stock inicial.
+- **UI:** nueva página **Compras** con pestañas Órdenes de compra, Proveedores y Movimientos; validado en vivo crear proveedor, orden, enviar, recibir y ver el kardex.
+- **Correcciones:** número de orden ajustado al límite de 20 caracteres; el borrado de productos limpia sus movimientos y bloquea si tiene órdenes de compra.
+- **Pruebas:** 104 automatizadas, incluyendo recepción, stock, kardex y cancelación.
+
 ### Fase 1: operación diaria (2026-11-19)
 - **Socios:** edición de datos y estado, cancelación de membresía con motivo e historial de membresías.
 - **Planes:** CRUD completo (precio, moneda, duración, beneficios, límite diario, activación) y página “Planes”.

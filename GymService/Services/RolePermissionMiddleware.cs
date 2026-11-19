@@ -249,6 +249,20 @@ namespace GymService.Services
             {
                 ["POST"] = "inventory.edit"
             },
+            ["/api/suppliers"] = new Dictionary<string, string>
+            {
+                ["GET"] = "inventory.view",
+                ["POST"] = "inventory.edit",
+                ["PUT"] = "inventory.edit",
+                ["DELETE"] = "inventory.edit"
+            },
+            ["/api/purchase-orders"] = new Dictionary<string, string>
+            {
+                ["GET"] = "inventory.view",
+                ["POST"] = "inventory.edit",
+                ["PUT"] = "inventory.edit",
+                ["DELETE"] = "inventory.edit"
+            },
             // Caja / turnos
             ["/api/cash-sessions"] = new Dictionary<string, string>
             {

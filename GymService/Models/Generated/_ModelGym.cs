@@ -65,7 +65,9 @@ namespace AxDatabase
                                                                        GYM_SCHEDULED_REPORTS.DatabaseMappingObject,
                                                                        GYM_STAFF.DatabaseMappingObject,
                                                                        GYM_PUSH_SUBSCRIPTIONS.DatabaseMappingObject,
-                                                                       GYM_CASH_SESSIONS.DatabaseMappingObject
+                                                                       GYM_CASH_SESSIONS.DatabaseMappingObject,
+                                                                       GYM_PURCHASE_ORDER_ITEMS.DatabaseMappingObject,
+                                                                       GYM_INVENTORY_MOVEMENTS.DatabaseMappingObject
                                                                     };
 
 
