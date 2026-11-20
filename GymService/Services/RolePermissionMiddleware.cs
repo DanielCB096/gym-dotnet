@@ -45,9 +45,27 @@ namespace GymService.Services
             // Determine required permission from the path
             var requiredPermission = PermissionMatrix.GetRequiredPermission(path, method);
 
-            // If no permission is defined for this route, allow access
+            // If no permission is defined for this route, allow access.
+            // Excepción de seguridad: una ruta /api sin entrada en la matriz no debe
+            // pasar sin permiso; se deniega y se registra (ver PermissionCoverageTests).
             if (string.IsNullOrEmpty(requiredPermission))
             {
+                if (path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
+                {
+                    Logger.AddErrorSubModule("RolePermissionMiddleware",
+                        $"Ruta de API sin permiso registrado: {method} {path}");
+
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    context.Response.ContentType = "application/json";
+                    var denied = JsonSerializer.Serialize(new
+                    {
+                        success = false,
+                        message = "Ruta de API no autorizada"
+                    });
+                    await context.Response.WriteAsync(denied);
+                    return;
+                }
+
                 await _next(context);
                 return;
             }
@@ -419,6 +437,7 @@ namespace GymService.Services
             ["/api/kiosk/devices"] = new Dictionary<string, string>
             {
                 ["GET"] = "admin.settings",
+                ["POST"] = "admin.settings",
                 ["PUT"] = "admin.settings"
             },
             // Staff

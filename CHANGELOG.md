@@ -6,6 +6,12 @@
 
 ## Backend (.NET)
 
+### Auditoría de permisos por ruta (2026-11-20)
+- **Bug:** `POST /api/kiosk/devices/{id}/rotate` no tenía entrada en `PermissionMatrix`; como el middleware deja pasar las rutas desconocidas, la petición no comprobaba permisos. Ahora exige `admin.settings`.
+- **Endurecimiento:** cualquier ruta `/api/*` sin permiso registrado responde `403` (antes se dejaba pasar). Las rutas públicas de auth, validación de código de acceso, validación de kiosco y equipos no disponibles siguen exentas.
+- **Pruebas:** nuevo `PermissionCoverageTests` que recorre por reflexión todas las rutas de los controllers y falla si alguna no tiene permiso; 123/123 con la suite completa.
+- **Verificación en vivo:** CASHIER recibe 403 en rotación de kiosco y en personal, y 200 en socios; OWNER recibe 200 en socios y 403 en `/api/noexiste`; el preflight CORS sigue respondiendo 204.
+
 ### Dashboard con tendencias (2026-11-20)
 - **Backend:** nuevo `DashboardModule`; `/api/dashboard/summary` mantiene los contadores y añade `trends.revenue` (7 días con ventas y cobros de membresía), `trends.access` (7 días) y `trends.upcoming` (hasta 10 vencimientos con días restantes).
 - **Frontend:** gráficas de barras de ingresos y accesos y lista de próximos vencimientos, sin dependencias nuevas.

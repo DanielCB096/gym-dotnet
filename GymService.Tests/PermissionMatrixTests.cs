@@ -23,6 +23,7 @@ public class PermissionMatrixTests
     [InlineData("/api/finance/transactions", "POST", "finance.reconcile")]
     [InlineData("/api/reports/sales/excel", "GET", "reports.view")]
     [InlineData("/api/kiosk/devices", "GET", "admin.settings")]
+    [InlineData("/api/kiosk/devices/9/rotate", "POST", "admin.settings")]
     [InlineData("/api/import/members/csv", "POST", "members.create")]
     [InlineData("/api/import/inventory/csv", "POST", "inventory.edit")]
     [InlineData("/api/import/templates/members/csv", "GET", "members.view")]
