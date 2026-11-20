@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <Package Name="GymService - Centro Fit"
+           Manufacturer="ANXO / Centro Fit"
+           Version="$(var.ProductVersion)"
+           UpgradeCode="6F2F2A2E-7B62-4E4E-9E1F-2B9E6B0C9A11"
+           Scope="perMachine"
+           Compressed="yes">
+
+    <MajorUpgrade DowngradeErrorMessage="Ya hay una version mas reciente de GymService instalada." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.LicenseFile)" />
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+
+    <Property Id="OPEN_FIREWALL" Value="0" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="ANXOFOLDER" Name="Anxo">
+        <Directory Id="INSTALLFOLDER" Name="GymService" />
+      </Directory>
+    </StandardDirectory>
+
+    <Feature Id="MainFeature" Title="GymService" Level="1">
+      <Files Directory="INSTALLFOLDER" Include="$(var.PublishDir)\**">
+        <Exclude Files="$(var.PublishDir)\GymService.exe" />
+        <Exclude Files="$(var.PublishDir)\install.ps1" />
+        <Exclude Files="$(var.PublishDir)\uninstall.ps1" />
+        <Exclude Files="$(var.PublishDir)\VERSION.txt" />
+        <Exclude Files="$(var.PublishDir)\**\*.pdb" />
+      </Files>
+
+      <ComponentRef Id="GymServiceExe" />
+      <ComponentRef Id="AppSettings" />
+    </Feature>
+
+    <!-- El ejecutable se autora a mano porque registra el servicio de Windows. -->
+    <Component Id="GymServiceExe" Directory="INSTALLFOLDER" Guid="*">
+      <File Id="GymServiceExe" Source="$(var.PublishDir)\GymService.exe" KeyPath="yes" />
+
+      <ServiceInstall Id="InstallGymService"
+                      Name="anxogymmservice"
+                      DisplayName="Anxo Gym Manager Service"
+                      Description="API y panel de Centro Fit"
+                      Type="ownProcess"
+                      Start="auto"
+                      ErrorControl="normal"
+                      Account="LocalSystem" />
+
+      <ServiceControl Id="ControlGymService"
+                      Name="anxogymmservice"
+                      Stop="both"
+                      Remove="uninstall"
+                      Wait="yes" />
+    </Component>
+
+    <!-- Configuracion inicial: no se sobrescribe en actualizaciones y se conserva al desinstalar. -->
+    <Component Id="AppSettings" Directory="INSTALLFOLDER" Guid="*" NeverOverwrite="yes" Permanent="yes">
+      <File Id="AppSettingsJson"
+            Source="$(var.PublishDir)\appsettings.example.json"
+            Name="appsettings.json"
+            KeyPath="yes" />
+    </Component>
+
+    <CustomAction Id="ServiceRecovery"
+                  Directory="SystemFolder"
+                  Execute="deferred"
+                  Impersonate="no"
+                  Return="ignore"
+                  ExeCommand="sc.exe failure anxogymmservice reset= 86400 actions= restart/60000/restart/120000/restart/180000" />
+
+    <CustomAction Id="OpenFirewall"
+                  Directory="SystemFolder"
+                  Execute="deferred"
+                  Impersonate="no"
+                  Return="ignore"
+                  ExeCommand="netsh.exe advfirewall firewall add rule name=&quot;GymService HTTP&quot; dir=in action=allow protocol=TCP localport=5000" />
+
+    <CustomAction Id="RemoveFirewall"
+                  Directory="SystemFolder"
+                  Execute="deferred"
+                  Impersonate="no"
+                  Return="ignore"
+                  ExeCommand="netsh.exe advfirewall firewall delete rule name=&quot;GymService HTTP&quot;" />
+
+    <InstallExecuteSequence>
+      <Custom Action="ServiceRecovery" After="InstallServices" Condition="NOT Installed" />
+      <Custom Action="OpenFirewall" After="ServiceRecovery" Condition="OPEN_FIREWALL=1 AND NOT Installed" />
+      <Custom Action="RemoveFirewall" Before="RemoveFiles" Condition="REMOVE=&quot;ALL&quot;" />
+    </InstallExecuteSequence>
+
+  </Package>
+</Wix>

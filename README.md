@@ -334,6 +334,26 @@ El instalador:
 
 Panel web y API quedan en `http://<servidor>:<puerto>` (por defecto `http://0.0.0.0:5000`).
 
+### 2b. Instalador MSI (WiX)
+
+Alternativa al ZIP con PowerShell. Genera un MSI per-machine que instala en
+`C:\Program Files\Anxo\GymService` y registra el servicio `anxogymmservice`.
+
+```powershell
+dotnet tool install -g wix --version 5.0.2   # WiX 6+ exige aceptar el EULA OSMF
+.\build-msi.ps1                              # publica y genera artifacts\GymService-<version>-win-x64.msi
+msiexec /i "artifacts\GymService-1.0.0-win-x64.msi" OPEN_FIREWALL=1   # Administrador
+```
+
+- El MSI instala `appsettings.json` desde la plantilla **solo si no existe** y lo conserva al
+  desinstalar (`NeverOverwrite` + `Permanent`).
+- El servicio queda instalado en automático **sin arrancar**: edita `appsettings.json` y ejecuta
+  `Start-Service anxogymmservice`.
+- `OPEN_FIREWALL=1` abre el puerto 5000; la regla se elimina al desinstalar.
+- Configura recuperación ante fallos (`sc failure`) automáticamente.
+- Si ya instalaste con el ZIP/PowerShell, desinstala esa versión antes para no duplicar el servicio.
+- `build-msi.ps1` valida el MSI con `wix msi validate` y `-FrameworkDependent` reduce el tamaño.
+
 ### 3. Configuración mínima de producción
 
 Editar `C:\Program Files\Anxo\GymService\appsettings.json`:

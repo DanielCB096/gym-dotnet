@@ -1,17 +1,17 @@
 # Graph Report - gimnasio-dotnet  (2026-11-20)
 
 ## Corpus Check
-- 198 files · ~217,037 words
+- 199 files · ~217,679 words
 - Verdict: corpus is large enough that graph structure adds value.
-- Unclassified: 8 file(s) not represented in the graph (top: (none) 3, .css 2, .xml 2)
+- Unclassified: 10 file(s) not represented in the graph (top: (none) 3, .css 2, .xml 2)
 
 ## Summary
-- 2744 nodes · 7689 edges · 110 communities (71 shown, 39 thin omitted)
+- 2745 nodes · 7689 edges · 111 communities (71 shown, 40 thin omitted)
 - Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 697 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `070a520d`
+- Built from commit: `d7d43db3`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -127,21 +127,21 @@
 10. `GYM_FISIO_PACKAGES` - 48 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `CancelMembershipModal()` --calls--> `Button`  [EXTRACTED]
-  GymServiceFront/src/components/CancelMembershipModal.jsx → GymServiceFront/src/components/ui/Button.jsx
-- `CancelMembershipModal()` --calls--> `Modal()`  [EXTRACTED]
-  GymServiceFront/src/components/CancelMembershipModal.jsx → GymServiceFront/src/components/ui/Modal.jsx
-- `MembershipModal()` --calls--> `ReceiptPreview()`  [EXTRACTED]
-  GymServiceFront/src/components/MembershipModal.jsx → GymServiceFront/src/components/ReceiptPreview.jsx
-- `MembershipModal()` --calls--> `Button`  [EXTRACTED]
-  GymServiceFront/src/components/MembershipModal.jsx → GymServiceFront/src/components/ui/Button.jsx
-- `MembershipModal()` --calls--> `Input`  [EXTRACTED]
-  GymServiceFront/src/components/MembershipModal.jsx → GymServiceFront/src/components/ui/Input.jsx
+- `IdentityModule` --references--> `EmailService`  [EXTRACTED]
+  GymService/Modules/Identity/IdentityModule.cs → GymService/Services/EmailService.cs
+- `InventoryFlowTests` --references--> `DatabaseFixture`  [EXTRACTED]
+  GymService.Tests/Integration/InventoryFlowTests.cs → GymService.Tests/Integration/DatabaseFixture.cs
+- `ProcurementFlowTests` --references--> `DatabaseFixture`  [EXTRACTED]
+  GymService.Tests/Integration/ProcurementFlowTests.cs → GymService.Tests/Integration/DatabaseFixture.cs
+- `MaintenanceFlowTests` --references--> `DatabaseFixture`  [EXTRACTED]
+  GymService.Tests/Integration/MaintenanceFlowTests.cs → GymService.Tests/Integration/DatabaseFixture.cs
+- `ClassSessionsFlowTests` --references--> `DatabaseFixture`  [EXTRACTED]
+  GymService.Tests/Integration/ClassSessionsFlowTests.cs → GymService.Tests/Integration/DatabaseFixture.cs
 
 ## Import Cycles
 - None detected.
 
-## Communities (110 total, 39 thin omitted)
+## Communities (111 total, 40 thin omitted)
 
 ### Community 0 - "Dictionary"
 Cohesion: 0.05
@@ -428,24 +428,24 @@ Cohesion: 0.25
 Nodes (8): dependencies, axios@^1.21.1, lucide-react@^1.75.0, react@^19.3.1, react-dom@^19.3.1, react-router-dom@^7.18.6, axios, react-dom
 
 ## Knowledge Gaps
-- **535 isolated node(s):** `CREATION_DATETIME`, `LAST_UPDATED_DATETIME`, `CREATED_BY`, `LAST_UPDATED_BY`, `LAST_UPDATE_LOG` (+530 more)
-  These have ≤1 connection - possible missing edges. (Counts symbols only; 813 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **39 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **535 isolated node(s):** `CREATED_BY`, `CREATION_DATETIME`, `InDatabase`, `IsChanged`, `LAST_UPDATE_LOG` (+530 more)
+  These have ≤1 connection - possible missing edges. (Counts symbols only; 814 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **40 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `GYM_FISIO_PACKAGES` connect `GYM_FISIO_PACKAGES` to `GYM_ROUTINE_ASSIGNMENTS`, `system_collections_generic`, `GYM_OTP_CODES`, `Boolean`, `Int32`, `MappingObject`, `GYM_PUSH_SUBSCRIPTIONS`, `List`, `GYM_EXERCISES`, `IDatabaseObject`, `FisioModule`, `DateTime`?**
-  _High betweenness centrality (0.034) - this node is a cross-community bridge._
-- **What connects `CREATION_DATETIME`, `LAST_UPDATED_DATETIME`, `CREATED_BY` to the rest of the system?**
+- **Why does `GYM_STAFF_SHIFTS` connect `GYM_STAFF_SHIFTS` to `GYM_ROUTINE_ASSIGNMENTS`, `system_collections_generic`, `GYM_OTP_CODES`, `Boolean`, `MappingObject`, `GYM_PUSH_SUBSCRIPTIONS`, `List`, `GYM_EXERCISES`, `IDatabaseObject`, `StaffModule`, `DateTime`?**
+  _High betweenness centrality (0.037) - this node is a cross-community bridge._
+- **What connects `CREATED_BY`, `CREATION_DATETIME`, `InDatabase` to the rest of the system?**
   _535 weakly-connected nodes found - possible missing edges._
 - **Should `Dictionary` be split into smaller, more focused modules?**
   _Cohesion score 0.050606568194507894 - nodes in this community are weakly interconnected._
-- **Why does `GYM_PUSH_SUBSCRIPTIONS` connect `GYM_PUSH_SUBSCRIPTIONS` to `GYM_ROUTINE_ASSIGNMENTS`, `system_collections_generic`, `GYM_OTP_CODES`, `Boolean`, `MappingObject`, `List`, `GYM_EXERCISES`, `IDatabaseObject`, `DateTime`?**
-  _High betweenness centrality (0.032) - this node is a cross-community bridge._
+- **Why does `GYM_USERS` connect `GYM_USERS` to `GYM_ROUTINE_ASSIGNMENTS`, `system_collections_generic`, `GYM_OTP_CODES`, `SecurityValidation.Sha256Hash`, `Boolean`, `MappingObject`, `MaintenanceTests.Cleanup_Removes_Expired_Sessions_And_Otp_But_Keeps_Valid_Ones`, `GYM_PUSH_SUBSCRIPTIONS`, `List`, `GYM_EXERCISES`, `IdentityModule`, `IDatabaseObject`, `DateTime`?**
+  _High betweenness centrality (0.035) - this node is a cross-community bridge._
 - **Should `GYM_BANK_TRANSACTIONS` be split into smaller, more focused modules?**
   _Cohesion score 0.07957957957957958 - nodes in this community are weakly interconnected._
-- **Why does `GYM_FISIO_APPOINTMENTS` connect `GYM_FISIO_APPOINTMENTS` to `GYM_ROUTINE_ASSIGNMENTS`, `system_collections_generic`, `GYM_OTP_CODES`, `Boolean`, `MappingObject`, `GYM_PUSH_SUBSCRIPTIONS`, `List`, `GYM_EXERCISES`, `IDatabaseObject`, `FisioModule`, `DateTime`?**
-  _High betweenness centrality (0.032) - this node is a cross-community bridge._
+- **Why does `GYM_MEMBERS` connect `GYM_MEMBERS` to `GYM_ROUTINE_ASSIGNMENTS`, `system_collections_generic`, `BulkImportResult`, `DatabaseFixture.Scalar`, `GYM_OTP_CODES`, `Boolean`, `MappingObject`, `GYM_PUSH_SUBSCRIPTIONS`, `List`, `GYM_EXERCISES`, `IDatabaseObject`, `MembersModule`, `DateTime`?**
+  _High betweenness centrality (0.029) - this node is a cross-community bridge._
 - **Should `xunit` be split into smaller, more focused modules?**
   _Cohesion score 0.07918367346938776 - nodes in this community are weakly interconnected._
