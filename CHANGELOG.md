@@ -6,6 +6,12 @@
 
 ## Backend (.NET)
 
+### Grafo versionado en cada commit (2026-11-20)
+- **Hook:** `.githooks/pre-commit` ejecuta `graphify update .` y añade `graphify-out/` al commit; se activa una vez por clon con `git config core.hooksPath .githooks`.
+- **Skill:** `.opencode/skills/graphify-commit/` documenta el mismo flujo para los agentes (actualizar, añadir y verificar el grafo antes de commitear).
+- **Versionado:** se incluyen `graph.json` y `GRAPH_REPORT.md`; el HTML, las cachés y el estado incremental quedan en `.gitignore` (regenerables).
+- **Verificación:** commit de prueba con el hook activo; el propio commit contiene el grafo actualizado.
+
 ### Grafo del código con graphify (2026-11-20)
 - **Integración:** skill y plugin de graphify instalados con `graphify install --project --platform opencode`; reglas de consulta añadidas a `AGENTS.md`.
 - **Grafo:** 191 archivos, 2 679 nodos, 7 575 aristas y 103 comunidades (91 % aristas EXTRACTED); `GRAPH_REPORT.md` y `graph.html` generados en local.

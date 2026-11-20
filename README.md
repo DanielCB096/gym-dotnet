@@ -229,7 +229,21 @@ graphify explain "GymService/Modules/Members/MembersModule.cs::MembersModule"
 graphify query "como se valida el acceso de un socio"
 ```
 
-`graphify-out/` (grafo, reporte y HTML) es generado y **no se versiona**.
+Se versionan `graphify-out/graph.json` y `graphify-out/GRAPH_REPORT.md`; el HTML
+(`graph.html`), las cachés y el estado incremental están en `.gitignore`.
+
+### Hook de commit
+
+Actívalo una vez por clon:
+
+```powershell
+git config core.hooksPath .githooks
+```
+
+Desde entonces, cada `git commit` ejecuta `graphify update .` y añade el grafo actualizado
+al propio commit (si falla la actualización, el commit se detiene; usa `--no-verify` para
+saltarlo). El skill `.opencode/skills/graphify-commit/` documenta el mismo flujo para los
+agentes.
 
 ## Pruebas
 

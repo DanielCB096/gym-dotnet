@@ -1,0 +1,33 @@
+#!/bin/sh
+# Mantiene actualizado el grafo de graphify y lo incluye en el commit.
+# Activar una vez por clon:  git config core.hooksPath .githooks
+
+set -e
+
+if command -v python >/dev/null 2>&1; then
+  PYTHON=python
+elif command -v py >/dev/null 2>&1; then
+  PYTHON=py
+else
+  echo "[graphify] python no esta disponible; el commit continua sin actualizar el grafo." >&2
+  exit 0
+fi
+
+if ! "$PYTHON" -m graphify --version >/dev/null 2>&1; then
+  echo "[graphify] no instalado. Ejecuta: python -m pip install --user graphifyy" >&2
+  echo "[graphify] el commit continua sin actualizar el grafo." >&2
+  exit 0
+fi
+
+echo "[graphify] actualizando el grafo del codigo..."
+if ! "$PYTHON" -m graphify update .; then
+  echo "[graphify] no se pudo actualizar el grafo." >&2
+  echo "[graphify] corrige el error o usa: git commit --no-verify" >&2
+  exit 1
+fi
+
+if [ -d graphify-out ]; then
+  git add -A graphify-out
+fi
+
+exit 0

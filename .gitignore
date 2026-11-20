@@ -30,8 +30,14 @@ publish/
 .DS_Store
 Thumbs.db
 
-# Grafo generado por graphify (se reconstruye en local)
-graphify-out/
+# Grafo de graphify: se versionan graph.json y GRAPH_REPORT.md;
+# el HTML, las cachés y el estado incremental son regenerables.
+graphify-out/cache/
+graphify-out/graph.html
+graphify-out/manifest.json
+graphify-out/.graphify_analysis.json
+graphify-out/.graphify_partition_cache.json
+graphify-out/.graphify_build.json
 
 # ===== Temporales =====
 *.tmp
