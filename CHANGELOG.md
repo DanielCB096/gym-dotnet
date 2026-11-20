@@ -6,6 +6,12 @@
 
 ## Backend (.NET)
 
+### Respaldos verificados de SQL Server (2026-11-20)
+- **`backup.ps1`:** respaldo completo con CHECKSUM y COMPRESSION, verificación `RESTORE VERIFYONLY`, tamaño, copia opcional (`-CopyTo`) y retención de esas copias.
+- **`verify-backup.ps1`:** restaura el `.bak` en una base temporal, valida tablas y socios, y la elimina; rechaza usar la base de producción como destino.
+- **Verificación:** BD temporal con datos, respaldo de 0.48 MB verificado y restaurado (1 tabla) sin tocar producción; los artefactos de prueba se eliminaron.
+- **Operación:** documentado en `README.md` con RPO/RTO recomendados y el procedimiento de recuperación.
+
 ### Envío real de correo con Gmail (2026-11-20)
 - **Comando de prueba:** `GymService.exe -test-email <correo>` envía un mensaje de prueba sin arrancar el servicio ni crear datos.
 - **Puertos:** 465 usa SSL directo (`SslOnConnect`) y 587 STARTTLS.

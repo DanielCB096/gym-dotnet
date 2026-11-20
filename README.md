@@ -376,6 +376,34 @@ Actualizar = ejecutar de nuevo `install.ps1` con el ZIP nuevo (detiene, reemplaz
 - [ ] `GET /health` responde `healthy`.
 - [ ] Alta del owner y prueba de login/panel.
 
+## Respaldos y restauración
+
+`backup.ps1` crea un respaldo completo con verificación (`RESTORE VERIFYONLY`) y
+`verify-backup.ps1` lo restaura en una base temporal para comprobar que es recuperable.
+
+```powershell
+# Respaldo (carpeta por defecto del servidor SQL, base de appsettings.json)
+.\backup.ps1
+
+# Base o carpeta concretas; copia opcional a una ruta accesible desde este equipo
+.\backup.ps1 -Database GymManager -BackupDir "D:\SQLBackups" -CopyTo "\\nas\gym\backups"
+
+# Verificación: restaura en GymService_Verify_<fecha>, cuenta tablas y elimina la copia
+.\verify-backup.ps1 -BackupFile "D:\SQLBackups\GymManager_20261120_170000.bak"
+```
+
+- El `.bak` se escribe **en el servidor SQL**. `-CopyTo` solo funciona si ejecutas el script
+  en ese servidor o si la ruta es un recurso compartido accesible por ambos equipos.
+- `-RetentionDays` (14 por defecto) solo purga las copias hechas con `-CopyTo`; la retención del
+  servidor debe gestionarla la política de respaldos.
+- Objetivo recomendado (ADR-086 del proyecto original): **RPO ≤ 15 min y RTO ≤ 4 h**. Este script
+  hace respaldos completos; para RPO de 15 minutos programa respaldos completos diarios y de
+  log cada 15 minutos en modelo FULL.
+- Para una recuperación real: detén el servicio, restaura a una base nueva y cambia
+  `Database:Database`, o restaura sobre la base actual con `WITH REPLACE` con el servicio detenido.
+  Nunca ejecutes una restauración destructiva sin autorización.
+- `verify-backup.ps1` nunca usa como destino la base configurada en `appsettings.json`.
+
 ## Reglas de negocio
 
 Las reglas de membresías, renovaciones y control de acceso se documentan en
