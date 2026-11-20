@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -70,6 +70,12 @@ export default function Layout({ children }) {
     return stored ? stored === 'false' : true;
   });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const mainRef = useRef(null);
+
+  // Cada página empieza arriba: el scroll vive dentro de <main>, no en el documento.
+  useEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTop = 0;
+  }, [location.pathname]);
 
   // Save sidebar state to localStorage whenever it changes
   useEffect(() => {
@@ -93,7 +99,7 @@ export default function Layout({ children }) {
   const currentPageLabel = routeLabels[location.pathname] || 'Dashboard';
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="h-dvh overflow-hidden bg-slate-100">
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
@@ -237,7 +243,8 @@ export default function Layout({ children }) {
 
       {/* Main content */}
       <main
-        className={`transition-all duration-300 ease-in-out min-h-screen
+        ref={mainRef}
+        className={`h-dvh overflow-y-auto overscroll-contain transition-all duration-300 ease-in-out
           ${sidebarOpen ? 'lg:ml-72' : 'lg:ml-20'}`}
       >
         {/* Header — 80px tall */}

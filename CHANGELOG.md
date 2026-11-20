@@ -6,6 +6,12 @@
 
 ## Backend (.NET)
 
+### Corrección del layout a pantalla completa (2026-11-20)
+- **Bug:** con Edge en un monitor a 125 % después de mover la ventana desde otro monitor, el scroll del documento desplazaba la superficie compuesta y dejaba una franja gris arriba; el panel parecía no llenar la pantalla.
+- **Solución:** shell de altura fija (`h-dvh overflow-hidden`) con scroll interno en `<main>` (`overflow-y-auto overscroll-contain`); al cambiar de ruta el scroll vuelve arriba.
+- **Verificación:** en Edge real (125 %, ventana 1528×828) el panel llena la ventana y el scroll interno llega al final sin franja; sin errores de consola.
+- **Despliegue:** `dist` copiado al `wwwroot` del servicio instalado; MSI regenerado como 1.5.1.
+
 ### Instalador MSI con WiX (2026-11-20)
 - **`installer/GymService.wxs` + `build-msi.ps1`:** MSI per-machine con UI, servicio `anxogymmservice`, recuperación ante fallos, firewall opcional (`OPEN_FIREWALL=1`, puerto configurable con `WEB_PORT`) y configuración persistente.
 - **Empaquetado:** publica self-contained y cosecha 402 archivos con el elemento `Files` de WiX 5 (sin Heat); excluye PDB y los scripts de instalación.
