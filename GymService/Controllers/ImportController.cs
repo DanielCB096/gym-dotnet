@@ -27,7 +27,7 @@ namespace GymService.Controllers
             if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
                 return Unauthorized(new { success = false, message = errorMessage });
 
-            if (Request.Form.Files.Count == 0)
+            if (!Request.HasFormContentType || Request.Form.Files.Count == 0)
                 return BadRequest(new { success = false, message = "No se proporcionó ningún archivo" });
 
             var file = Request.Form.Files[0];
@@ -53,7 +53,7 @@ namespace GymService.Controllers
             if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
                 return Unauthorized(new { success = false, message = errorMessage });
 
-            if (Request.Form.Files.Count == 0)
+            if (!Request.HasFormContentType || Request.Form.Files.Count == 0)
                 return BadRequest(new { success = false, message = "No se proporcionó ningún archivo" });
 
             var file = Request.Form.Files[0];
@@ -80,7 +80,7 @@ namespace GymService.Controllers
             if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
                 return Unauthorized(new { success = false, message = errorMessage });
 
-            if (Request.Form.Files.Count == 0)
+            if (!Request.HasFormContentType || Request.Form.Files.Count == 0)
                 return BadRequest(new { success = false, message = "No se proporcionó ningún archivo" });
 
             var file = Request.Form.Files[0];
@@ -106,7 +106,7 @@ namespace GymService.Controllers
             if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
                 return Unauthorized(new { success = false, message = errorMessage });
 
-            if (Request.Form.Files.Count == 0)
+            if (!Request.HasFormContentType || Request.Form.Files.Count == 0)
                 return BadRequest(new { success = false, message = "No se proporcionó ningún archivo" });
 
             var file = Request.Form.Files[0];

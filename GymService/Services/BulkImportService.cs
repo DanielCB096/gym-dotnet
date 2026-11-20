@@ -123,6 +123,37 @@ namespace GymService.Services
             return row.GetValueOrDefault(column, "").Trim();
         }
 
+        /// <summary>
+        /// Codificaciones admitidas sin depender del proveedor de code pages:
+        /// UTF-8 y Latin-1 (los CSV exportados por Excel en español suelen ser Latin-1).
+        /// </summary>
+        private static bool TryResolveEncoding(string? encoding, out Encoding resolved, out string error)
+        {
+            resolved = Encoding.UTF8;
+            error = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(encoding))
+                return true;
+
+            switch (encoding.Trim().ToLowerInvariant().Replace("_", "-"))
+            {
+                case "utf-8":
+                case "utf8":
+                    return true;
+                case "latin1":
+                case "latin-1":
+                case "iso-8859-1":
+                case "windows-1252":
+                case "cp1252":
+                case "1252":
+                    resolved = Encoding.Latin1;
+                    return true;
+                default:
+                    error = $"Codificación no admitida: {encoding}. Usa UTF-8 o Latin-1.";
+                    return false;
+            }
+        }
+
         private static GYM_MEMBERS? BuildMember(Dictionary<string, string> row, int rowNum, BulkImportResult result)
         {
             var firstName = ReadColumn(row, "FirstName");
@@ -238,7 +269,12 @@ namespace GymService.Services
         public BulkImportResult ImportMembersFromCsv(Stream fileStream, string? encoding = null)
         {
             var result = new BulkImportResult { TableName = "gym_members" };
-            var enc = string.IsNullOrEmpty(encoding) ? Encoding.UTF8 : Encoding.GetEncoding(encoding);
+            if (!TryResolveEncoding(encoding, out var enc, out var encodingError))
+            {
+                result.Message = encodingError;
+                result.Success = false;
+                return result;
+            }
 
             try
             {
@@ -455,7 +491,12 @@ namespace GymService.Services
         public BulkImportResult ImportInventoryFromCsv(Stream fileStream, string? encoding = null)
         {
             var result = new BulkImportResult { TableName = "gym_inventory" };
-            var enc = string.IsNullOrEmpty(encoding) ? Encoding.UTF8 : Encoding.GetEncoding(encoding);
+            if (!TryResolveEncoding(encoding, out var enc, out var encodingError))
+            {
+                result.Message = encodingError;
+                result.Success = false;
+                return result;
+            }
 
             try
             {

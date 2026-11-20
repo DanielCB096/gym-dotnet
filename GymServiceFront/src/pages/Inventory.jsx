@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { AlertCircle, Boxes } from 'lucide-react';
+import { AlertCircle, Boxes, Upload } from 'lucide-react';
 import api from '../services/api';
 import CrudPage from '../components/CrudPage';
+import ImportDialog from '../components/ImportDialog';
 import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
 import Button from '../components/ui/Button';
@@ -15,6 +16,7 @@ export default function Inventory() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [lowStockOnly, setLowStockOnly] = useState(false);
+  const [importTarget, setImportTarget] = useState(null);
 
   const openStock = (product, reload) => {
     setStockTarget({ product, reload });
@@ -75,7 +77,7 @@ export default function Inventory() {
         searchParam="query"
         searchPlaceholder="Buscar por nombre, categoría o SKU"
         toolbar={({ reload }) => (
-          <div className="flex items-end gap-2">
+          <div className="flex flex-wrap items-end gap-2">
             <Select
               label="Existencias"
               value={lowStockOnly ? 'low' : ''}
@@ -83,6 +85,13 @@ export default function Inventory() {
               options={[{ value: 'low', label: 'Solo stock bajo' }]}
               placeholder="Todos"
             />
+            <Button
+              variant="outline"
+              icon={Upload}
+              onClick={() => setImportTarget({ reload })}
+            >
+              Importar
+            </Button>
             <Button variant="outline" onClick={reload}>Actualizar</Button>
           </div>
         )}
@@ -192,6 +201,15 @@ export default function Inventory() {
           </div>
         </form>
       </Modal>
+
+      {importTarget && (
+        <ImportDialog
+          entity="inventory"
+          isOpen
+          onClose={() => setImportTarget(null)}
+          onImported={() => importTarget.reload()}
+        />
+      )}
     </>
   );
 }

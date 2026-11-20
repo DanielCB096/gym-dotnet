@@ -365,14 +365,14 @@ auditadas, cobro manual y límite diario de entradas por plan.
 - ✅ Conexión a SQL Server con AnxoDatabase
 - ✅ Servidor Kestrel con ASP.NET Core
 - ✅ 35 tablas SQL Server definidas, con índices UNIQUE y foreign keys aplicadas
-- ✅ 15 controllers REST con ~67 endpoints operativos
+- ✅ 18 controllers REST con ~67 endpoints operativos
 - ✅ Módulo Identity completo (login, MFA, OTP, RBAC)
 - ✅ AuthController con endpoints REST
 - ✅ Seguridad: PBKDF2-SHA256, MFA cifrado AES-256, SQL parametrizado, endpoints de personal autenticados
-- ✅ Frontend React 19 + Vite + Tailwind CSS 4 con 14 páginas
-- ⏳ Tests automatizados
+- ✅ Frontend React 19 + Vite + Tailwind CSS 4 con 20 páginas
+- ✅ Importación masiva de socios e inventario desde el panel (CSV/Excel, UTF-8 o Latin-1)
+- ✅ 106 pruebas automatizadas (unitarias + integración)
 - ⏳ Instalador WiX
-- ⏳ Envío real de OTP por correo (MailKit)
 
 ## Migración desde PostgreSQL
 

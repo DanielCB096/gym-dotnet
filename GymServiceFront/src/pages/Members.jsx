@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { CreditCard, XCircle } from 'lucide-react';
+import { CreditCard, Upload, XCircle } from 'lucide-react';
 import api from '../services/api';
 import CrudPage from '../components/CrudPage';
+import ImportDialog from '../components/ImportDialog';
 import MembershipModal from '../components/MembershipModal';
 import CancelMembershipModal from '../components/CancelMembershipModal';
 import Badge from '../components/ui/Badge';
+import Button from '../components/ui/Button';
 import { formatCurrency, formatDate } from '../utils/format';
 
 const membershipStatusInfo = {
@@ -20,6 +22,7 @@ export default function Members() {
   const [plansError, setPlansError] = useState('');
   const [membershipTarget, setMembershipTarget] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
+  const [importTarget, setImportTarget] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -67,7 +70,16 @@ export default function Members() {
       emptyText="No hay miembros registrados"
       searchParam="query"
       searchPlaceholder="Buscar por nombre o email"
-      canEdit={false}
+      toolbar={({ reload }) => (
+        <Button
+          variant="outline"
+          icon={Upload}
+          onClick={() => setImportTarget({ reload })}
+          className="w-full sm:w-auto"
+        >
+          Importar
+        </Button>
+      )}
       canDelete={false}
       columns={[
         {
@@ -170,6 +182,15 @@ export default function Members() {
             cancelTarget.notify('success', message);
             cancelTarget.reload();
           }}
+        />
+      )}
+
+      {importTarget && (
+        <ImportDialog
+          entity="members"
+          isOpen
+          onClose={() => setImportTarget(null)}
+          onImported={() => importTarget.reload()}
         />
       )}
     </>

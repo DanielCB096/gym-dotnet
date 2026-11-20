@@ -5,9 +5,6 @@ const API_BASE = '/api';
 
 const api = axios.create({
   baseURL: API_BASE,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Agregar token a cada petición

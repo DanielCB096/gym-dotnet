@@ -44,6 +44,7 @@ src/
 │   ├── ui/              # Componentes reutilizables (Button, Card, Table, Badge, Input, Modal, Select, PageHeader, ConfirmDialog)
 │   ├── Layout.jsx       # Layout principal con sidebar y header
 │   ├── ProtectedRoute.jsx # Protección de rutas con JWT
+│   ├── ImportDialog.jsx # Importación masiva CSV/Excel (socios e inventario)
 │   └── CrudPage.jsx     # Página genérica de CRUD
 ├── context/
 │   └── AuthContext.jsx  # Contexto de autenticación (token, usuario, login, logout)
