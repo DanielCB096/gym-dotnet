@@ -6,6 +6,11 @@
 
 ## Backend (.NET)
 
+### Corrección de fechas locales en accesos (2026-11-20)
+- **Bug:** con SQL Server en UTC (contenedor Docker), `ValidateAccessCode` comparaba `expires_at > GETDATE()` y los conteos diarios usaban `CAST(GETDATE() AS DATE)`. Un código recién generado con hora local se consideraba vencido y la validación fallaba; las pruebas de integración `AccessFlowTests` lo detectaron (2 fallos).
+- **Solución:** el vencimiento y el límite diario usan la fecha local de la aplicación como parámetro (`ac.expires_at > ?`, `CAST(? AS DATE)`), sin depender de la zona horaria del servidor SQL.
+- **Verificación:** las 106 pruebas (unitarias + integración) pasan contra SQL Server 2022 en Docker. Smoke en vivo: generar código para un socio y validarlo devuelve `Acceso concedido`; el mismo código ya no se puede reutilizar.
+
 ### Pruebas en vivo Fase 1 (2026-11-19)
 - **UI real:** creación/edición de plan, alta/edición de socio, renovación de cortesía, cancelación con motivo, historial/pagos/recibos, acceso manual y kiosco administrativo/PWA en `/kiosk-app/`.
 - **Correcciones encontradas:** una membresía cancelada se mostraba como “Vencida” (ahora “Cancelada”); la bitácora no mostraba el motivo del acceso manual (nueva columna “Motivo”).

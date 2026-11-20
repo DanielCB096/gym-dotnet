@@ -82,8 +82,8 @@ namespace GymService.Modules.Access
                 if (dailyLimit > 0)
                 {
                     long entriesToday = _tools.ExecuteQueryObjectCount(
-                        "SELECT COUNT(*) FROM GYM_ACCESS_LOG WHERE MEMBER_ID = ? AND ACCESS_RESULT = 'granted' AND CAST(ACCESSED_AT AS DATE) = CAST(GETDATE() AS DATE)",
-                        memberId);
+                        "SELECT COUNT(*) FROM GYM_ACCESS_LOG WHERE MEMBER_ID = ? AND ACCESS_RESULT = 'granted' AND CAST(ACCESSED_AT AS DATE) = CAST(? AS DATE)",
+                        memberId, DateTime.Now.Date);
 
                     if (entriesToday >= dailyLimit)
                     {
@@ -154,8 +154,8 @@ namespace GymService.Modules.Access
                                  ORDER BY CASE WHEN mem2.status = 'active' THEN 0 WHEN mem2.status = 'frozen' THEN 1 ELSE 2 END,
                                           mem2.end_date DESC) mem
                     LEFT JOIN GYM_MEMBERSHIP_PLANS p ON p.ID = mem.plan_id
-                    WHERE ac.code_hash = ? AND ac.used = 0 AND ac.expires_at > GETDATE()",
-                    codeHash
+                    WHERE ac.code_hash = ? AND ac.used = 0 AND ac.expires_at > ?",
+                    codeHash, DateTime.Now
                 );
 
                 if (result == null || result.Rows.Count == 0)
@@ -207,8 +207,8 @@ namespace GymService.Modules.Access
                 if (maxDailyEntries > 0)
                 {
                     long entriesToday = _tools.ExecuteQueryObjectCount(
-                        "SELECT COUNT(*) FROM GYM_ACCESS_LOG WHERE MEMBER_ID = ? AND ACCESS_RESULT = 'granted' AND CAST(ACCESSED_AT AS DATE) = CAST(GETDATE() AS DATE)",
-                        memberId);
+                        "SELECT COUNT(*) FROM GYM_ACCESS_LOG WHERE MEMBER_ID = ? AND ACCESS_RESULT = 'granted' AND CAST(ACCESSED_AT AS DATE) = CAST(? AS DATE)",
+                        memberId, DateTime.Now.Date);
 
                     if (entriesToday >= maxDailyEntries)
                     {
