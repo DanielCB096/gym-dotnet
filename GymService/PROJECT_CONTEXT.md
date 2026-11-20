@@ -1,8 +1,12 @@
 # GymService - Contexto Completo del Proyecto
 
-> **Última actualización:** 18 de noviembre de 2026 — Frontend convertido a CRUD real
-> **Estado:** Compilando (0 errores, 24 warnings NuGet). 15 controllers con ~68 endpoints. Frontend React con CRUD en 10 módulos. Repositorio en GitHub: https://github.com/DanielCB096/gym-dotnet
-> **Framework:** .NET 8.0 Windows + Anxo Libraries (framework propietario)
+> **Última actualización:** 20 de noviembre de 2026
+> **Estado:** .NET 10 (`net10.0-windows7.0`), 18 controllers, 15 módulos de negocio, 40 tablas gestionadas por el modelo de objetos de Anxo y 113 pruebas automatizadas. Frontend React 19 + Vite 8 + Tailwind CSS 4 con 20 páginas.
+> **Framework:** .NET 10 Windows + Anxo Libraries (framework propietario)
+>
+> **Documentos vigentes:** `README.md` (estado y operación), `CHANGELOG.md` (últimos cambios),
+> `docs/reglas-negocio.md` (reglas) y `Models/_ModelGym.xml` (esquema). Este archivo conserva
+> el contexto y los patrones de la API de Anxo; si hay conflicto, mandan los documentos anteriores.
 
 ---
 
@@ -13,8 +17,10 @@
 2. `PROJECT_CONTEXT.md` (este archivo) — Contexto completo del proyecto, arquitectura y patrones.
 
 **Reglas obligatorias:**
-- Siempre usar `DatabaseTools.ExecuteQueryResultSet()` para SELECT.
-- Siempre usar `CreateSession()` + `ExecuteTransaction()` + `TryExecute()` para INSERT/UPDATE/DELETE.
+- Siempre usar `DatabaseTools.ExecuteQueryResultSet()` para SELECT (SQL parametrizado con `?`).
+- Escrituras con el modelo de objetos: `Session.InsertObject` / `InsertObjectWithID` /
+  `UpdateObjectChanges` / `DeleteObject` y `TryExecute()`. `ExecuteTransaction(sql, params)`
+  queda para operaciones masivas o DDL en `Services/`.
 - Siempre usar `Logger.AddErrorSubModule()` para logging de errores.
 - Los controllers usan `[ApiController]` con `SecurityValidation.ValidateAuthentication()` para endpoints protegidos.
 - Los módulos reciben `DatabaseTools` en el constructor, NO `OODatabaseManager`.
@@ -44,59 +50,46 @@ GymService es un **servicio de Windows** que proporciona una API REST para gesti
 
 ```
 GymService (Windows Service)
-├── Program.cs              → Entry point, configura Logger y ServiceConsole
+├── Program.cs              → Entry point, Logger y ServiceConsole
 ├── ServiceImplementation.cs → Lifecycle del servicio (Start/Stop)
-├── DataCenter.cs           → Estado global: DB, config, módulos de negocio
+├── DataCenter.cs           → Estado global: BD, configuración y módulos
 │
-├── Controllers/            → API REST (MVC Controllers, 15 controllers)
-│   ├── AuthController.cs   → Autenticación (login, logout, MFA, OTP, bootstrap) ✓
-│   ├── MembersController.cs   → Socios, membresías, pagos ✓
-│   ├── AccessController.cs    → Códigos OTP de acceso ✓
-│   ├── SalesController.cs     → Ventas y transacciones ✓
-│   ├── InventoryController.cs → Productos e inventario ✓
-│   ├── ClassesController.cs   → Clases grupales ✓
-│   ├── RoutinesController.cs  → Planes de rutinas ✓
-│   ├── FisioController.cs     → Fisioterapia ✓
-│   ├── MaintenanceController.cs → Equipos y mantenimiento ✓
-│   ├── BillingController.cs   → Facturación ✓
-│   ├── FinanceController.cs   → Finanzas ✓
-│   ├── ReportsController.cs   → Reportes ✓
-│   ├── KioskController.cs     → Dispositivos kiosko ✓
-│   ├── StaffController.cs     → Personal y notificaciones ✓
-│   └── ImportController.cs    → Importación masiva CSV/Excel ✓
+├── Controllers/            → API REST (18 controllers)
+│   ├── Auth, Members, Access y Kiosk
+│   ├── Sales, Cash, Inventory y Procurement
+│   ├── Classes, Routines, Fisio y Maintenance
+│   ├── Billing, Finance y Reports
+│   ├── Staff y Dashboard
+│   └── Import
 │
-├── Modules/                → Lógica de negocio (13 módulos, todos implementados)
-│   ├── Identity/           → Autenticación, sesiones, MFA, RBAC ✓
-│   ├── Members/            → Socios, membresías, pagos ✓
-│   ├── Access/             → Códigos OTP para acceso ✓
-│   ├── Sales/              → Ventas y transacciones ✓
-│   ├── Inventory/          → Productos e inventario ✓
-│   ├── Classes/            → Tipos de clases ✓
-│   ├── Routines/           → Planes de rutinas ✓
-│   ├── Fisio/              → Fisioterapia ✓
-│   ├── Maintenance/        → Equipos y mantenimiento ✓
-│   ├── Billing/            → Facturación ✓
-│   ├── Finance/            → Finanzas ✓
-│   ├── Reports/            → Reportes ✓
-│   ├── Kiosk/              → Dispositivos kiosko ✓
-│   └── Staff/              → Personal y notificaciones ✓
+├── Modules/                → Lógica de negocio (15 módulos)
+│   ├── Identity, Members y Access
+│   ├── Sales, Cash e Inventory
+│   ├── Classes, Routines y Fisio
+│   ├── Maintenance, Billing y Finance
+│   ├── Reports, Kiosk y Staff
 │
 ├── Services/
-│   ├── DatabaseService.cs  → Inicialización del esquema de BD (32 tablas + 25 FK)
-│   ├── WebServerService.cs → Servidor web Kestrel
-│   ├── GymHealthCheck.cs   → Health checks personalizados
-│   ├── RolePermissionMiddleware.cs → Middleware de validación de roles
-│   ├── BulkImportService.cs → Importación masiva CSV/Excel
-│   └── ReportExportService.cs → Exportación de reportes a Excel
+│   ├── DatabaseService.cs     → Esquema aditivo desde MappingObject
+│   ├── WebServerService.cs    → Kestrel, CORS, rate limiting, panel y Swagger
+│   ├── RolePermissionMiddleware.cs → RBAC por ruta y método
+│   ├── CleanupHostedService.cs → Limpieza periódica de sesiones/OTP/bitácora
+│   ├── MaintenanceService.cs   → Retención y membresías vencidas
+│   ├── EmailService.cs         → SMTP con MailKit
+│   ├── BulkImportService.cs    → Importación CSV/Excel (CsvHelper/ClosedXML)
+│   ├── ReportExportService.cs  → Exportación a Excel (ClosedXML)
+│   └── GymHealthCheck.cs       → Health checks
 │
 ├── Models/
-│   └── ModelGym.cs         → Definición de tablas y columnas del esquema
+│   ├── _ModelGym.xml          → Esquema declarativo (fuente de verdad)
+│   └── Generated/             → Entidades GYM_*.cs y MappingObjects
 │
 ├── Tools/
-│   └── SecurityValidation.cs → Validación de tokens, hashing, OTP
+│   ├── SecurityValidation.cs  → Sesiones, hashing y utilidades de seguridad
+│   ├── CurrentUser.cs         → Usuario de auditoría (AsyncLocal)
+│   └── ObjectToInferredTypesConverter.cs → JSON a primitivos CLR
 │
-└── Config/
-    └── appsettings.json    → Configuración de BD, web server, auth
+└── appsettings.json        → Configuración (ignorado por git)
 ```
 
 ---
@@ -188,31 +181,37 @@ if (result != null && result.Rows.Count > 0)
 }
 ```
 
-### 3.3. INSERT / UPDATE / DELETE (Session + Transaction)
+### 3.3. INSERT / UPDATE / DELETE (modelo de objetos)
 
 ```csharp
-// Crear una sesión de transacción
-var session = tools.CreateSession("MODULE_NAME");
+// Crear una sesión de transacción con el usuario de auditoría
+var session = tools.CreateSession("MODULE_NAME", CurrentUser.ForAudit);
 
-// Agregar transacciones
-session.ExecuteTransaction(
-    "INSERT INTO users (name, email) VALUES (?, ?)",
-    "John", "john@example.com"
-);
+// Insertar una entidad generada (la PK la asigna Anxo con secuencias)
+session.InsertObject(new GYM_MEMBERS
+{
+    FIRST_NAME = "John",
+    LAST_NAME = "Doe",
+    EMAIL = "john@example.com",
+    STATUS = "active"
+});
 
-session.ExecuteTransaction(
-    "UPDATE users SET name = ? WHERE id = ?",
-    "Jane", 123
-);
+// Actualizar solo los cambios de una entidad existente
+session.UpdateObjectChanges(member);   // member debe tener ID cargado
+session.DeleteObject(member);
 
-// Ejecutar todas las transacciones
+// Ejecutar todas las operaciones de la sesión
 var processResult = session.TryExecute();
 
 if (processResult.IsError)
 {
-    // Manejar error
+    // Manejar error (processResult.Message)
 }
 ```
+
+`InsertObjectWithID` se usa cuando la PK viene de otra operación de la misma sesión
+(cabecera + detalle). `Session.ExecuteTransaction(sql, params)` sigue disponible para
+operaciones masivas o DDL en `Services/` (p. ej. limpieza por fechas).
 
 ### 3.4. Lectura de Row (sin indexador [])
 
@@ -337,37 +336,20 @@ if (result.IsError) { /* manejar error */ }
 ## 4. Estado Actual del Proyecto
 
 ### ✅ Completado
-- **Compilación:** 0 errores, 26 warnings (nullable references, no críticos)
-- **IdentityModule:** Implementado completamente (login, logout, sesiones, MFA, RBAC, OTP por email)
-- **MembersModule:** Implementado completamente (CRUD socios, membresías, congelaciones, pagos)
-- **AccessModule:** Implementado (generación y validación de códigos OTP)
-- **SalesModule:** Implementado (creación de ventas con items)
-- **BillingModule:** Implementado (listado de facturas con filtro)
-- **ClassesModule:** Implementado (tipos de clases activas)
-- **FinanceModule:** Implementado (cuentas bancarias activas)
-- **FisioModule:** Implementado (paquetes de fisioterapia)
-- **InventoryModule:** Implementado (productos en inventario)
-- **KioskModule:** Implementado (registro/validación de dispositivos, equipo no disponible)
-- **MaintenanceModule:** Implementado (listado de equipos)
-- **ReportsModule:** Implementado (reportes programados)
-- **RoutinesModule:** Implementado (planes de rutinas)
-- **StaffModule:** Implementado (personal y suscripciones push)
-- **Infraestructura:** ServiceImplementation, DataCenter, Program.cs, SecurityValidation, WebServerService
-- **Documentación:** OBSTACLES_AND_API.md + PROJECT_CONTEXT.md
+- **Compilación:** .NET 10, 0 errores. Los warnings restantes son NU1902/NU1510 de dependencias heredadas de Anxo.
+- **Esquema:** 40 tablas, índices UNIQUE y 26 FK desde `Models/_ModelGym.xml`; creación y migración aditiva al arrancar.
+- **Módulos (15):** Identity, Members, Access, Sales, Cash, Inventory (productos, proveedores, órdenes y kardex), Classes (sesiones, reservas y lista de espera), Routines, Fisio, Maintenance, Billing, Finance (cuentas, movimientos y conciliación), Reports, Kiosk y Staff (turnos y asistencia).
+- **Frontend:** 20 páginas React 19 + Vite 8 + Tailwind 4, `CrudPage`, paneles por módulo, recibos en el panel, PWA de kiosco, importación CSV/Excel y exportación de reportes.
+- **Seguridad:** PBKDF2-SHA256, MFA AES-256, sesiones Bearer opacas, RBAC por ruta, rate limiting, bloqueo por intentos y OTP real por MailKit.
+- **Operación:** servicio Windows (`-install`), `publish.ps1`, instalador PowerShell, health checks y CI de release por tag.
+- **Pruebas:** 113 automatizadas (unitarias + integración contra BD temporal); la prueba en vivo es obligatoria (`docs/pruebas-en-vivo.md`).
+- **Documentación:** `README.md`, `CHANGELOG.md`, `docs/reglas-negocio.md`, `docs/pruebas-en-vivo.md` y `OBSTACLES_AND_API.md`.
 
-### 🚧 Siguientes Pasos
-- **DatabaseService:** ✓ Implementado — crea 32 tablas + 25 foreign keys usando DatabaseAdministrator del framework
-- **Base de datos:** ✓ El esquema se crea automáticamente al iniciar el servicio desde ModelGym.cs
-- **Controllers REST:** ✓ CRUD completo para todos los 14 módulos (GET, POST, PUT, DELETE)
-- **Swagger/OpenAPI:** ✓ Documentación interactiva con JWT Bearer auth en /swagger
-- **Paginación:** ✓ OFFSET/FETCH en 7 módulos principales (Members, Sales, Billing, Inventory, Staff, Access)
-- **Health checks:** ✓ 3 endpoints (/health, /ready, /health/live) con verificación de BD, módulos y recursos del sistema
-- **Validación de roles:** ✓ Middleware con 27 permisos granulares y 4 roles (OWNER, ADMIN, STAFF, CASHIER)
-- **Windows Service:** ✓ Scripts de instalación/desinstalación con recovery options y guía DEPLOYMENT.md
-- **Rate limiting:** ✓ 3 políticas (general 100/min, auth 20/min, strict 5/min) con respuesta 429 personalizada
-- **Pruebas:** No hay tests unitarios
-- **Pruebas de integración:** Bloqueado — requiere SQL Server instalado (necesita privilegios de administrador)
-- **Despliegue:** ✓ Scripts de instalación PowerShell con recovery options y guía DEPLOYMENT.md
+### 🚧 Pendientes conocidos
+- Pasarela de pago, tokenización y renovación automática.
+- Bloqueo por adeudo, horarios por plan, aforo y antipassback.
+- Instalador WiX (hoy se usa el instalador PowerShell).
+- Vulnerabilidad moderada de `MySqlConnector` heredada de Anxo (MySQL no se usa en este despliegue).
 
 ---
 
@@ -473,7 +455,9 @@ namespace GymService.Modules.ModuleName
 
 1. **DatabaseTools** es la API principal para acceso a BD. NO uses `OODatabaseManager` directamente en módulos.
 2. **ExecuteQueryResultSet()** para SELECT. NO existe `ExecuteQuery()`.
-3. **CreateSession() + ExecuteTransaction() + TryExecute()** para INSERT/UPDATE/DELETE.
+3. **Escrituras con el modelo de objetos:** `Session.InsertObject` / `InsertObjectWithID` /
+   `UpdateObjectChanges` / `DeleteObject` + `TryExecute()`. `CreateSession()` +
+   `ExecuteTransaction()` queda para operaciones masivas o DDL en `Services/`.
 4. **Row.GetObject(index)** para leer valores. NO existe `row["column"]`.
 5. **Logger.AddErrorSubModule()** para logging. NO existe `Logger.AddErrorDevException()` con 3 args.
 6. **Session NO implementa IDisposable**. NO uses `using` con Session.
@@ -486,31 +470,20 @@ namespace GymService.Modules.ModuleName
 
 ## 6. Esquema de Base de Datos
 
-Las tablas se definen en `Models/ModelGym.cs`. Las tablas principales son:
+El esquema se declara en `Models/_ModelGym.xml` y se genera en `Models/Generated/`
+(`GYM_*.cs` y `ModelGym.MappingObjects`). No edites esos archivos a mano: usa
+`Tools/AnxoModelGenerator` (ver `README.md`). Son 40 tablas; por grupo:
 
-| Tabla | Propósito |
+| Grupo | Tablas |
 |---|---|
-| `gym_users` | Usuarios del sistema (auth) |
-| `gym_sessions` | Sesiones activas |
-| `gym_members` | Socios del gimnasio |
-| `gym_memberships` | Membresías de socios |
-| `gym_payments` | Pagos registrados |
-| `gym_access_codes` | Códigos OTP para acceso |
-| `gym_access_log` | Historial de accesos |
-| `gym_sales` | Ventas de punto de venta |
-| `gym_sale_items` | Items de cada venta |
-| `gym_inventory` | Productos en inventario |
-| `gym_class_types` | Tipos de clases grupales |
-| `gym_routine_plans` | Planes de rutinas |
-| `gym_fisio_packages` | Paquetes de fisioterapia |
-| `gym_equipment` | Equipos del gimnasio |
-| `gym_maintenance` | Registro de mantenimiento |
-| `gym_invoices` | Facturas |
-| `gym_bank_accounts` | Cuentas bancarias |
-| `gym_reports` | Reportes programados |
-| `gym_kiosk_devices` | Dispositivos de kiosko |
-| `gym_staff` | Personal del gimnasio |
-| `gym_push_subscriptions` | Suscripciones a notificaciones |
+| Identidad | `GYM_USERS`, `GYM_PERMISSIONS`, `GYM_ROLE_PERMISSIONS`, `GYM_SESSIONS`, `GYM_OTP_CODES` |
+| Socios | `GYM_MEMBERS`, `GYM_MEMBERSHIP_PLANS`, `GYM_MEMBERSHIPS`, `GYM_PAYMENTS` |
+| Acceso | `GYM_ACCESS_CODES`, `GYM_ACCESS_LOG`, `GYM_KIOSK_DEVICES` |
+| Ventas e inventario | `GYM_SALES`, `GYM_SALE_ITEMS`, `GYM_CASH_SESSIONS`, `GYM_INVENTORY`, `GYM_INVENTORY_MOVEMENTS`, `GYM_SUPPLIERS`, `GYM_PURCHASE_ORDERS`, `GYM_PURCHASE_ORDER_ITEMS` |
+| Clases y rutinas | `GYM_CLASS_TYPES`, `GYM_CLASS_SESSIONS`, `GYM_CLASS_RESERVATIONS`, `GYM_ROUTINE_PLANS`, `GYM_ROUTINE_PLAN_EXERCISES`, `GYM_EXERCISES`, `GYM_ROUTINE_ASSIGNMENTS`, `GYM_WORKOUTS`, `GYM_MEASUREMENTS` |
+| Fisio y mantenimiento | `GYM_FISIO_PACKAGES`, `GYM_FISIO_APPOINTMENTS`, `GYM_EQUIPMENT`, `GYM_MAINTENANCE_TICKETS` |
+| Finanzas y facturación | `GYM_INVOICES`, `GYM_BANK_ACCOUNTS`, `GYM_BANK_TRANSACTIONS` |
+| Personal y reportes | `GYM_STAFF`, `GYM_STAFF_SHIFTS`, `GYM_PUSH_SUBSCRIPTIONS`, `GYM_SCHEDULED_REPORTS` |
 
 ---
 
@@ -572,7 +545,9 @@ namespace GymService.Controllers
 
 1. Abre el archivo del módulo en `Modules/ModuleName/ModuleNameModule.cs`
 2. Usa `ExecuteQueryResultSet()` para SELECT
-3. Usa `CreateSession()` + `ExecuteTransaction()` + `TryExecute()` para INSERT/UPDATE/DELETE
+3. Usa el modelo de objetos (`InsertObject`, `InsertObjectWithID`, `UpdateObjectChanges`,
+   `DeleteObject`) y `TryExecute()` para INSERT/UPDATE/DELETE. `ExecuteTransaction` queda
+   para operaciones masivas o DDL.
 4. Usa `Logger.AddErrorSubModule()` para logging
 5. Agrega el endpoint correspondiente en el controller
 6. Compila con `dotnet build` para verificar
@@ -621,59 +596,25 @@ Ver `OBSTACLES_AND_API.md` para la lista completa de obstáculos técnicos.
 
 ---
 
-## 10. API REST — Endpoints Disponibles
+## 10. API REST - Endpoints
 
-| Controller | Método | Endpoint | Autenticación | Descripción |
-|---|---|---|---|---|
-| AuthController | POST | /api/auth/login | No | Login con username/password |
-| AuthController | POST | /api/auth/logout | Sí | Cerrar sesión |
-| AuthController | POST | /api/auth/mfa/setup | Sí | Configurar MFA TOTP |
-| AuthController | POST | /api/auth/mfa/verify | Sí | Verificar código MFA |
-| AuthController | POST | /api/auth/otp/request | No | Solicitar OTP por email |
-| AuthController | POST | /api/auth/otp/verify | No | Verificar OTP por email |
-| AuthController | POST | /api/auth/bootstrap | No | Crear primer usuario (owner) |
-| MembersController | GET | /api/members | No | Listar/buscar socios |
-| MembersController | POST | /api/members | Sí | Crear socio |
-| MembersController | POST | /api/memberships/{id}/freeze | Sí | Congelar membresía |
-| MembersController | POST | /api/memberships/{id}/resume | Sí | Reanudar membresía |
-| MembersController | POST | /api/members/{id}/payments | Sí | Registrar pago |
-| AccessController | POST | /api/access/code/generate | Sí | Generar código OTP de acceso |
-| AccessController | POST | /api/access/code/validate | No | Validar código de acceso |
-| AccessController | GET | /api/access/logs | Sí | Obtener historial de accesos |
-| AccessController | DELETE | /api/access/clean/{daysOld} | Sí | Limpiar registros antiguos |
-| SalesController | POST | /api/sales | Sí | Crear venta |
-| SalesController | GET | /api/sales | Sí | Obtener historial de ventas |
-| SalesController | DELETE | /api/sales/{saleId} | Sí | Eliminar venta |
-| InventoryController | GET | /api/inventory | Sí | Listar productos |
-| ClassesController | GET | /api/classes | No | Listar tipos de clases |
-| RoutinesController | GET | /api/routines | Sí | Listar planes de rutinas |
-| FisioController | GET | /api/fisio/packages | Sí | Listar paquetes de fisio |
-| MaintenanceController | GET | /api/maintenance/equipment | Sí | Listar equipos |
-| BillingController | GET | /api/billing/invoices | Sí | Listar facturas |
-| FinanceController | GET | /api/finance/accounts | Sí | Listar cuentas bancarias |
-| ReportsController | GET | /api/reports/scheduled | Sí | Listar reportes programados |
-| KioskController | POST | /api/kiosk/device/register | Sí | Registrar dispositivo kiosko |
-| KioskController | POST | /api/kiosk/device/validate | No | Validar token de kiosko |
-| KioskController | GET | /api/kiosk/equipment/unavailable | No | Equipos en mantenimiento |
-| KioskController | GET | /api/kiosk/devices | Sí | Listar dispositivos kiosko |
-| KioskController | PUT | /api/kiosk/devices/{deviceId}/deactivate | Sí | Desactivar dispositivo kiosko |
-| StaffController | GET | /api/staff | Sí | Listar personal |
-| StaffController | GET | /api/staff/push-subscriptions | Sí | Suscripciones push |
-| ImportController | POST | /api/import/members/csv | Sí | Importar miembros desde CSV |
-| ImportController | POST | /api/import/members/excel | Sí | Importar miembros desde Excel |
-| ImportController | POST | /api/import/inventory/csv | Sí | Importar inventario desde CSV |
-| ImportController | POST | /api/import/inventory/excel | Sí | Importar inventario desde Excel |
-| ImportController | GET | /api/import/templates/members/csv | No | Descargar plantilla CSV miembros |
-| ImportController | GET | /api/import/templates/members/excel | No | Descargar plantilla Excel miembros |
-| ImportController | GET | /api/import/templates/inventory/csv | No | Descargar plantilla CSV inventario |
-| ImportController | GET | /api/import/templates/inventory/excel | No | Descargar plantilla Excel inventario |
-| ReportsController | GET | /api/reports/sales/excel | Sí | Exportar ventas a Excel |
-| ReportsController | GET | /api/reports/members/excel | Sí | Exportar miembros a Excel |
-| ReportsController | GET | /api/reports/attendance/excel | Sí | Exportar asistencia a Excel |
-| ReportsController | GET | /api/reports/inventory/excel | Sí | Exportar inventario a Excel |
+La fuente viva es Swagger (`/swagger`) y los controllers. Grupos principales:
+
+| Grupo | Rutas |
+|---|---|
+| Autenticación | `/api/auth/*` (login, logout, MFA, OTP, bootstrap) |
+| Socios y planes | `/api/members`, `/api/members/plans`, `/api/members/{id}/membership`, `/api/members/{id}/payments` |
+| Acceso y kiosco | `/api/access/*`, `/api/kiosk/*`, `/api/dashboard/summary` |
+| Ventas y caja | `/api/sales`, `/api/cash/*` |
+| Inventario y compras | `/api/inventory/*`, `/api/procurement/*` |
+| Clases, rutinas y fisio | `/api/classes/*`, `/api/routines/*`, `/api/fisio/*` |
+| Mantenimiento y personal | `/api/maintenance/*`, `/api/staff/*` |
+| Facturación y finanzas | `/api/billing/*`, `/api/finance/*` |
+| Reportes e importación | `/api/reports/*`, `/api/import/*` |
+
+Los permisos por ruta y método están en `Services/RolePermissionMiddleware.cs`.
 
 ---
-
 ## 11. Historial de Sesiones
 
 ### Sesión 1: Corrección de ~458 errores

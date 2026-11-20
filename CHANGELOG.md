@@ -6,6 +6,10 @@
 
 ## Backend (.NET)
 
+### Documentación al día (2026-11-20)
+- **`GymService/PROJECT_CONTEXT.md`:** actualizado a .NET 10, 18 controllers, 15 módulos, 40 tablas desde `_ModelGym.xml`, estado real de pruebas y pendientes. Los patrones de escritura muestran el modelo de objetos de Anxo (`InsertObject` / `InsertObjectWithID` / `UpdateObjectChanges` / `DeleteObject`) y la API se resume por grupos, con Swagger como fuente viva.
+- **`README.md`:** corregido el estado del proyecto (controllers, páginas, 113 pruebas y OTP real ya implementados) y añadida la importación masiva CSV/Excel.
+
 ### Importación masiva CSV/Excel desde el panel (2026-11-20)
 - **UI:** botón **Importar** en Miembros e Inventario con un diálogo reutilizable (`ImportDialog`): formato CSV o Excel, codificación UTF-8/Latin-1, descarga de plantilla, resumen de filas y detalle de errores por fila. Usa los endpoints `/api/import/*` ya existentes (CsvHelper y ClosedXML).
 - **Bug corregido (bloqueante):** el cliente axios fijaba `Content-Type: application/json` en todas las peticiones, así que `FormData` se serializaba como JSON, el navegador no enviaba el `boundary` y la importación devolvía 500. Se quitó el header fijo; axios lo agrega solo cuando el cuerpo es JSON.
