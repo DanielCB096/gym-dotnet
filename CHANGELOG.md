@@ -6,10 +6,10 @@
 
 ## Backend (.NET)
 
-### Corrección de fechas locales en accesos (2026-11-20)
-- **Bug:** con SQL Server en UTC (contenedor Docker), `ValidateAccessCode` comparaba `expires_at > GETDATE()` y los conteos diarios usaban `CAST(GETDATE() AS DATE)`. Un código recién generado con hora local se consideraba vencido y la validación fallaba; las pruebas de integración `AccessFlowTests` lo detectaron (2 fallos).
-- **Solución:** el vencimiento y el límite diario usan la fecha local de la aplicación como parámetro (`ac.expires_at > ?`, `CAST(? AS DATE)`), sin depender de la zona horaria del servidor SQL.
-- **Verificación:** las 106 pruebas (unitarias + integración) pasan contra SQL Server 2022 en Docker. Smoke en vivo: generar código para un socio y validarlo devuelve `Acceso concedido`; el mismo código ya no se puede reutilizar.
+### Corrección de fechas locales frente a SQL en UTC (2026-11-20)
+- **Bug:** con SQL Server en UTC (contenedor Docker), varias comparaciones usaban `GETDATE()` mientras la aplicación guarda fechas locales. Un código de acceso recién generado se consideraba vencido, las sesiones/OTP/kiosco dependían de la diferencia horaria, el dashboard contaba el día equivocado y las membresías podían expirar antes de tiempo. Las pruebas de integración `AccessFlowTests` detectaron 2 fallos.
+- **Solución:** las comparaciones de vencimiento, límite diario, sesiones, OTP, token de kiosco, resumen del dashboard y expiración de membresías usan la fecha local de la aplicación como parámetro (`?`), sin depender de la zona horaria del servidor SQL.
+- **Verificación:** las 106 pruebas (unitarias + integración) pasan contra SQL Server 2022 en Docker. Smoke en vivo: login, dashboard con 1 socio activo y 1 acceso del día, generación y validación de código (`Acceso concedido`) y rechazo de reutilización.
 
 ### Pruebas en vivo Fase 1 (2026-11-19)
 - **UI real:** creación/edición de plan, alta/edición de socio, renovación de cortesía, cancelación con motivo, historial/pagos/recibos, acceso manual y kiosco administrativo/PWA en `/kiosk-app/`.

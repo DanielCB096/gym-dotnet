@@ -241,8 +241,8 @@ namespace GymService.Modules.Identity
                     SELECT s.user_id, s.device_info, u.username, u.role, u.email 
                     FROM gym_sessions s 
                     INNER JOIN gym_users u ON s.user_id = u.id 
-                    WHERE s.token_hash = ? AND s.is_active = 1 AND s.expires_at > GETDATE()",
-                    tokenHash
+                    WHERE s.token_hash = ? AND s.is_active = 1 AND s.expires_at > ?",
+                    tokenHash, DateTime.Now
                 );
 
                 if (result == null || result.Rows.Count == 0)
@@ -571,9 +571,9 @@ namespace GymService.Modules.Identity
 
                 var result = _tools.ExecuteQueryResultSet(@"
                     SELECT id, code_hash, expires_at, used FROM gym_otp_codes 
-                    WHERE email = ? AND purpose = ? AND used = 0 AND expires_at > GETDATE() 
+                    WHERE email = ? AND purpose = ? AND used = 0 AND expires_at > ? 
                     ORDER BY id DESC",
-                    email, purpose
+                    email, purpose, DateTime.Now
                 );
 
                 if (result == null || result.Rows.Count == 0)

@@ -98,8 +98,8 @@ namespace GymService.Modules.Kiosk
                 var result = _tools.ExecuteQueryResultSet(
                     "SELECT id, device_name, TOKEN_EXPIRES_AT FROM gym_kiosk_devices " +
                     "WHERE device_token_hash = ? AND is_active = 1 " +
-                    "AND (TOKEN_EXPIRES_AT IS NULL OR TOKEN_EXPIRES_AT > GETDATE())",
-                    tokenHash
+                    "AND (TOKEN_EXPIRES_AT IS NULL OR TOKEN_EXPIRES_AT > ?)",
+                    tokenHash, DateTime.Now
                 );
 
                 if (result == null || result.Rows.Count == 0)

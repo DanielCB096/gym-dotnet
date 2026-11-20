@@ -60,7 +60,8 @@ namespace GymService.Services
 
                 // Membresías vencidas.
                 session.ExecuteTransaction(
-                    "UPDATE GYM_MEMBERSHIPS SET STATUS = 'expired' WHERE STATUS = 'active' AND END_DATE < CAST(GETDATE() AS date)");
+                    "UPDATE GYM_MEMBERSHIPS SET STATUS = 'expired' WHERE STATUS = 'active' AND END_DATE < CAST(? AS date)",
+                    now.Date);
 
                 if (session.TryExecute().IsError)
                 {

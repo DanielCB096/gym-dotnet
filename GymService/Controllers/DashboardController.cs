@@ -20,17 +20,19 @@ namespace GymService.Controllers
 
             try
             {
+                var today = DateTime.Today;
                 var result = DataCenter.DatabaseManager.Tools.ExecuteQueryResultSet(@"
                     SELECT
                       (SELECT COUNT(*) FROM GYM_MEMBERS WHERE STATUS = 'active') AS ACTIVE_MEMBERS,
-                      (SELECT COUNT(*) FROM GYM_MEMBERSHIPS WHERE STATUS = 'active' AND END_DATE >= CAST(GETDATE() AS DATE)) AS ACTIVE_MEMBERSHIPS,
-                      (SELECT COUNT(*) FROM GYM_MEMBERSHIPS WHERE STATUS = 'active' AND END_DATE BETWEEN CAST(GETDATE() AS DATE) AND DATEADD(DAY, 7, CAST(GETDATE() AS DATE))) AS EXPIRING_SOON,
-                      (SELECT ISNULL(SUM(TOTAL_AMOUNT),0) FROM GYM_SALES WHERE STATUS = 'completed' AND CAST(SALE_DATE AS DATE) = CAST(GETDATE() AS DATE)) AS SALES_TODAY,
-                      (SELECT COUNT(*) FROM GYM_SALES WHERE STATUS = 'completed' AND CAST(SALE_DATE AS DATE) = CAST(GETDATE() AS DATE)) AS SALES_TODAY_COUNT,
-                      (SELECT ISNULL(SUM(AMOUNT),0) FROM GYM_PAYMENTS WHERE CAST(PAYMENT_DATE AS DATE) = CAST(GETDATE() AS DATE)) AS PAYMENTS_TODAY,
-                      (SELECT COUNT(*) FROM GYM_ACCESS_LOG WHERE ACCESS_RESULT = 'granted' AND CAST(ACCESSED_AT AS DATE) = CAST(GETDATE() AS DATE)) AS ACCESS_TODAY,
+                      (SELECT COUNT(*) FROM GYM_MEMBERSHIPS WHERE STATUS = 'active' AND END_DATE >= CAST(? AS DATE)) AS ACTIVE_MEMBERSHIPS,
+                      (SELECT COUNT(*) FROM GYM_MEMBERSHIPS WHERE STATUS = 'active' AND END_DATE BETWEEN CAST(? AS DATE) AND DATEADD(DAY, 7, CAST(? AS DATE))) AS EXPIRING_SOON,
+                      (SELECT ISNULL(SUM(TOTAL_AMOUNT),0) FROM GYM_SALES WHERE STATUS = 'completed' AND CAST(SALE_DATE AS DATE) = CAST(? AS DATE)) AS SALES_TODAY,
+                      (SELECT COUNT(*) FROM GYM_SALES WHERE STATUS = 'completed' AND CAST(SALE_DATE AS DATE) = CAST(? AS DATE)) AS SALES_TODAY_COUNT,
+                      (SELECT ISNULL(SUM(AMOUNT),0) FROM GYM_PAYMENTS WHERE CAST(PAYMENT_DATE AS DATE) = CAST(? AS DATE)) AS PAYMENTS_TODAY,
+                      (SELECT COUNT(*) FROM GYM_ACCESS_LOG WHERE ACCESS_RESULT = 'granted' AND CAST(ACCESSED_AT AS DATE) = CAST(? AS DATE)) AS ACCESS_TODAY,
                       (SELECT COUNT(*) FROM GYM_INVENTORY WHERE IS_ACTIVE = 1 AND STOCK_QUANTITY <= MIN_STOCK) AS LOW_STOCK,
-                      (SELECT COUNT(*) FROM GYM_CASH_SESSIONS WHERE STATUS = 'open') AS OPEN_CASH");
+                      (SELECT COUNT(*) FROM GYM_CASH_SESSIONS WHERE STATUS = 'open') AS OPEN_CASH",
+                    today, today, today, today, today, today, today);
 
                 var row = result.Rows[0];
                 var data = new Dictionary<string, object>
