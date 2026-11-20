@@ -131,7 +131,7 @@ export default function ImportDialog({ entity, isOpen, onClose, onImported }) {
     } catch (err) {
       const payload = err.response?.data;
       if (payload && typeof payload === 'object' && !(payload instanceof Blob)) {
-        // La importación puede ser parcial: el backend devuelve 400 con el detalle.
+        // La importación puede ser parcial: el detalle llega con 200 o 400 según el caso.
         applyResult(payload);
       } else if (err.response?.status === 403) {
         setError('No tienes permiso para importar este tipo de datos.');

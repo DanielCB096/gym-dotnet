@@ -38,8 +38,7 @@ namespace GymService.Controllers
             var service = GetImportService();
             var result = service.ImportMembersFromCsv(stream, encoding);
 
-            var response = BuildResponse(result);
-            return result.Success ? Ok(response) : BadRequest(response);
+            return BuildActionResult(result);
         }
 
         /// <summary>
@@ -64,8 +63,7 @@ namespace GymService.Controllers
             var service = GetImportService();
             var result = service.ImportMembersFromExcel(stream);
 
-            var response = BuildResponse(result);
-            return result.Success ? Ok(response) : BadRequest(response);
+            return BuildActionResult(result);
         }
 
         /// <summary>
@@ -91,8 +89,7 @@ namespace GymService.Controllers
             var service = GetImportService();
             var result = service.ImportInventoryFromCsv(stream, encoding);
 
-            var response = BuildResponse(result);
-            return result.Success ? Ok(response) : BadRequest(response);
+            return BuildActionResult(result);
         }
 
         /// <summary>
@@ -117,8 +114,7 @@ namespace GymService.Controllers
             var service = GetImportService();
             var result = service.ImportInventoryFromExcel(stream);
 
-            var response = BuildResponse(result);
-            return result.Success ? Ok(response) : BadRequest(response);
+            return BuildActionResult(result);
         }
 
         /// <summary>
@@ -183,6 +179,19 @@ namespace GymService.Controllers
             var bytes = service.GenerateInventoryExcelTemplate();
 
             return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "plantilla_inventario.xlsx");
+        }
+
+        /// <summary>
+        /// Una importación parcial (filas importadas + filas con error) no es un fallo de la
+        /// petición: devuelve 200 con success=false y el detalle. El 400 queda para archivos
+        /// vacíos, ilegibles o con codificación no admitida.
+        /// </summary>
+        private ActionResult<Dictionary<string, object>> BuildActionResult(BulkImportResult result)
+        {
+            var response = BuildResponse(result);
+            return result.Success || result.ImportedRows > 0
+                ? Ok(response)
+                : BadRequest(response);
         }
 
         private Dictionary<string, object> BuildResponse(BulkImportResult result)

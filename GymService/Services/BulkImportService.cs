@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CsvHelper;
 using CsvHelper.Configuration;
@@ -108,9 +109,7 @@ namespace GymService.Services
                     {
                         RowNumber = pending.RowNumber,
                         RowData = pending.RowData,
-                        ErrorMessage = string.IsNullOrEmpty(rowResult.Message)
-                            ? "Error al insertar la fila"
-                            : rowResult.Message
+                        ErrorMessage = FriendlyErrorMessage(rowResult.Message)
                     });
                 }
             }
@@ -121,6 +120,33 @@ namespace GymService.Services
         private static string ReadColumn(Dictionary<string, string> row, string column)
         {
             return row.GetValueOrDefault(column, "").Trim();
+        }
+
+        /// <summary>
+        /// Traduce los errores de SQL Server más frecuentes a mensajes entendibles
+        /// para la tabla de errores de la importación (sin volcar el SQL completo).
+        /// </summary>
+        private static string FriendlyErrorMessage(string? message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+                return "Error al insertar la fila";
+
+            if (message.Contains("Cannot insert duplicate key", StringComparison.OrdinalIgnoreCase))
+            {
+                var match = Regex.Match(message, @"duplicate key value is \((?<value>.*?)\)", RegexOptions.IgnoreCase);
+                return match.Success
+                    ? $"El valor '{match.Groups["value"].Value}' ya existe; usa uno distinto."
+                    : "Ya existe un registro con ese valor único.";
+            }
+
+            if (message.Contains("would be truncated", StringComparison.OrdinalIgnoreCase))
+                return "Uno de los valores supera la longitud permitida.";
+
+            if (message.Contains("FOREIGN KEY constraint", StringComparison.OrdinalIgnoreCase))
+                return "El registro hace referencia a un dato que no existe.";
+
+            var firstLine = message.Split('\n')[0].Trim();
+            return firstLine.Length > 300 ? firstLine[..300] : firstLine;
         }
 
         /// <summary>
