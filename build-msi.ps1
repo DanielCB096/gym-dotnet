@@ -14,7 +14,7 @@ param(
     [switch]$FrameworkDependent,
     [switch]$SkipFrontend,
     [switch]$SkipPublish,
-    [string]$AnxoRoot = "C:\repositorios\pilot\ANXO LIBRARIES"
+    [string]$AnxoRoot = ""
 )
 
 $ErrorActionPreference = 'Stop'

@@ -8,11 +8,17 @@
     <RootNamespace>GymService</RootNamespace>
     <AssemblyName>GymService</AssemblyName>
     <Version>1.0.0</Version>
-    <!-- Ruta de las ANXO Libraries (pilot). Se puede sobrescribir: -p:AnxoRoot=... -->
+    <!-- Ruta de las ANXO Libraries (pilot). Prioridad: -p:AnxoRoot, ANXO_ROOT, ruta por defecto. -->
+    <AnxoRoot Condition="'$(AnxoRoot)' == '' and '$(ANXO_ROOT)' != ''">$(ANXO_ROOT)</AnxoRoot>
     <AnxoRoot Condition="'$(AnxoRoot)' == ''">..\..\..\repositorios\pilot\ANXO LIBRARIES</AnxoRoot>
   </PropertyGroup>
 
-  <ItemGroup>
+  <Target Name="ValidateAnxoRoot" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('$(AnxoRoot)')"
+           Text="No se encontró ANXO Libraries en '$(AnxoRoot)'. Copia la carpeta o define ANXO_ROOT / -p:AnxoRoot=&quot;ruta&quot;." />
+  </Target>
+
+  <ItemGroup Condition="Exists('$(AnxoRoot)')">
     <!-- ANXO Libraries -->
     <ProjectReference Include="$(AnxoRoot)\AnxoServiceTools\AnxoServiceTools.csproj" />
     <ProjectReference Include="$(AnxoRoot)\AnxoDatabase\AnxoDatabase.csproj" />

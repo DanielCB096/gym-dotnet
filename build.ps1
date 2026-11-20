@@ -1,12 +1,16 @@
 param(
     [switch]$Integration,
-    [string]$AnxoRoot = "C:\repositorios\pilot\ANXO LIBRARIES"
+    [string]$AnxoRoot = ""
 )
 
 $ErrorActionPreference = 'Stop'
 
 Write-Host "== Build =="
-dotnet build GymService.slnx -c Release -p:AnxoRoot="$AnxoRoot"
+$buildArgs = @('build', 'GymService.slnx', '-c', 'Release')
+if (-not [string]::IsNullOrWhiteSpace($AnxoRoot)) {
+    $buildArgs += "-p:AnxoRoot=$AnxoRoot"
+}
+dotnet @buildArgs
 
 if ($Integration)
 {

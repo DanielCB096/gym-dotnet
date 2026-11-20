@@ -6,6 +6,12 @@
 
 ## Backend (.NET)
 
+### Compilación portable de ANXO (2026-11-20)
+- **ANXO_ROOT:** `GymService.csproj` y `AnxoModelGenerator.csproj` aceptan la variable de entorno, además de `-p:AnxoRoot`; prioridad parámetro > variable > ruta relativa.
+- **Error claro:** si falta la carpeta, la compilación muestra un mensaje con las opciones en vez de un error de referencia de proyecto.
+- **Scripts:** `build.ps1`, `publish.ps1` y `build-msi.ps1` ya no imponen la ruta fija; solo la pasan si se indica. Sin argumentos usan `ANXO_ROOT` o la ruta relativa.
+- **Verificación:** build completo con 129 pruebas, `ANXO_ROOT` detectada y error controlado con una ruta inexistente. El MSI/publicación self-contained no requiere ANXO en el servidor.
+
 ### Corrección del layout a pantalla completa (2026-11-20)
 - **Bug:** con Edge en un monitor a 125 % después de mover la ventana desde otro monitor, el scroll del documento desplazaba la superficie compuesta y dejaba una franja gris arriba; el panel parecía no llenar la pantalla.
 - **Solución:** shell de altura fija (`h-dvh overflow-hidden`) con scroll interno en `<main>` (`overflow-y-auto overscroll-contain`); al cambiar de ruta el scroll vuelve arriba.

@@ -5,7 +5,7 @@ param(
     [switch]$FrameworkDependent,
     [switch]$SkipFrontend,
     [switch]$NoZip,
-    [string]$AnxoRoot = "C:\repositorios\pilot\ANXO LIBRARIES",
+    [string]$AnxoRoot = "",
     [string]$Output = ""
 )
 
@@ -51,13 +51,19 @@ if (Test-Path $Output) {
 
 $selfContained = if ($FrameworkDependent) { 'false' } else { 'true' }
 
-dotnet publish (Join-Path $root 'GymService\GymService.csproj') `
-    -c $Configuration `
-    -r $Runtime `
-    --self-contained $selfContained `
-    -p:AnxoRoot="$AnxoRoot" `
-    -p:Version="$Version" `
-    -o $Output
+$publishArgs = @(
+    'publish', (Join-Path $root 'GymService\GymService.csproj'),
+    '-c', $Configuration,
+    '-r', $Runtime,
+    '--self-contained', $selfContained,
+    "-p:Version=$Version",
+    '-o', $Output
+)
+if (-not [string]::IsNullOrWhiteSpace($AnxoRoot)) {
+    $publishArgs += "-p:AnxoRoot=$AnxoRoot"
+}
+
+dotnet @publishArgs
 
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish falló con código $LASTEXITCODE"

@@ -216,7 +216,24 @@ cd C:\proyectos\gimnasio-dotnet
 
 `build.ps1` compila `GymService.slnx` (Release) y ejecuta las pruebas unitarias.
 Para integración: `.\build.ps1 -Integration` con las variables `GYM_TEST_DB_*` definidas.
-La ruta de las ANXO Libraries se puede sobrescribir con `-AnxoRoot` o `-p:AnxoRoot=...`.
+
+### ANXO Libraries (solo para compilar)
+
+El código fuente de las ANXO Libraries **no está en este repositorio** (es propietario).
+La ruta por defecto es `..\..\..\repositorios\pilot\ANXO LIBRARIES` (en este equipo,
+`C:\repositorios\pilot\ANXO LIBRARIES`). En otro equipo, copia esa carpeta o define la ruta:
+
+```powershell
+$env:ANXO_ROOT = "D:\libs\ANXO LIBRARIES"   # tiene prioridad sobre la ruta por defecto
+dotnet build GymService.slnx -c Release
+
+.\build.ps1 -AnxoRoot "D:\libs\ANXO LIBRARIES"
+.\publish.ps1 -AnxoRoot "D:\libs\ANXO LIBRARIES"
+.\build-msi.ps1 -AnxoRoot "D:\libs\ANXO LIBRARIES"
+```
+
+Si la ruta no existe, la compilación se detiene con un mensaje claro. El **MSI y la
+publicación self-contained ya incluyen las DLLs**: el servidor no necesita las librerías.
 
 ## Grafo del código (graphify)
 
