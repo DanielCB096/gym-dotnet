@@ -51,6 +51,79 @@ namespace GymService.Controllers
             return success ? Ok(response) : BadRequest(response);
         }
 
+        // ==================== CASH EXPORT ====================
+
+        [HttpGet]
+        [Route("api/reports/cash/excel")]
+        public ActionResult ExportCashExcel([FromQuery] string? startDate, [FromQuery] string? endDate)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (!TryParseOptionalDate(startDate, out var start) || !TryParseOptionalDate(endDate, out var end))
+                return BadRequest(new { success = false, message = "Fecha inválida. Usa el formato aaaa-mm-dd." });
+
+            var service = GetExportService();
+            var bytes = service.ExportCashToExcel(start, end);
+            return File(bytes, XlsxContentType, $"caja_{DateTime.Now:yyyyMMdd}.xlsx");
+        }
+
+        // ==================== MEMBERSHIPS EXPORT ====================
+
+        [HttpGet]
+        [Route("api/reports/memberships/excel")]
+        public ActionResult ExportMembershipsExcel(
+            [FromQuery] string? status,
+            [FromQuery] string? startDate,
+            [FromQuery] string? endDate)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (!TryParseOptionalDate(startDate, out var start) || !TryParseOptionalDate(endDate, out var end))
+                return BadRequest(new { success = false, message = "Fecha inválida. Usa el formato aaaa-mm-dd." });
+
+            var service = GetExportService();
+            var bytes = service.ExportMembershipsToExcel(status, start, end);
+            return File(bytes, XlsxContentType, $"membresias_{DateTime.Now:yyyyMMdd}.xlsx");
+        }
+
+        // ==================== KARDEX EXPORT ====================
+
+        [HttpGet]
+        [Route("api/reports/kardex/excel")]
+        public ActionResult ExportKardexExcel(
+            [FromQuery] long? productId,
+            [FromQuery] string? startDate,
+            [FromQuery] string? endDate)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (!TryParseOptionalDate(startDate, out var start) || !TryParseOptionalDate(endDate, out var end))
+                return BadRequest(new { success = false, message = "Fecha inválida. Usa el formato aaaa-mm-dd." });
+
+            var service = GetExportService();
+            var bytes = service.ExportKardexToExcel(productId, start, end);
+            return File(bytes, XlsxContentType, $"kardex_{DateTime.Now:yyyyMMdd}.xlsx");
+        }
+
+        private static bool TryParseOptionalDate(string? value, out DateTime? date)
+        {
+            date = null;
+            if (string.IsNullOrWhiteSpace(value))
+                return true;
+
+            if (!DateTime.TryParse(value, out var parsed))
+                return false;
+
+            date = parsed;
+            return true;
+        }
+
+        private static readonly string XlsxContentType =
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
         private ReportExportService GetExportService()
         {
             if (DataCenter.DatabaseManager == null)

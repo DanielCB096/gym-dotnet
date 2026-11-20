@@ -10,6 +10,9 @@ const exports = [
   { label: 'Miembros', url: '/reports/members/excel', filename: 'miembros.xlsx' },
   { label: 'Asistencia', url: '/reports/attendance/excel', filename: 'asistencia.xlsx' },
   { label: 'Inventario', url: '/reports/inventory/excel', filename: 'inventario.xlsx' },
+  { label: 'Caja', url: '/reports/cash/excel', filename: 'caja.xlsx' },
+  { label: 'Membresías', url: '/reports/memberships/excel', filename: 'membresias.xlsx' },
+  { label: 'Kardex', url: '/reports/kardex/excel', filename: 'kardex.xlsx' },
 ];
 
 function ExportButtons({ notify }) {

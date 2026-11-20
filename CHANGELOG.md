@@ -6,6 +6,15 @@
 
 ## Backend (.NET)
 
+### Reportes Excel de caja, membresías y kardex (2026-11-20)
+- **Nuevos reportes:** `GET /api/reports/cash/excel`, `/api/reports/memberships/excel` y `/api/reports/kardex/excel`, con filtros opcionales `startDate`/`endDate`, `status` y `productId`.
+- **Caja:** folio, apertura/cierre con usuario, fondo inicial, ventas y cobros del turno, efectivo esperado/contado, diferencia, estado, notas y fila de totales.
+- **Membresías:** socio, email, plan, periodo, estado, renovación automática, congelación, cancelación y último pago.
+- **Kardex:** fecha, producto, SKU, tipo de movimiento, delta, stock anterior/nuevo, referencia y notas.
+- **UI:** botones Caja, Membresías y Kardex en la página de Reportes.
+- **Pruebas:** 3 pruebas de integración que generan el archivo y validan celdas y filtros; 116/116 en la suite con BD temporal. Se corrigió la inicialización de `MappingSchemaTests` (`ModelGym.Register()`) para que no dependa del orden de ejecución.
+- **Verificación en vivo:** descarga por API y desde el panel (Edge) contra una BD temporal con un turno, una membresía con pago y un movimiento de kardex; los tres archivos contienen los datos y totales esperados.
+
 ### Documentación al día (2026-11-20)
 - **`GymService/PROJECT_CONTEXT.md`:** actualizado a .NET 10, 18 controllers, 15 módulos, 40 tablas desde `_ModelGym.xml`, estado real de pruebas y pendientes. Los patrones de escritura muestran el modelo de objetos de Anxo (`InsertObject` / `InsertObjectWithID` / `UpdateObjectChanges` / `DeleteObject`) y la API se resume por grupos, con Swagger como fuente viva.
 - **`README.md`:** corregido el estado del proyecto (controllers, páginas, 113 pruebas y OTP real ya implementados) y añadida la importación masiva CSV/Excel.

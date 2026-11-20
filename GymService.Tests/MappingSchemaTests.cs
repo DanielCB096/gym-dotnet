@@ -7,6 +7,13 @@ namespace GymService.Tests;
 
 public class MappingSchemaTests
 {
+    static MappingSchemaTests()
+    {
+        // Registra todas las entidades antes de resolver las FK; si no, el framework
+        // puede buscar una tabla externa antes de que su mapping exista.
+        ModelGym.Register();
+    }
+
     private static DatabaseTable TableOf(MappingObject mapping) => mapping.GetDatabaseTable();
 
     [Fact]
