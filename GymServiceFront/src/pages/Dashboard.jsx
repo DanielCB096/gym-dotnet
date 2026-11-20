@@ -26,6 +26,114 @@ const colorMap = {
   info: { bg: 'bg-info-50', text: 'text-info-500' },
 };
 
+const formatDay = (isoDate) => {
+  const date = new Date(`${isoDate}T00:00:00`);
+  return date.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' });
+};
+
+const daysLeftLabel = (days) => {
+  if (days <= 0) return 'Hoy';
+  if (days === 1) return 'Mañana';
+  return `${days} días`;
+};
+
+function TrendsSection({ trends }) {
+  const revenue = Array.isArray(trends.revenue) ? trends.revenue : [];
+  const access = Array.isArray(trends.access) ? trends.access : [];
+  const upcoming = Array.isArray(trends.upcoming) ? trends.upcoming : [];
+
+  const maxRevenue = Math.max(1, ...revenue.map((day) => Number(day.total) || 0));
+  const maxAccess = Math.max(1, ...access.map((day) => Number(day.count) || 0));
+
+  return (
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 lg:gap-6 mb-6">
+      <Card title="Ingresos últimos 7 días" subtitle="Ventas y cobros de membresía">
+        <div className="mb-3 flex items-center gap-4 text-xs text-slate-500">
+          <span className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-sm bg-brand-500" /> Ventas
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-sm bg-success-400" /> Membresías
+          </span>
+        </div>
+        <div className="flex h-36 items-stretch gap-1.5">
+          {revenue.map((day) => {
+            const total = Number(day.total) || 0;
+            const height = Math.max(total > 0 ? 6 : 2, Math.round((total / maxRevenue) * 100));
+            const salesShare = total > 0 ? (Number(day.sales) / total) * 100 : 0;
+
+            return (
+              <div
+                key={day.date}
+                className="flex h-full flex-1 flex-col items-center gap-2"
+                title={`${formatDay(day.date)}: ${formatCurrency(total)}`}
+              >
+                <div className="flex w-full flex-1 items-end">
+                  <div
+                    className="flex w-full max-w-10 flex-col justify-end overflow-hidden rounded-md bg-slate-100"
+                    style={{ height: `${height}%` }}
+                  >
+                    <div className="w-full bg-success-400" style={{ height: `${100 - salesShare}%` }} />
+                    <div className="w-full bg-brand-500" style={{ height: `${salesShare}%` }} />
+                  </div>
+                </div>
+                <span className="text-[11px] text-slate-400">{formatDay(day.date)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+
+      <Card title="Accesos últimos 7 días" subtitle="Entradas concedidas por día">
+        <div className="flex h-36 items-stretch gap-1.5">
+          {access.map((day) => {
+            const count = Number(day.count) || 0;
+            const height = Math.max(count > 0 ? 6 : 2, Math.round((count / maxAccess) * 100));
+
+            return (
+              <div
+                key={day.date}
+                className="flex h-full flex-1 flex-col items-center gap-2"
+                title={`${formatDay(day.date)}: ${count} accesos`}
+              >
+                <div className="flex w-full flex-1 items-end">
+                  <div
+                    className="w-full max-w-10 rounded-md bg-info-500"
+                    style={{ height: `${height}%` }}
+                  />
+                </div>
+                <span className="text-[11px] text-slate-400">{formatDay(day.date)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+
+      <Card title="Próximos vencimientos" subtitle="Membresías que vencen en 7 días">
+        {upcoming.length === 0 ? (
+          <p className="py-10 text-center text-sm text-slate-400">No hay membresías por vencer.</p>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {upcoming.map((item) => (
+              <li key={item.id} className="flex items-center justify-between gap-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-slate-700">{item.memberName}</p>
+                  <p className="truncate text-xs text-slate-400">
+                    {item.planName || 'Sin plan'} · {formatDay(item.endDate)}
+                  </p>
+                </div>
+                <Badge variant={item.daysLeft <= 1 ? 'danger' : 'warning'} dot>
+                  {daysLeftLabel(item.daysLeft)}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState({ members: 0, sales: 0, inventory: 0, staff: 0, classes: 0 });
@@ -131,6 +239,8 @@ export default function Dashboard() {
           ))}
         </div>
       )}
+
+      {summary?.trends && <TrendsSection trends={summary.trends} />}
 
       {/* Bottom section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">

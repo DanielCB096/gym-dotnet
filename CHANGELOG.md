@@ -6,6 +6,12 @@
 
 ## Backend (.NET)
 
+### Dashboard con tendencias (2026-11-20)
+- **Backend:** nuevo `DashboardModule`; `/api/dashboard/summary` mantiene los contadores y añade `trends.revenue` (7 días con ventas y cobros de membresía), `trends.access` (7 días) y `trends.upcoming` (hasta 10 vencimientos con días restantes).
+- **Frontend:** gráficas de barras de ingresos y accesos y lista de próximos vencimientos, sin dependencias nuevas.
+- **Pruebas:** prueba de integración con pagos, ventas y accesos de hoy/ayer; 121/121 con BD temporal.
+- **Verificación en vivo:** el panel mostró $750 de ingresos hoy, 2 accesos, las barras de 7 días y la membresía de prueba a 3 días; sin errores de consola.
+
 ### Correos transaccionales con MailKit (2026-11-20)
 - **Plantillas:** bienvenida al alta de socio, recibo al asignar/renovar membresía con cobro (plan, periodo, importe, método, referencia) y aviso de vencimiento con los días restantes.
 - **Aviso de vencimiento:** la limpieza periódica envía a las membresías activas que vencen dentro de `Notifications:ExpiryNoticeDays` (7 por defecto) y marca `EXPIRY_NOTICE_SENT_AT` para no repetirlo; nueva columna aditiva en `GYM_MEMBERSHIPS` (modelo XML regenerado).
