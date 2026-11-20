@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Wallet } from 'lucide-react';
 import api from '../services/api';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
@@ -40,6 +40,14 @@ export default function CancelMembershipModal({ target, onClose, onCancelled }) 
         <form onSubmit={save} className="space-y-4">
           <div className="rounded-lg border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger-700">
             La membresía quedará cancelada y el socio perderá el acceso. El historial se conserva.
+          </div>
+
+          <div className="flex items-start gap-2 rounded-lg border border-success-200 bg-success-50 px-3 py-2 text-sm text-success-700">
+            <Wallet className="mt-0.5 h-4 w-4 flex-shrink-0" />
+            <span>
+              Los días no usados se abonan como crédito a favor (precio del plan entre su duración).
+              Se aplicará automáticamente en la próxima renovación.
+            </span>
           </div>
 
           <div>

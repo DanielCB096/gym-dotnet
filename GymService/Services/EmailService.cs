@@ -21,6 +21,7 @@ namespace GymService.Services
         public string PaymentMethod { get; set; } = string.Empty;
         public string Reference { get; set; } = string.Empty;
         public DateTime PaymentDate { get; set; } = DateTime.Now;
+        public decimal CreditApplied { get; set; }
         public bool NoCharge { get; set; }
     }
 
@@ -99,6 +100,9 @@ namespace GymService.Services
                 : $"{receipt.Amount:0.00} {Html(receipt.Currency)}";
             string method = receipt.NoCharge ? "—" : PaymentMethodText(receipt.PaymentMethod);
             string reference = string.IsNullOrWhiteSpace(receipt.Reference) ? "—" : Html(receipt.Reference);
+            string creditRow = receipt.CreditApplied > 0
+                ? $"<tr><td style=\"padding:6px 0;color:#6b7280\">Crédito aplicado</td><td style=\"padding:6px 0;text-align:right\">-{receipt.CreditApplied:0.00} {Html(receipt.Currency)}</td></tr>"
+                : string.Empty;
 
             string body = $@"<p>Hola <strong>{Html(memberName)}</strong>,</p>
   <p>Registramos tu membresía correctamente. Este es el detalle:</p>
@@ -106,6 +110,7 @@ namespace GymService.Services
     <tr><td style=""padding:6px 0;color:#6b7280"">Plan</td><td style=""padding:6px 0;text-align:right""><strong>{Html(receipt.PlanName)}</strong></td></tr>
     <tr><td style=""padding:6px 0;color:#6b7280"">Periodo</td><td style=""padding:6px 0;text-align:right"">{receipt.StartDate:dd/MM/yyyy} — {receipt.EndDate:dd/MM/yyyy}</td></tr>
     <tr><td style=""padding:6px 0;color:#6b7280"">Importe</td><td style=""padding:6px 0;text-align:right""><strong>{amount}</strong></td></tr>
+    {creditRow}
     <tr><td style=""padding:6px 0;color:#6b7280"">Método</td><td style=""padding:6px 0;text-align:right"">{method}</td></tr>
     <tr><td style=""padding:6px 0;color:#6b7280"">Referencia</td><td style=""padding:6px 0;text-align:right"">{reference}</td></tr>
     <tr><td style=""padding:6px 0;color:#6b7280"">Fecha del cobro</td><td style=""padding:6px 0;text-align:right"">{receipt.PaymentDate:dd/MM/yyyy HH:mm}</td></tr>

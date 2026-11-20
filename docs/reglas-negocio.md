@@ -35,8 +35,17 @@
    y activa/renueva la membresía en la misma operación.
 9. Un socio no debe tener dos membresías activas simultáneas; la operación de
    renovación actualiza la vigente o crea una nueva si ya venció/canceló.
-10. Un socio sin plan al darse de alta queda como “sin membresía” hasta que se le
+10. Un socio sin plan al darse de alta queda como "sin membresía" hasta que se le
     asigne uno. Los planes base (Mensual/Trimestral/Anual) se crean si no existen.
+11. Al cancelar una membresía se abona un **crédito a favor** por los días completos no
+    usados: `precio del plan / duración en días × días restantes`, redondeado a 2
+    decimales y sin penalización. No hay reembolso en efectivo.
+12. El crédito se guarda en `GYM_MEMBER_CREDITS` y se aplica automáticamente en la
+    siguiente renovación de la misma moneda: primero se consume el saldo (parcial o
+    total) y solo se registra un pago por lo que no cubra. El crédito no se aplica en
+    activaciones de cortesía.
+13. La cancelación exige motivo, queda auditada y no borra el historial; una membresía
+    cancelada no se puede volver a cancelar.
 
 ## Control de acceso
 
@@ -67,4 +76,4 @@
 | Pasarela de pago, tokenización y renovación automática real | Pendiente (fuera de esta entrega) |
 | Bloqueo por adeudo, horarios por plan, aforo y antipassback | Pendiente |
 | Eventos/historial de membresía dedicados | Pendiente (se conservan pagos y auditoría) |
-| Cancelación con motivo y prorrateo | Pendiente |
+| Cancelación con motivo y crédito proporcional | Implementado |

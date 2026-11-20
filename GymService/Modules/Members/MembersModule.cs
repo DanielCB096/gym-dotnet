@@ -80,7 +80,9 @@ namespace GymService.Modules.Members
 
                 // Main query with pagination (SQL Server OFFSET/FETCH)
                 var sql = $"SELECT m.*, mem.id AS membership_id, mem.plan_id, mp.plan_name AS membership_type, mem.start_date, mem.end_date, " +
-                    $"m.status AS member_status, mem.status AS membership_status " +
+                    $"m.status AS member_status, mem.status AS membership_status, " +
+                    $"(SELECT ISNULL(SUM(c.remaining_amount),0) FROM gym_member_credits c " +
+                    $" WHERE c.member_id = m.id AND c.status = 'available') AS credit_balance " +
                     $"FROM gym_members m " +
                     $"OUTER APPLY (SELECT TOP 1 mem2.id, mem2.plan_id, mem2.status, mem2.start_date, mem2.end_date " +
                     $"             FROM gym_memberships mem2 WHERE mem2.member_id = m.id " +
@@ -127,7 +129,8 @@ namespace GymService.Modules.Members
                             ["membershipStatus"] = membershipStatus,
                             ["hasActiveMembership"] = membershipStatus == "active",
                             ["membershipId"] = GetRowValue(row, result, "membership_id") != null ? Convert.ToInt64(GetRowValue(row, result, "membership_id")) : (long?)null,
-                            ["membershipEnd"] = membershipEnd
+                            ["membershipEnd"] = membershipEnd,
+                            ["creditBalance"] = Convert.ToDecimal(GetRowValue(row, result, "credit_balance"))
                         });
                     }
                 }
@@ -601,6 +604,24 @@ namespace GymService.Modules.Members
                     return false;
                 }
 
+                DateTime today = DateTime.Now.Date;
+                int daysLeft = (membership.Value.EndDate.Date - today).Days;
+                decimal creditAmount = 0m;
+                string creditCurrency = "MXN";
+
+                if (daysLeft > 0)
+                {
+                    var plan = GetPlanState(membership.Value.PlanId);
+                    if (plan != null && plan.Value.DurationDays > 0 && plan.Value.Price > 0)
+                    {
+                        creditCurrency = plan.Value.Currency;
+                        decimal dailyRate = plan.Value.Price / plan.Value.DurationDays;
+                        creditAmount = Math.Round(dailyRate * daysLeft, 2, MidpointRounding.AwayFromZero);
+                        if (creditAmount > plan.Value.Price)
+                            creditAmount = plan.Value.Price;
+                    }
+                }
+
                 var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.UpdateObjectChanges(new GYM_MEMBERSHIPS
                 {
@@ -610,6 +631,28 @@ namespace GymService.Modules.Members
                     CANCEL_REASON = reason
                 });
 
+                long? creditId = null;
+                if (creditAmount > 0)
+                {
+                    long newCreditId = _tools.GenerateUniqueID(GYM_MEMBER_CREDITS.DatabaseMappingObject, 1).GetInt64UniqueId();
+                    creditId = newCreditId;
+                    string creditReason = ("Cancelación: " + reason).Trim();
+                    if (creditReason.Length > 300)
+                        creditReason = creditReason.Substring(0, 300);
+
+                    session.InsertObjectWithID(new GYM_MEMBER_CREDITS
+                    {
+                        ID = newCreditId,
+                        MEMBER_ID = membership.Value.MemberId,
+                        MEMBERSHIP_ID = membershipId,
+                        AMOUNT = creditAmount,
+                        REMAINING_AMOUNT = creditAmount,
+                        CURRENCY = creditCurrency,
+                        STATUS = "available",
+                        REASON = creditReason
+                    });
+                }
+
                 if (session.TryExecute().IsError)
                 {
                     response["success"] = false;
@@ -617,9 +660,17 @@ namespace GymService.Modules.Members
                     return false;
                 }
 
-                Logger.AddInfoSubModule(SubModule, $"Membresía {membershipId} cancelada: {reason}");
+                Logger.AddInfoSubModule(SubModule,
+                    $"Membresía {membershipId} cancelada: {reason}. Crédito a favor: {creditAmount:0.00} {creditCurrency} ({daysLeft} días)");
+
                 response["success"] = true;
-                response["message"] = "Membresía cancelada correctamente";
+                response["creditId"] = creditId;
+                response["creditAmount"] = creditAmount;
+                response["creditCurrency"] = creditCurrency;
+                response["creditDays"] = daysLeft > 0 ? daysLeft : 0;
+                response["message"] = creditAmount > 0
+                    ? $"Membresía cancelada. Crédito a favor: {creditAmount:0.00} {creditCurrency}"
+                    : "Membresía cancelada correctamente";
                 return true;
             }
             catch (Exception ex)
@@ -1072,6 +1123,26 @@ namespace GymService.Modules.Members
                 bool autoRenew = data.ContainsKey("autoRenew") && Convert.ToBoolean(data["autoRenew"]);
                 DateTime today = DateTime.Now.Date;
 
+                var availableCredits = new List<(long Id, decimal Remaining)>();
+                if (!noCharge && amount > 0)
+                {
+                    var creditResult = _tools.ExecuteQueryResultSet(
+                        "SELECT ID, REMAINING_AMOUNT FROM GYM_MEMBER_CREDITS " +
+                        "WHERE MEMBER_ID = ? AND STATUS = 'available' AND REMAINING_AMOUNT > 0 AND CURRENCY = ? " +
+                        "ORDER BY CREATED_AT, ID",
+                        memberId, plan.Value.Currency);
+
+                    if (creditResult != null)
+                    {
+                        foreach (Row creditRow in creditResult.Rows)
+                        {
+                            availableCredits.Add((
+                                Convert.ToInt64(creditRow.GetObject(0)),
+                                Convert.ToDecimal(creditRow.GetObject(1))));
+                        }
+                    }
+                }
+
                 DateTime requestedStart = data.ContainsKey("startDate") &&
                     DateTime.TryParse(Convert.ToString(data["startDate"]), out var parsedStart)
                     ? parsedStart.Date
@@ -1124,18 +1195,55 @@ namespace GymService.Modules.Members
                     });
                 }
 
-                if (!noCharge)
+                decimal creditApplied = 0m;
+                decimal amountPaid = amount;
+
+                if (!noCharge && availableCredits.Count > 0)
                 {
+                    decimal pending = amount;
+
+                    foreach (var credit in availableCredits)
+                    {
+                        if (pending <= 0)
+                            break;
+
+                        decimal take = credit.Remaining < pending ? credit.Remaining : pending;
+                        decimal remaining = credit.Remaining - take;
+
+                        session.UpdateObjectChanges(new GYM_MEMBER_CREDITS
+                        {
+                            ID = credit.Id,
+                            REMAINING_AMOUNT = remaining,
+                            STATUS = remaining <= 0 ? "applied" : "available",
+                            APPLIED_AT = DateTime.Now
+                        });
+
+                        creditApplied += take;
+                        pending -= take;
+                    }
+
+                    amountPaid = amount - creditApplied;
+                }
+
+                if (!noCharge && amountPaid > 0)
+                {
+                    string paymentNotes = (Convert.ToString(data.GetValueOrDefault("notes", "")) ?? "").Trim();
+                    if (creditApplied > 0)
+                    {
+                        string creditNote = $"Crédito aplicado: {creditApplied:0.00} {plan.Value.Currency}";
+                        paymentNotes = paymentNotes.Length > 0 ? $"{creditNote}. {paymentNotes}" : creditNote;
+                    }
+
                     session.InsertObject(new GYM_PAYMENTS
                     {
                         MEMBER_ID = memberId,
                         MEMBERSHIP_ID = membershipId,
-                        AMOUNT = amount,
+                        AMOUNT = amountPaid,
                         CURRENCY = plan.Value.Currency,
                         PAYMENT_METHOD = paymentMethod,
                         PAYMENT_DATE = DateTime.Now,
                         REFERENCE = Convert.ToString(data.GetValueOrDefault("reference", "")) ?? "",
-                        NOTES = (Convert.ToString(data.GetValueOrDefault("notes", "")) ?? "").Trim(),
+                        NOTES = paymentNotes,
                         CASH_SESSION_ID = GymService.Modules.Cash.CashModule.GetOpenSessionId(_tools)
                     });
                 }
@@ -1153,7 +1261,8 @@ namespace GymService.Modules.Members
 
                 Logger.AddInfoSubModule(SubModule,
                     $"Membresía {membershipId} de socio {memberId}: plan '{plan.Value.Name}', {startDate:yyyy-MM-dd} a {endDate:yyyy-MM-dd}, " +
-                    (noCharge ? "sin cobro (cortesía)" : $"cobro {paymentMethod} por {amount:0.00} {plan.Value.Currency}"));
+                    (noCharge ? "sin cobro (cortesía)" : $"cobro {paymentMethod} por {amountPaid:0.00} {plan.Value.Currency}" +
+                        (creditApplied > 0 ? $" (crédito aplicado {creditApplied:0.00})" : "")));
 
                 response["success"] = true;
                 response["membershipId"] = membershipId;
@@ -1164,21 +1273,29 @@ namespace GymService.Modules.Members
                 response["status"] = "active";
                 response["noCharge"] = noCharge;
                 response["amount"] = amount;
-                response["message"] = latest != null && string.Equals(latest.Value.Status, "active", StringComparison.OrdinalIgnoreCase)
+                response["amountPaid"] = amountPaid;
+                response["creditApplied"] = creditApplied;
+
+                string membershipMessage = latest != null && string.Equals(latest.Value.Status, "active", StringComparison.OrdinalIgnoreCase)
                     ? "Membresía renovada correctamente"
                     : "Membresía asignada correctamente";
+                if (creditApplied > 0)
+                    membershipMessage += $" Se aplicó crédito por {creditApplied:0.00} {plan.Value.Currency}.";
 
-                if (!noCharge)
+                response["message"] = membershipMessage;
+
+                if (!noCharge && amountPaid > 0)
                 {
                     SendMembershipReceipt(
                         memberId,
                         plan.Value.Name,
                         startDate,
                         endDate,
-                        amount,
+                        amountPaid,
                         plan.Value.Currency,
                         paymentMethod,
-                        Convert.ToString(data.GetValueOrDefault("reference", "")) ?? "");
+                        Convert.ToString(data.GetValueOrDefault("reference", "")) ?? "",
+                        creditApplied);
                 }
 
                 return true;
@@ -1215,7 +1332,8 @@ namespace GymService.Modules.Members
             decimal amount,
             string currency,
             string paymentMethod,
-            string reference)
+            string reference,
+            decimal creditApplied = 0m)
         {
             if (_email == null || !_email.IsEnabled)
                 return;
@@ -1233,7 +1351,8 @@ namespace GymService.Modules.Members
                 Currency = currency,
                 PaymentMethod = paymentMethod,
                 Reference = reference,
-                PaymentDate = DateTime.Now
+                PaymentDate = DateTime.Now,
+                CreditApplied = creditApplied
             };
 
             if (!_email.TrySendMembershipReceipt(contact.Value.Email, contact.Value.Name, receipt, out var emailError))
@@ -1325,10 +1444,10 @@ namespace GymService.Modules.Members
             );
         }
 
-        private (long Id, string Status, DateTime StartDate, DateTime EndDate)? GetMembershipState(long membershipId)
+        private (long Id, long MemberId, long PlanId, string Status, DateTime StartDate, DateTime EndDate)? GetMembershipState(long membershipId)
         {
             var result = _tools.ExecuteQueryResultSet(
-                "SELECT ID, STATUS, START_DATE, END_DATE FROM GYM_MEMBERSHIPS WHERE ID = ?", membershipId);
+                "SELECT ID, MEMBER_ID, PLAN_ID, STATUS, START_DATE, END_DATE FROM GYM_MEMBERSHIPS WHERE ID = ?", membershipId);
 
             if (result == null || result.Rows.Count == 0)
                 return null;
@@ -1337,6 +1456,8 @@ namespace GymService.Modules.Members
 
             return (
                 Convert.ToInt64(GetRowValue(row, result, "id")),
+                Convert.ToInt64(GetRowValue(row, result, "member_id")),
+                Convert.ToInt64(GetRowValue(row, result, "plan_id")),
                 Convert.ToString(GetRowValue(row, result, "status")) ?? "",
                 Convert.ToDateTime(GetRowValue(row, result, "start_date")),
                 Convert.ToDateTime(GetRowValue(row, result, "end_date"))

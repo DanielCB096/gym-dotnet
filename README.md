@@ -57,7 +57,7 @@ gimnasio-dotnet/
 | Módulo | Descripción |
 |--------|-------------|
 | **Identity** | Autenticación, sesiones Bearer, MFA TOTP, OTP por correo, RBAC, bootstrap de dueño |
-| **Members** | Socios, membresías, ciclo de vida (freeze/resume/cancel), pagos manuales |
+| **Members** | Socios, membresías, ciclo de vida (freeze/resume/cancel), pagos manuales y crédito por cancelación |
 | **Access** | Códigos rotativos HMAC, check-in, bitácora, override manual |
 | **Sales** | Punto de venta, devoluciones, ventas offline, tickets PDF |
 | **Inventory** | Productos, stock, proveedores, órdenes de compra |

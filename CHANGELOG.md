@@ -6,6 +6,14 @@
 
 ## Backend (.NET)
 
+### Cancelación con crédito proporcional (2026-11-20)
+- **Regla:** al cancelar se abona `días no usados × (precio del plan / duración)`, redondeado a 2 decimales y sin penalización; se guarda como crédito a favor.
+- **Datos:** nueva tabla `GYM_MEMBER_CREDITS` (importe, saldo, estado, motivo, aplicación) con FK a socios y membresías; 41 tablas y 34 FK.
+- **Renovación:** aplica los créditos disponibles de la misma moneda (parcial o total), cobra solo lo no cubierto y marca el crédito como aplicado; las cortesías no consumen saldo.
+- **API/UI:** la cancelación devuelve el crédito; la lista de socios muestra el saldo; el modal de membresía muestra crédito y lo que se pagará; el recibo incluye "Crédito aplicado".
+- **Pruebas:** 2 de integración (crédito total y saldo restante) y flujo en vivo; 129/129.
+- **Reglas:** `docs/reglas-negocio.md` pasa el prorrateo a implementado.
+
 ### Respaldos de log y tareas programadas (2026-11-20)
 - **`backup-log.ps1`:** `BACKUP LOG` con verificación y copia opcional; exige modelo FULL y un respaldo completo previo, con mensajes claros cuando no se cumple.
 - **`register-backup-tasks.ps1`:** registra `GymService-Full` (diario) y `GymService-Log` (cada 15 minutos); `-RunAsSystem` para servidores y `-Unregister` para retirarlas.

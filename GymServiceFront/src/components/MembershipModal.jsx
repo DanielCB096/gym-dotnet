@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, CalendarCheck, Printer } from 'lucide-react';
+import { AlertCircle, CalendarCheck, Printer, Wallet } from 'lucide-react';
 import api from '../services/api';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
@@ -83,6 +83,10 @@ export default function MembershipModal({ target, plans, onClose, onSaved }) {
 
   const isCourtesy = paymentMethod === 'none';
   const statusInfo = membershipLabel[member?.membershipStatus] || membershipLabel.none;
+
+  const availableCredit = isCourtesy ? 0 : Number(member?.creditBalance) || 0;
+  const creditToApply = Math.min(availableCredit, Number(amount) || 0);
+  const amountToPay = Math.max(0, (Number(amount) || 0) - creditToApply);
 
   const save = async (event) => {
     event.preventDefault();
@@ -206,12 +210,25 @@ export default function MembershipModal({ target, plans, onClose, onSaved }) {
                 </div>
               </div>
 
+              {!isCourtesy && availableCredit > 0 && (
+                <div className="flex items-start gap-2 rounded-lg border border-success-200 bg-success-50 px-3 py-2 text-xs text-success-700">
+                  <Wallet className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <span>
+                    Crédito disponible: <strong>{formatCurrency(availableCredit)}</strong>.
+                    {creditToApply > 0
+                      ? ` Se aplicarán ${formatCurrency(creditToApply)} a este cobro; pagas ${formatCurrency(amountToPay)}.`
+                      : ' Se aplicará en el próximo cobro.'}
+                  </span>
+                </div>
+              )}
+
               {projectedEnd && (
                 <div className="flex items-center gap-2 rounded-lg border border-brand-100 bg-brand-50/60 px-3 py-2 text-xs text-brand-700">
                   <CalendarCheck className="h-4 w-4 flex-shrink-0" />
                   <span>
                     Nuevo vencimiento estimado: <strong>{formatDate(projectedEnd)}</strong>
-                    {isCourtesy ? ' · sin cobro' : ` · cobro ${formatCurrency(Number(amount) || 0)}`}
+                    {isCourtesy ? ' · sin cobro' : ` · cobro ${formatCurrency(amountToPay)}`}
+                    {!isCourtesy && creditToApply > 0 ? ` (crédito ${formatCurrency(creditToApply)})` : ''}
                   </span>
                 </div>
               )}

@@ -38,6 +38,7 @@ namespace AxDatabase
                                                                        GYM_MEMBERSHIP_PLANS.DatabaseMappingObject,
                                                                        GYM_MEMBERSHIPS.DatabaseMappingObject,
                                                                        GYM_PAYMENTS.DatabaseMappingObject,
+                                                                       GYM_MEMBER_CREDITS.DatabaseMappingObject,
                                                                        GYM_ACCESS_CODES.DatabaseMappingObject,
                                                                        GYM_ACCESS_LOG.DatabaseMappingObject,
                                                                        GYM_KIOSK_DEVICES.DatabaseMappingObject,

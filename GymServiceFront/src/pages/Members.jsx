@@ -102,9 +102,16 @@ export default function Members() {
           key: 'membershipType',
           label: 'Plan',
           render: (row) => (
-            row.membershipType
-              ? <Badge variant="primary">{row.membershipType}</Badge>
-              : <span className="text-slate-400">Sin membresía</span>
+            <div>
+              {row.membershipType
+                ? <Badge variant="primary">{row.membershipType}</Badge>
+                : <span className="text-slate-400">Sin membresía</span>}
+              {Number(row.creditBalance) > 0 && (
+                <p className="mt-1 text-xs font-medium text-success-600">
+                  Crédito: {formatCurrency(row.creditBalance)}
+                </p>
+              )}
+            </div>
           ),
         },
         {
