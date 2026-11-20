@@ -193,6 +193,10 @@ producción y CI.
 - **OTP por correo real** con MailKit (`Email:SmtpServer/Port/User/Password/FromAddress/EnableSsl`).
   Si no hay SMTP y `Email:ShowCodeInResponse=true` (solo desarrollo), el código se devuelve en la
   respuesta; si no, el alta de OTP falla y no deja códigos huérfanos.
+- **Correos transaccionales:** bienvenida al alta de socio, recibo al asignar/renovar con cobro y
+  aviso de vencimiento (`Notifications:ExpiryNoticeDays`, por defecto 7 días) con la marca
+  `EXPIRY_NOTICE_SENT_AT` para no repetirlo. Si no hay SMTP configurado,
+  `Email:OutboxDirectory` guarda los correos como HTML (útil para desarrollo y pruebas).
 - **Limpieza automática** (`CleanupHostedService` cada `Maintenance:CleanupIntervalMinutes`):
   sesiones y OTP caducados, códigos de acceso no usados, retención de bitácora y membresías vencidas.
 - **Índices no únicos** para las consultas más frecuentes (`member_id`, `status`, fechas, `sale_id`…),

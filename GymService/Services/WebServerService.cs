@@ -195,7 +195,7 @@ namespace GymService.Services
             // Limpieza periodica de datos (sesiones, OTP, codigos y membresias)
             if (DataCenter.DatabaseManager != null)
             {
-                services.AddSingleton(_ => new MaintenanceService(DataCenter.DatabaseManager.Tools, _configuration));
+                services.AddSingleton(_ => new MaintenanceService(DataCenter.DatabaseManager.Tools, _configuration, DataCenter.EmailService));
                 services.AddHostedService<CleanupHostedService>();
             }
 

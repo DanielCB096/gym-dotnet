@@ -4,6 +4,7 @@ using System.Linq;
 using AxLogger;
 using AxDatabase;
 using AxObjectOrientedDatabase;
+using GymService.Services;
 
 namespace GymService.Modules.Members
 {
@@ -14,10 +15,12 @@ namespace GymService.Modules.Members
     {
         private const string SubModule = "MEMBERS_MODULE";
         private DatabaseTools _tools;
+        private readonly EmailService? _email;
 
-        public MembersModule(DatabaseTools tools)
+        public MembersModule(DatabaseTools tools, EmailService? email = null)
         {
             _tools = tools;
+            _email = email ?? DataCenter.EmailService;
         }
 
         private int GetColumnIndex(ResultSet result, string columnName)
@@ -254,6 +257,8 @@ namespace GymService.Modules.Members
                 response["success"] = true;
                 response["memberId"] = memberId;
                 response["message"] = "Socio creado exitosamente";
+
+                SendWelcomeEmail(email, $"{firstName} {lastName}".Trim());
                 return true;
             }
             catch (Exception ex)
@@ -1162,6 +1167,20 @@ namespace GymService.Modules.Members
                 response["message"] = latest != null && string.Equals(latest.Value.Status, "active", StringComparison.OrdinalIgnoreCase)
                     ? "Membresía renovada correctamente"
                     : "Membresía asignada correctamente";
+
+                if (!noCharge)
+                {
+                    SendMembershipReceipt(
+                        memberId,
+                        plan.Value.Name,
+                        startDate,
+                        endDate,
+                        amount,
+                        plan.Value.Currency,
+                        paymentMethod,
+                        Convert.ToString(data.GetValueOrDefault("reference", "")) ?? "");
+                }
+
                 return true;
             }
             catch (Exception ex)
@@ -1171,6 +1190,68 @@ namespace GymService.Modules.Members
                 response["message"] = "Error interno del servidor";
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Envía el correo de bienvenida sin bloquear el alta del socio.
+        /// </summary>
+        private void SendWelcomeEmail(string email, string memberName)
+        {
+            if (_email == null || !_email.IsEnabled || string.IsNullOrWhiteSpace(email))
+                return;
+
+            if (!_email.TrySendWelcome(email, memberName, out var emailError))
+                Logger.AddWarningSubModule(SubModule, $"No se envió el correo de bienvenida: {emailError}");
+        }
+
+        /// <summary>
+        /// Envía el recibo del cobro de membresía sin bloquear la operación.
+        /// </summary>
+        private void SendMembershipReceipt(
+            long memberId,
+            string planName,
+            DateTime startDate,
+            DateTime endDate,
+            decimal amount,
+            string currency,
+            string paymentMethod,
+            string reference)
+        {
+            if (_email == null || !_email.IsEnabled)
+                return;
+
+            var contact = GetMemberContact(memberId);
+            if (contact == null || string.IsNullOrWhiteSpace(contact.Value.Email))
+                return;
+
+            var receipt = new MembershipReceipt
+            {
+                PlanName = planName,
+                StartDate = startDate,
+                EndDate = endDate,
+                Amount = amount,
+                Currency = currency,
+                PaymentMethod = paymentMethod,
+                Reference = reference,
+                PaymentDate = DateTime.Now
+            };
+
+            if (!_email.TrySendMembershipReceipt(contact.Value.Email, contact.Value.Name, receipt, out var emailError))
+                Logger.AddWarningSubModule(SubModule, $"No se envió el recibo de membresía: {emailError}");
+        }
+
+        private (string Name, string Email)? GetMemberContact(long memberId)
+        {
+            var result = _tools.ExecuteQueryResultSet(
+                "SELECT FIRST_NAME, LAST_NAME, EMAIL FROM GYM_MEMBERS WHERE ID = ?", memberId);
+
+            if (result == null || result.Rows.Count == 0)
+                return null;
+
+            var row = result.Rows[0];
+            string name = $"{row.GetObject(0)} {row.GetObject(1)}".Trim();
+            string email = Convert.ToString(row.GetObject(2)) ?? "";
+            return (name, email);
         }
 
         /// <summary>

@@ -185,8 +185,9 @@ namespace GymService
                 var dbManager = DataCenter.DatabaseManager!;
 
                 var tools = dbManager.Tools;
+                DataCenter.EmailService ??= new EmailService(_configuration);
                 DataCenter.BusinessProcess.Identity = new Modules.Identity.IdentityModule(tools, _configuration);
-                DataCenter.BusinessProcess.Members = new Modules.Members.MembersModule(tools);
+                DataCenter.BusinessProcess.Members = new Modules.Members.MembersModule(tools, DataCenter.EmailService);
                 DataCenter.BusinessProcess.Members.EnsureDefaultPlans();
                 DataCenter.BusinessProcess.Access = new Modules.Access.AccessModule(tools);
                 DataCenter.BusinessProcess.Sales = new Modules.Sales.SalesModule(tools);

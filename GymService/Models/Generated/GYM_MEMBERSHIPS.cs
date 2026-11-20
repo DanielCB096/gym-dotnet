@@ -44,14 +44,15 @@ namespace AxDatabase
                                      new MappingAttribute(6,"AUTO_RENEW","AUTO_RENEW",MappingAttribute.ColumnTypes.NotNull,DataType.Boolean,250,20,8,"0",String.Empty,false,false),
                                      new MappingAttribute(7,"FREEZE_START","FREEZE_START",MappingAttribute.ColumnTypes.Null,DataType.Date,250,20,8,String.Empty,String.Empty,false,false),
                                      new MappingAttribute(8,"FREEZE_END","FREEZE_END",MappingAttribute.ColumnTypes.Null,DataType.Date,250,20,8,String.Empty,String.Empty,false,false),
-                                     new MappingAttribute(9,"CANCELLED_AT","CANCELLED_AT",MappingAttribute.ColumnTypes.Null,DataType.DateTime2,250,20,8,String.Empty,String.Empty,false,false),
-                                     new MappingAttribute(10,"CANCEL_REASON","CANCEL_REASON",MappingAttribute.ColumnTypes.Null,DataType.String,300,20,8,String.Empty,String.Empty,false,false),
-                                     new MappingAttribute(11,"CREATION_DATETIME","CREATED_AT",MappingAttribute.ColumnTypes.InsertTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
-                                     new MappingAttribute(12,"LAST_UPDATED_DATETIME","UPDATED_AT",MappingAttribute.ColumnTypes.UpdateTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
-                                     new MappingAttribute(13,"CREATED_BY","CREATED_BY",MappingAttribute.ColumnTypes.InsertTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
-                                     new MappingAttribute(14,"LAST_UPDATED_BY","LAST_UPDATED_BY",MappingAttribute.ColumnTypes.UpdateTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
-                                     new MappingAttribute(15,"LAST_UPDATE_LOG","LAST_UPDATE_LOG",MappingAttribute.ColumnTypes.LogTracking,DataType.String,100,20,8,"[EMPTY]",String.Empty,false,false),
-                                     new MappingAttribute(16,"OBJECT_VERSION","OBJECT_VERSION",MappingAttribute.ColumnTypes.VersionTracking,DataType.Int32,250,20,8,"1",String.Empty,false,false)
+                                     new MappingAttribute(9,"EXPIRY_NOTICE_SENT_AT","EXPIRY_NOTICE_SENT_AT",MappingAttribute.ColumnTypes.Null,DataType.DateTime2,250,20,8,String.Empty,String.Empty,false,false),
+                                     new MappingAttribute(10,"CANCELLED_AT","CANCELLED_AT",MappingAttribute.ColumnTypes.Null,DataType.DateTime2,250,20,8,String.Empty,String.Empty,false,false),
+                                     new MappingAttribute(11,"CANCEL_REASON","CANCEL_REASON",MappingAttribute.ColumnTypes.Null,DataType.String,300,20,8,String.Empty,String.Empty,false,false),
+                                     new MappingAttribute(12,"CREATION_DATETIME","CREATED_AT",MappingAttribute.ColumnTypes.InsertTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
+                                     new MappingAttribute(13,"LAST_UPDATED_DATETIME","UPDATED_AT",MappingAttribute.ColumnTypes.UpdateTracking,DataType.DateTime,250,20,8,"GETDATE()",String.Empty,false,false),
+                                     new MappingAttribute(14,"CREATED_BY","CREATED_BY",MappingAttribute.ColumnTypes.InsertTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
+                                     new MappingAttribute(15,"LAST_UPDATED_BY","LAST_UPDATED_BY",MappingAttribute.ColumnTypes.UpdateTrackingUserID,DataType.Int64,250,20,8,"-1",String.Empty,false,false),
+                                     new MappingAttribute(16,"LAST_UPDATE_LOG","LAST_UPDATE_LOG",MappingAttribute.ColumnTypes.LogTracking,DataType.String,100,20,8,"[EMPTY]",String.Empty,false,false),
+                                     new MappingAttribute(17,"OBJECT_VERSION","OBJECT_VERSION",MappingAttribute.ColumnTypes.VersionTracking,DataType.Int32,250,20,8,"1",String.Empty,false,false)
                                   },
                                   new MappingIndex[]
                                   { 
@@ -68,7 +69,7 @@ namespace AxDatabase
 
 
       private Boolean a_indatabase = false;
-      private Boolean[] a_attributeschanges = new Boolean[17];
+      private Boolean[] a_attributeschanges = new Boolean[18];
       private ReportList a_relateobjects = new ReportList();
       private Object a_tag = null;
 
@@ -82,6 +83,7 @@ namespace AxDatabase
       private Boolean a_auto_renew = false;
       private DateTime? a_freeze_start = null;
       private DateTime? a_freeze_end = null;
+      private DateTime? a_expiry_notice_sent_at = null;
       private DateTime? a_cancelled_at = null;
       private String a_cancel_reason = null;
       private DateTime a_creation_datetime = DateTime.Now;
@@ -101,14 +103,15 @@ namespace AxDatabase
       public const Int32 AttributeID_AUTO_RENEW = 6;
       public const Int32 AttributeID_FREEZE_START = 7;
       public const Int32 AttributeID_FREEZE_END = 8;
-      public const Int32 AttributeID_CANCELLED_AT = 9;
-      public const Int32 AttributeID_CANCEL_REASON = 10;
-      public const Int32 AttributeID_CREATION_DATETIME = 11;
-      public const Int32 AttributeID_LAST_UPDATED_DATETIME = 12;
-      public const Int32 AttributeID_CREATED_BY = 13;
-      public const Int32 AttributeID_LAST_UPDATED_BY = 14;
-      public const Int32 AttributeID_LAST_UPDATE_LOG = 15;
-      public const Int32 AttributeID_OBJECT_VERSION = 16;
+      public const Int32 AttributeID_EXPIRY_NOTICE_SENT_AT = 9;
+      public const Int32 AttributeID_CANCELLED_AT = 10;
+      public const Int32 AttributeID_CANCEL_REASON = 11;
+      public const Int32 AttributeID_CREATION_DATETIME = 12;
+      public const Int32 AttributeID_LAST_UPDATED_DATETIME = 13;
+      public const Int32 AttributeID_CREATED_BY = 14;
+      public const Int32 AttributeID_LAST_UPDATED_BY = 15;
+      public const Int32 AttributeID_LAST_UPDATE_LOG = 16;
+      public const Int32 AttributeID_OBJECT_VERSION = 17;
 
 
 
@@ -233,6 +236,18 @@ namespace AxDatabase
 
 
       /// <summary>
+      /// Propiedad para SET o GET del atributo 'EXPIRY_NOTICE_SENT_AT' que representa la columna 'EXPIRY_NOTICE_SENT_AT' en la base de datos  
+      /// Generado por Anxo Code Generator 
+      /// </summary> 
+
+      public DateTime? EXPIRY_NOTICE_SENT_AT
+      {
+        get { return a_expiry_notice_sent_at; }
+        set { a_expiry_notice_sent_at = value; TrackChanges(9); }
+      }
+
+
+      /// <summary>
       /// Propiedad para SET o GET del atributo 'CANCELLED_AT' que representa la columna 'CANCELLED_AT' en la base de datos  
       /// Generado por Anxo Code Generator 
       /// </summary> 
@@ -240,7 +255,7 @@ namespace AxDatabase
       public DateTime? CANCELLED_AT
       {
         get { return a_cancelled_at; }
-        set { a_cancelled_at = value; TrackChanges(9); }
+        set { a_cancelled_at = value; TrackChanges(10); }
       }
 
 
@@ -252,7 +267,7 @@ namespace AxDatabase
       public String CANCEL_REASON
       {
         get { return a_cancel_reason; }
-        set { a_cancel_reason = value; TrackChanges(10); }
+        set { a_cancel_reason = value; TrackChanges(11); }
       }
 
 
@@ -380,36 +395,40 @@ namespace AxDatabase
                  TrackChanges(8);
                  break;
                case 9:
-                 a_cancelled_at= (DateTime?) value;
+                 a_expiry_notice_sent_at= (DateTime?) value;
                  TrackChanges(9);
                  break;
                case 10:
-                 a_cancel_reason= (String) value;
+                 a_cancelled_at= (DateTime?) value;
                  TrackChanges(10);
                  break;
                case 11:
-                 a_creation_datetime= (DateTime) value;
+                 a_cancel_reason= (String) value;
                  TrackChanges(11);
                  break;
                case 12:
-                 a_last_updated_datetime= (DateTime) value;
+                 a_creation_datetime= (DateTime) value;
                  TrackChanges(12);
                  break;
                case 13:
-                 a_created_by= (Int64) value;
+                 a_last_updated_datetime= (DateTime) value;
                  TrackChanges(13);
                  break;
                case 14:
-                 a_last_updated_by= (Int64) value;
+                 a_created_by= (Int64) value;
                  TrackChanges(14);
                  break;
                case 15:
-                 a_last_update_log= (String) value;
+                 a_last_updated_by= (Int64) value;
                  TrackChanges(15);
                  break;
                case 16:
-                 a_object_version= (Int32) value;
+                 a_last_update_log= (String) value;
                  TrackChanges(16);
+                 break;
+               case 17:
+                 a_object_version= (Int32) value;
+                 TrackChanges(17);
                  break;
             }
          }
@@ -436,20 +455,22 @@ namespace AxDatabase
                case 8:
                  return a_freeze_end;
                case 9:
-                 return a_cancelled_at;
+                 return a_expiry_notice_sent_at;
                case 10:
-                 return a_cancel_reason;
+                 return a_cancelled_at;
                case 11:
-                 return a_creation_datetime;
+                 return a_cancel_reason;
                case 12:
-                 return a_last_updated_datetime;
+                 return a_creation_datetime;
                case 13:
-                 return a_created_by;
+                 return a_last_updated_datetime;
                case 14:
-                 return a_last_updated_by;
+                 return a_created_by;
                case 15:
-                 return a_last_update_log;
+                 return a_last_updated_by;
                case 16:
+                 return a_last_update_log;
+               case 17:
                  return a_object_version;
             }
 
@@ -610,6 +631,7 @@ namespace AxDatabase
          objdata.a_auto_renew = a_auto_renew;
          objdata.a_freeze_start = a_freeze_start;
          objdata.a_freeze_end = a_freeze_end;
+         objdata.a_expiry_notice_sent_at = a_expiry_notice_sent_at;
          objdata.a_cancelled_at = a_cancelled_at;
          objdata.a_cancel_reason = a_cancel_reason;
          objdata.a_creation_datetime = a_creation_datetime;

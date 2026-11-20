@@ -46,6 +46,9 @@ namespace GymService
         // Database service for schema management
         public static DatabaseService? DatabaseService { get; set; }
 
+        // Correo (SMTP u outbox de desarrollo)
+        public static EmailService? EmailService { get; set; }
+
         // Business process modules (lazy initialized)
         public static BusinessProcess BusinessProcess { get; } = new BusinessProcess();
 
@@ -59,6 +62,7 @@ namespace GymService
             ConnectionData = null;
             WebServer = null;
             DatabaseService = null;
+            EmailService = null;
 
             // Los modulos guardan un DatabaseTools ligado al manager desconectado:
             // hay que soltarlos para que no se reutilicen tras un Stop().

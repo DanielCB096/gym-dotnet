@@ -211,6 +211,7 @@
     <attribute name="AUTO_RENEW" column="auto_renew" type="bit" flag="not_null" default="0" />
     <attribute name="FREEZE_START" column="freeze_start" type="date" flag="null" />
     <attribute name="FREEZE_END" column="freeze_end" type="date" flag="null" />
+    <attribute name="EXPIRY_NOTICE_SENT_AT" column="expiry_notice_sent_at" type="datetime2" flag="null" />
 
     <!-- RECORD TRACKING CHANGES (WHO) -->
     <attribute name="CANCELLED_AT" column="cancelled_at" type="datetime2" flag="null" />

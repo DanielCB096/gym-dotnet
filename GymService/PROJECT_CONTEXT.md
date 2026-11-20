@@ -75,7 +75,7 @@ GymService (Windows Service)
 │   ├── RolePermissionMiddleware.cs → RBAC por ruta y método
 │   ├── CleanupHostedService.cs → Limpieza periódica de sesiones/OTP/bitácora
 │   ├── MaintenanceService.cs   → Retención y membresías vencidas
-│   ├── EmailService.cs         → SMTP con MailKit
+│   ├── EmailService.cs         → SMTP con MailKit, plantillas y outbox de desarrollo
 │   ├── BulkImportService.cs    → Importación CSV/Excel (CsvHelper/ClosedXML)
 │   ├── ReportExportService.cs  → Exportación a Excel (ClosedXML)
 │   └── GymHealthCheck.cs       → Health checks

@@ -6,6 +6,14 @@
 
 ## Backend (.NET)
 
+### Correos transaccionales con MailKit (2026-11-20)
+- **Plantillas:** bienvenida al alta de socio, recibo al asignar/renovar membresía con cobro (plan, periodo, importe, método, referencia) y aviso de vencimiento con los días restantes.
+- **Aviso de vencimiento:** la limpieza periódica envía a las membresías activas que vencen dentro de `Notifications:ExpiryNoticeDays` (7 por defecto) y marca `EXPIRY_NOTICE_SENT_AT` para no repetirlo; nueva columna aditiva en `GYM_MEMBERSHIPS` (modelo XML regenerado).
+- **Outbox de desarrollo:** si no hay SMTP y se define `Email:OutboxDirectory`, los correos se guardan como HTML (`Email:ShowCodeInResponse` sigue aplicando solo a OTP).
+- **Sin bloquear la operación:** un fallo de correo no revierte el alta, el cobro ni la membresía; se registra como advertencia.
+- **Pruebas:** 4 unitarias de plantillas/outbox y 1 de integración (envío, marca y no duplicado); 120/120 con BD temporal.
+- **Verificación en vivo:** con SMTP deshabilitado y outbox, crear socio y asignar membresía generó bienvenida y recibo; una membresía a 5 días generó el aviso una sola vez y quedó marcada en la BD.
+
 ### Reportes Excel de caja, membresías y kardex (2026-11-20)
 - **Nuevos reportes:** `GET /api/reports/cash/excel`, `/api/reports/memberships/excel` y `/api/reports/kardex/excel`, con filtros opcionales `startDate`/`endDate`, `status` y `productId`.
 - **Caja:** folio, apertura/cierre con usuario, fondo inicial, ventas y cobros del turno, efectivo esperado/contado, diferencia, estado, notas y fila de totales.
