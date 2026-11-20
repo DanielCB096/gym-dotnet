@@ -342,7 +342,7 @@ Alternativa al ZIP con PowerShell. Genera un MSI per-machine que instala en
 ```powershell
 dotnet tool install -g wix --version 5.0.2   # WiX 6+ exige aceptar el EULA OSMF
 .\build-msi.ps1                              # publica y genera artifacts\GymService-<version>-win-x64.msi
-msiexec /i "artifacts\GymService-1.0.0-win-x64.msi" OPEN_FIREWALL=1   # Administrador
+msiexec /i "artifacts\GymService-1.0.0-win-x64.msi" OPEN_FIREWALL=1 WEB_PORT=5055   # Administrador
 ```
 
 - El MSI instala `appsettings.json` desde la plantilla **solo si no existe** y lo conserva al

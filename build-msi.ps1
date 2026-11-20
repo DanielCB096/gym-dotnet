@@ -87,5 +87,5 @@ if ($LASTEXITCODE -ne 0) { throw "wix msi validate reportó errores" }
 $size = [math]::Round((Get-Item $output).Length / 1MB, 2)
 Write-Host ""
 Write-Host "MSI: $output ($size MB)" -ForegroundColor Green
-Write-Host "Instalación (Administrador): msiexec /i `"$output`" OPEN_FIREWALL=1" -ForegroundColor Green
+Write-Host "Instalación (Administrador): msiexec /i `"$output`" OPEN_FIREWALL=1 WEB_PORT=5055" -ForegroundColor Green
 Write-Host "Tras instalar: edita appsettings.json y arranca el servicio con Start-Service anxogymmservice" -ForegroundColor Yellow

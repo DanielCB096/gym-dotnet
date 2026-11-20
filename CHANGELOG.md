@@ -7,7 +7,7 @@
 ## Backend (.NET)
 
 ### Instalador MSI con WiX (2026-11-20)
-- **`installer/GymService.wxs` + `build-msi.ps1`:** MSI per-machine con UI, servicio `anxogymmservice`, recuperación ante fallos, firewall opcional y configuración persistente.
+- **`installer/GymService.wxs` + `build-msi.ps1`:** MSI per-machine con UI, servicio `anxogymmservice`, recuperación ante fallos, firewall opcional (`OPEN_FIREWALL=1`, puerto configurable con `WEB_PORT`) y configuración persistente.
 - **Empaquetado:** publica self-contained y cosecha 402 archivos con el elemento `Files` de WiX 5 (sin Heat); excluye PDB y los scripts de instalación.
 - **Verificación:** MSI de 48.32 MB generado, `wix msi validate` sin errores y extracción administrativa con `GymService.exe`, `wwwroot/index.html` y `appsettings.json`; el servicio y las acciones aparecen en las tablas del MSI. No se instaló por falta de permisos de administrador.
 - **Nota:** se usa WiX 5 (libre); WiX 7 exige aceptar el EULA OSMF.
