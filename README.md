@@ -197,6 +197,9 @@ producción y CI.
   aviso de vencimiento (`Notifications:ExpiryNoticeDays`, por defecto 7 días) con la marca
   `EXPIRY_NOTICE_SENT_AT` para no repetirlo. Si no hay SMTP configurado,
   `Email:OutboxDirectory` guarda los correos como HTML (útil para desarrollo y pruebas).
+- **Prueba de SMTP:** `GymService.exe -test-email correo@dominio` envía un mensaje de prueba sin
+  arrancar el servicio ni crear datos (también `dotnet run --project GymService -- -test-email ...`).
+  El puerto 465 usa SSL directo y el 587 STARTTLS.
 - **Limpieza automática** (`CleanupHostedService` cada `Maintenance:CleanupIntervalMinutes`):
   sesiones y OTP caducados, códigos de acceso no usados, retención de bitácora y membresías vencidas.
 - **Índices no únicos** para las consultas más frecuentes (`member_id`, `status`, fechas, `sale_id`…),

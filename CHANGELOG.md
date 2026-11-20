@@ -6,6 +6,13 @@
 
 ## Backend (.NET)
 
+### Envío real de correo con Gmail (2026-11-20)
+- **Comando de prueba:** `GymService.exe -test-email <correo>` envía un mensaje de prueba sin arrancar el servicio ni crear datos.
+- **Puertos:** 465 usa SSL directo (`SslOnConnect`) y 587 STARTTLS.
+- **Errores:** cuando el servidor rechaza las credenciales, el mensaje indica que Gmail requiere una contraseña de aplicación de 16 caracteres.
+- **Verificación:** correo de prueba, bienvenida y recibo entregados a `daniel.cb096@gmail.com`; 127/127 pruebas.
+- **Config local:** `SmtpUser` y `FromAddress` se completaron en el `appsettings.json` ignorado por git; la contraseña no se versiona.
+
 ### Grafo versionado en cada commit (2026-11-20)
 - **Hook:** `.githooks/pre-commit` ejecuta `graphify update .` y añade `graphify-out/` al commit; se activa una vez por clon con `git config core.hooksPath .githooks`.
 - **Skill:** `.opencode/skills/graphify-commit/` documenta el mismo flujo para los agentes (actualizar, añadir y verificar el grafo antes de commitear).

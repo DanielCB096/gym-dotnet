@@ -145,6 +145,29 @@ namespace GymService.Services
             return TrySendEmail(to, subject, BuildHtml("Tu membresía está por vencer", body), out error);
         }
 
+        /// <summary>
+        /// Correo de prueba para comprobar la configuración SMTP.
+        /// </summary>
+        public bool TrySendTest(string to, out string error)
+        {
+            string body = $@"<p>Este es un correo de prueba de <strong>Centro Fit</strong>.</p>
+  <p>Si lo recibes, el envío SMTP está configurado correctamente.</p>
+  <p style=""color:#6b7280"">Enviado el {DateTime.Now:dd/MM/yyyy HH:mm}.</p>";
+
+            return TrySendEmail(to, "Prueba de correo - Centro Fit", BuildHtml("El correo funciona", body), out error);
+        }
+
+        /// <summary>
+        /// Elige el modo de conexión: 465 usa SSL directo, 587 STARTTLS.
+        /// </summary>
+        public static SecureSocketOptions ResolveSocketOptions(int port, bool useSsl)
+        {
+            if (port == 465)
+                return SecureSocketOptions.SslOnConnect;
+
+            return useSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.None;
+        }
+
         private bool TrySendEmail(string to, string subject, string html, out string error)
         {
             error = string.Empty;
@@ -182,7 +205,7 @@ namespace GymService.Services
                 message.Body = new TextPart("html") { Text = html };
 
                 using var client = new SmtpClient();
-                client.Connect(server, port, useSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.None);
+                client.Connect(server, port, ResolveSocketOptions(port, useSsl));
                 client.Authenticate(_configuration["Email:SmtpUser"], _configuration["Email:SmtpPassword"]);
                 client.Send(new SmtpSendRequest(message));
                 client.Disconnect(true);
@@ -192,8 +215,22 @@ namespace GymService.Services
             }
             catch (Exception ex)
             {
-                error = $"No se pudo enviar el correo: {ex.Message}";
-                Logger.AddErrorSubModule(SubModule, $"Error al enviar '{subject}' a {MaskEmail(to)}: {ex.Message}");
+                string detail = ex.Message ?? string.Empty;
+
+                if (detail.Contains("535", StringComparison.OrdinalIgnoreCase)
+                    || detail.Contains("5.7.8", StringComparison.OrdinalIgnoreCase)
+                    || detail.Contains("Username and Password not accepted", StringComparison.OrdinalIgnoreCase)
+                    || detail.Contains("authentication", StringComparison.OrdinalIgnoreCase))
+                {
+                    error = "El servidor rechazó las credenciales. En Gmail usa una contraseña de aplicación " +
+                            "(16 caracteres) con verificación en 2 pasos, no la contraseña de la cuenta.";
+                }
+                else
+                {
+                    error = $"No se pudo enviar el correo: {detail}";
+                }
+
+                Logger.AddErrorSubModule(SubModule, $"Error al enviar '{subject}' a {MaskEmail(to)}: {detail}");
                 return false;
             }
         }

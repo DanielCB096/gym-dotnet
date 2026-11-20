@@ -67,6 +67,20 @@ namespace GymService
                     effectiveArgs = new[] { "-console" };
                 }
 
+                // Diagnóstico de correo: no arranca el servicio, solo prueba el SMTP.
+                if (effectiveArgs.Length >= 2 &&
+                    effectiveArgs[0].ToLower().Trim().Replace("-", "") == "testemail")
+                {
+                    var emailService = new GymService.Services.EmailService(configuration);
+                    string recipient = effectiveArgs[1];
+
+                    Console.WriteLine($"Enviando correo de prueba a {recipient}...");
+                    bool sent = emailService.TrySendTest(recipient, out var emailError);
+                    Console.WriteLine(sent ? "Correo enviado correctamente." : $"Error: {emailError}");
+                    Environment.ExitCode = sent ? 0 : 1;
+                    return;
+                }
+
                 if (effectiveArgs.Length > 0 && effectiveArgs[0].ToLower().Trim().Replace("-", "") == "console")
                 {
                     // Console mode: auto-start the service directly without interactive shell.

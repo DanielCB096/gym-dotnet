@@ -141,6 +141,37 @@ public class EmailServiceTests
         }
     }
 
+    [Fact]
+    public void Test_Email_Is_Written_To_Outbox()
+    {
+        string outbox = NewOutbox();
+
+        try
+        {
+            var service = NewOutboxService(outbox);
+
+            Assert.True(service.TrySendTest("ana@test.local", out string error), error);
+
+            string content = ReadSingleHtml(outbox);
+            Assert.Contains("Asunto: Prueba de correo - Centro Fit", content);
+            Assert.Contains("correo de prueba", content);
+            Assert.Contains("El correo funciona", content);
+        }
+        finally
+        {
+            Directory.Delete(outbox, true);
+        }
+    }
+
+    [Theory]
+    [InlineData(465, true, "SslOnConnect")]
+    [InlineData(587, true, "StartTls")]
+    [InlineData(25, false, "None")]
+    public void ResolveSocketOptions_Uses_SSL_On_465(int port, bool useSsl, string expected)
+    {
+        Assert.Equal(expected, EmailService.ResolveSocketOptions(port, useSsl).ToString());
+    }
+
     private static string NewOutbox()
     {
         return Path.Combine(Path.GetTempPath(), "gym-email-tests", Guid.NewGuid().ToString("N"));
