@@ -390,8 +390,22 @@ Actualizar = ejecutar de nuevo `install.ps1` con el ZIP nuevo (detiene, reemplaz
 
 # Verificación: restaura en GymService_Verify_<fecha>, cuenta tablas y elimina la copia
 .\verify-backup.ps1 -BackupFile "D:\SQLBackups\GymManager_20261120_170000.bak"
+
+# Respaldo de log (requiere modelo FULL y un respaldo completo previo)
+.\backup-log.ps1
+
+# Programar: completo diario a las 02:00 + log cada 15 minutos
+.\register-backup-tasks.ps1
+.\register-backup-tasks.ps1 -RunAsSystem     # en un servidor, consola de Administrador
+.\register-backup-tasks.ps1 -Unregister
 ```
 
+- Los respaldos de log usan `backup-log.ps1`; falla con un mensaje claro si la base está en
+  modelo SIMPLE o si aún no existe un respaldo completo. Para RPO de 15 minutos: modelo FULL,
+  completo diario y log cada 15 minutos (`register-backup-tasks.ps1` lo deja configurado).
+- `register-backup-tasks.ps1` crea las tareas `GymService-Full` y `GymService-Log`. Sin
+  `-RunAsSystem` corren con el usuario actual y solo con sesión iniciada; en un servidor usa
+  `-RunAsSystem` desde una consola de Administrador.
 - El `.bak` se escribe **en el servidor SQL**. `-CopyTo` solo funciona si ejecutas el script
   en ese servidor o si la ruta es un recurso compartido accesible por ambos equipos.
 - `-RetentionDays` (14 por defecto) solo purga las copias hechas con `-CopyTo`; la retención del

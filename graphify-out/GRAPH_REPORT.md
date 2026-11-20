@@ -1,17 +1,17 @@
 # Graph Report - gimnasio-dotnet  (2026-11-20)
 
 ## Corpus Check
-- 194 files · ~212,738 words
+- 196 files · ~213,910 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 8 file(s) not represented in the graph (top: (none) 3, .css 2, .xml 2)
 
 ## Summary
-- 2697 nodes · 7601 edges · 108 communities (68 shown, 40 thin omitted)
+- 2703 nodes · 7606 edges · 109 communities (66 shown, 43 thin omitted)
 - Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 682 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2f24868c`
+- Built from commit: `97a8aaf1`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -27,7 +27,7 @@
 - Table
 - GYM_MEMBERSHIPS
 - GYM_USERS
-- react
+- Button
 - GYM_CLASS_TYPES
 - GYM_MEMBERSHIP_PLANS
 - GYM_PAYMENTS
@@ -40,7 +40,6 @@
 - App.jsx
 - GYM_INVENTORY_MOVEMENTS
 - IdentityModule
-- WebServerService.cs
 - RoutinesModule
 - GYM_FISIO_PACKAGES
 - InventoryModule
@@ -77,7 +76,7 @@
 - IConfiguration
 - GymService.Tools
 - package.json
-- MembersModule
+- DatabaseFixture.Scalar
 - DateTime
 - ServiceImplementation
 - DatabaseService
@@ -87,10 +86,10 @@
 - steps
 - AccessModule
 - SalesModule
-- DatabaseFixture.Scalar
+- CrudPage
 - MaintenanceModule
 - Phase1FlowTests.Kiosk_Token_Rotation_And_Manual_Access_Work
-- CurrentUser
+- ServiceImplementation.cs
 - DatabaseTools
 - EmailService
 - MappingObject
@@ -104,16 +103,14 @@
 - MembershipReceipt
 - PermissionCoverageTests.Every_Controller_Route_Has_A_Permission
 - ClassSessionsPanel.jsx
-- FisioAppointmentsPanel.jsx
-- ClassesModule.cs
+- FisioModule
 - ObjectToInferredTypesConverter.Read
 - AnxoModelGenerator.csproj
-- dependencies
 - IdentityModule.RequestOtpByEmail
 - .oxlintrc.json
-- MaintenanceTests.Cleanup_Removes_Expired_Sessions_And_Otp_But_Keeps_Valid_Ones
-- Finance.jsx
+- DatabaseFixture.Execute
 - ModelGym
+- register-backup-tasks.ps1
 
 ## God Nodes (most connected - your core abstractions)
 1. `AxDatabase` - 71 edges
@@ -132,17 +129,17 @@
   GymService/Modules/Identity/IdentityModule.cs → GymService/Services/EmailService.cs
 - `ClassSessionsFlowTests` --references--> `DatabaseFixture`  [EXTRACTED]
   GymService.Tests/Integration/ClassSessionsFlowTests.cs → GymService.Tests/Integration/DatabaseFixture.cs
-- `AccessFlowTests` --references--> `DatabaseFixture`  [EXTRACTED]
-  GymService.Tests/Integration/AccessFlowTests.cs → GymService.Tests/Integration/DatabaseFixture.cs
-- `EmailFlowTests` --references--> `DatabaseFixture`  [EXTRACTED]
-  GymService.Tests/Integration/EmailFlowTests.cs → GymService.Tests/Integration/DatabaseFixture.cs
-- `EmailNotificationFlowTests` --references--> `DatabaseFixture`  [EXTRACTED]
-  GymService.Tests/Integration/EmailNotificationFlowTests.cs → GymService.Tests/Integration/DatabaseFixture.cs
+- `MaintenanceService` --references--> `EmailService`  [EXTRACTED]
+  GymService/Services/MaintenanceService.cs → GymService/Services/EmailService.cs
+- `StaffShiftFlowTests` --references--> `DatabaseFixture`  [EXTRACTED]
+  GymService.Tests/Integration/StaffShiftFlowTests.cs → GymService.Tests/Integration/DatabaseFixture.cs
+- `DashboardFlowTests` --references--> `DatabaseFixture`  [EXTRACTED]
+  GymService.Tests/Integration/DashboardFlowTests.cs → GymService.Tests/Integration/DatabaseFixture.cs
 
 ## Import Cycles
 - None detected.
 
-## Communities (108 total, 40 thin omitted)
+## Communities (109 total, 43 thin omitted)
 
 ### Community 0 - "Dictionary"
 Cohesion: 0.05
@@ -154,27 +151,27 @@ Nodes (28): GYM_BANK_TRANSACTIONS, ACCOUNT_ID, AMOUNT, CREATED_BY, CREATION_DATE
 
 ### Community 2 - "xunit"
 Cohesion: 0.07
-Nodes (20): GymService.Modules.Inventory, GymService.Modules.Sales, GymService.Tests.Integration, GymService.Modules.Members, GymService.Tests, GymService.Modules.Classes, GymService.Modules.Billing, GymService.Modules.Access (+12 more)
+Nodes (19): GymService.Modules.Inventory, GymService.Modules.Sales, GymService.Tests.Integration, GymService.Modules.Members, GymService.Tests, GymService.Modules.Classes, GymService.Modules.Billing, GymService.Modules.Access (+11 more)
 
 ### Community 4 - "GYM_INVOICES"
-Cohesion: 0.08
-Nodes (24): GYM_INVOICES, AMOUNT, CREATED_BY, CREATION_DATETIME, ID, InDatabase, INVOICE_DATE, INVOICE_NUMBER (+16 more)
+Cohesion: 0.07
+Nodes (25): GYM_INVOICES, AMOUNT, CREATED_BY, CREATION_DATETIME, ID, InDatabase, INVOICE_DATE, INVOICE_NUMBER (+17 more)
 
 ### Community 5 - "BulkImportResult"
 Cohesion: 0.09
 Nodes (19): BulkImportError, ErrorMessage, RowData, RowNumber, BulkImportResult, ErrorRows, Errors, ImportedRows (+11 more)
 
 ### Community 6 - "DatabaseFixture"
-Cohesion: 0.08
-Nodes (14): CatalogFlowTests, DashboardFlowTests, DatabaseCollection, DatabaseFixture, Available, ConnectionString, Manager, SkipReason (+6 more)
+Cohesion: 0.06
+Nodes (16): CatalogFlowTests, DatabaseCollection, DatabaseFixture, Available, ConnectionString, Manager, SkipReason, Tools (+8 more)
 
 ### Community 7 - "GYM_MEMBERS"
 Cohesion: 0.08
 Nodes (27): GYM_MEMBERS, ADDRESS, CREATED_BY, CREATION_DATETIME, CURP, EMAIL, EMERGENCY_CONTACT, EMERGENCY_PHONE (+19 more)
 
 ### Community 8 - "Table"
-Cohesion: 0.12
-Nodes (31): buildPayload(), CrudPage(), toInputValue(), ExercisesPanel(), errorMessage(), RoutineAssignmentsPanel(), errorMessage(), measurementTypes (+23 more)
+Cohesion: 0.17
+Nodes (21): errorMessage(), RoutineAssignmentsPanel(), errorMessage(), measurementTypes, pad(), RoutineMeasurementsPanel(), toLocalInput(), errorMessage() (+13 more)
 
 ### Community 9 - "GYM_MEMBERSHIPS"
 Cohesion: 0.08
@@ -184,12 +181,12 @@ Nodes (25): GYM_MEMBERSHIPS, AUTO_RENEW, CANCEL_REASON, CANCELLED_AT, CREATED_BY
 Cohesion: 0.08
 Nodes (27): GYM_USERS, CREATED_BY, CREATION_DATETIME, EMAIL, FAILED_LOGIN_ATTEMPTS, FULL_NAME, ID, InDatabase (+19 more)
 
-### Community 11 - "react"
-Cohesion: 0.20
-Nodes (20): errorMessage(), MaintenanceTicketsPanel(), priorityLabel, priorityOptions, priorityVariant, statusLabel, statusOptions, statusVariant (+12 more)
+### Community 11 - "Button"
+Cohesion: 0.14
+Nodes (35): defaultAppointmentDate(), errorMessage(), FisioAppointmentsPanel(), pad(), statusLabel, statusOptions, statusVariant, toLocalInput() (+27 more)
 
 ### Community 12 - "GYM_CLASS_TYPES"
-Cohesion: 0.09
+Cohesion: 0.08
 Nodes (21): GYM_CLASS_TYPES, CREATED_BY, CREATION_DATETIME, DESCRIPTION, DURATION_MINUTES, ID, InDatabase, IS_ACTIVE (+13 more)
 
 ### Community 13 - "GYM_MEMBERSHIP_PLANS"
@@ -202,11 +199,11 @@ Nodes (23): GYM_PAYMENTS, AMOUNT, CASH_SESSION_ID, CREATED_BY, CREATION_DATETIME
 
 ### Community 15 - "react"
 Cohesion: 0.13
-Nodes (27): CancelMembershipModal(), errorMessage(), ENCODINGS, ENTITIES, filenameFromDisposition(), FORMATS, ImportDialog(), saveBlob() (+19 more)
+Nodes (26): CancelMembershipModal(), errorMessage(), ENCODINGS, ENTITIES, filenameFromDisposition(), FORMATS, ImportDialog(), saveBlob() (+18 more)
 
 ### Community 16 - "Badge"
-Cohesion: 0.12
-Nodes (26): addDays(), FisioPackagesPanel(), today(), errorMessage(), StaffUsersPanel(), Badge(), dotColors, variants (+18 more)
+Cohesion: 0.14
+Nodes (23): Badge(), dotColors, variants, Card(), Billing(), statusInfo, statusOptions, colorMap (+15 more)
 
 ### Community 17 - "BusinessProcess"
 Cohesion: 0.06
@@ -225,16 +222,16 @@ Cohesion: 0.09
 Nodes (24): GYM_SALES, CASH_SESSION_ID, CREATED_BY, CREATION_DATETIME, ID, InDatabase, IS_OFFLINE, IsChanged (+16 more)
 
 ### Community 21 - "App.jsx"
-Cohesion: 0.14
-Nodes (21): App(), Layout(), menuSections, routeLabels, MaintenanceEquipmentPanel(), statusOptions, statusVariants, ProtectedRoute() (+13 more)
+Cohesion: 0.19
+Nodes (14): App(), Layout(), menuSections, routeLabels, ProtectedRoute(), AuthContext, AuthProvider(), useAuth() (+6 more)
 
 ### Community 22 - "GYM_INVENTORY_MOVEMENTS"
 Cohesion: 0.09
 Nodes (23): GYM_INVENTORY_MOVEMENTS, CREATED_BY, CREATION_DATETIME, ID, InDatabase, IsChanged, LAST_UPDATE_LOG, LAST_UPDATED_BY (+15 more)
 
 ### Community 26 - "GYM_FISIO_PACKAGES"
-Cohesion: 0.07
-Nodes (23): GYM_FISIO_PACKAGES, CREATED_BY, CREATION_DATETIME, END_DATE, ID, InDatabase, IS_ACTIVE, IsChanged (+15 more)
+Cohesion: 0.09
+Nodes (22): GYM_FISIO_PACKAGES, CREATED_BY, CREATION_DATETIME, END_DATE, ID, InDatabase, IS_ACTIVE, IsChanged (+14 more)
 
 ### Community 28 - "GYM_ROUTINE_PLANS"
 Cohesion: 0.09
@@ -253,7 +250,7 @@ Cohesion: 0.09
 Nodes (21): GYM_ACCESS_LOG, ACCESS_RESULT, ACCESS_TYPE, ACCESSED_AT, AUTHORIZED_BY, CREATED_BY, CREATION_DATETIME, DEVICE_ID (+13 more)
 
 ### Community 32 - "GYM_ROUTINE_ASSIGNMENTS"
-Cohesion: 0.10
+Cohesion: 0.11
 Nodes (19): GYM_ROUTINE_ASSIGNMENTS, ASSIGNED_AT, ASSIGNED_BY, CREATED_BY, CREATION_DATETIME, ID, InDatabase, IS_ACTIVE (+11 more)
 
 ### Community 33 - "GYM_CLASS_RESERVATIONS"
@@ -313,7 +310,7 @@ Cohesion: 0.09
 Nodes (20): GYM_BANK_ACCOUNTS, ACCOUNT_NUMBER, BALANCE, BANK_NAME, CLABE, CREATED_BY, CREATION_DATETIME, CURRENCY (+12 more)
 
 ### Community 47 - "GYM_FISIO_APPOINTMENTS"
-Cohesion: 0.11
+Cohesion: 0.09
 Nodes (19): GYM_FISIO_APPOINTMENTS, APPOINTMENT_DATE, CREATED_BY, CREATION_DATETIME, ID, InDatabase, IsChanged, LAST_UPDATE_LOG (+11 more)
 
 ### Community 48 - "GYM_MEASUREMENTS"
@@ -325,11 +322,11 @@ Cohesion: 0.09
 Nodes (18): GYM_PERMISSIONS, CREATED_BY, CREATION_DATETIME, DESCRIPTION, ID, InDatabase, IsChanged, LAST_UPDATE_LOG (+10 more)
 
 ### Community 50 - "GYM_PURCHASE_ORDER_ITEMS"
-Cohesion: 0.10
+Cohesion: 0.09
 Nodes (19): GYM_PURCHASE_ORDER_ITEMS, CREATED_BY, CREATION_DATETIME, ID, InDatabase, IsChanged, LAST_UPDATE_LOG, LAST_UPDATED_BY (+11 more)
 
 ### Community 51 - "GYM_PUSH_SUBSCRIPTIONS"
-Cohesion: 0.09
+Cohesion: 0.10
 Nodes (19): GYM_PUSH_SUBSCRIPTIONS, AUTH, BROWSER, CREATED_BY, CREATION_DATETIME, ENDPOINT, ID, InDatabase (+11 more)
 
 ### Community 52 - "GYM_SALE_ITEMS"
@@ -345,20 +342,24 @@ Cohesion: 0.10
 Nodes (18): GYM_EXERCISES, CREATED_BY, CREATION_DATETIME, DESCRIPTION, EQUIPMENT, EXERCISE_NAME, ID, InDatabase (+10 more)
 
 ### Community 56 - "IDatabaseObject"
-Cohesion: 0.09
+Cohesion: 0.10
 Nodes (17): GYM_ROLE_PERMISSIONS, CREATED_BY, CREATION_DATETIME, GRANTED, ID, InDatabase, IsChanged, LAST_UPDATE_LOG (+9 more)
 
 ### Community 58 - "IConfiguration"
 Cohesion: 0.12
-Nodes (6): CleanupHostedService, GymHealthCheck, GymReadinessCheck, MaintenanceService, EmailNotificationFlowTests, StaffShiftFlowTests
+Nodes (6): CleanupHostedService, GymHealthCheck, GymReadinessCheck, MaintenanceService, MaintenanceTests, StaffShiftFlowTests
 
 ### Community 60 - "package.json"
-Cohesion: 0.10
-Nodes (24): devDependencies, oxlint@^1.90.0, tailwindcss@^4.3.5, @tailwindcss/vite@^4.3.5, @types/react@^19.3.0, @types/react-dom@^19.3.0, vite@^8.3.6, @vitejs/plugin-react@^6.1.2 (+16 more)
+Cohesion: 0.08
+Nodes (32): dependencies, axios@^1.21.1, lucide-react@^1.75.0, react@^19.3.1, react-dom@^19.3.1, react-router-dom@^7.18.6, devDependencies, oxlint@^1.90.0 (+24 more)
+
+### Community 63 - "ServiceImplementation"
+Cohesion: 0.14
+Nodes (3): Program, ServiceImplementation, WebServerService
 
 ### Community 66 - "Fact"
-Cohesion: 0.16
-Nodes (4): ModelGymTests, ObjectToInferredTypesConverterTests, CurrentUserTests, SecurityValidationTests
+Cohesion: 0.21
+Nodes (3): ModelGymTests, ObjectToInferredTypesConverterTests, CurrentUserTests
 
 ### Community 67 - "steps"
 Cohesion: 0.10
@@ -372,12 +373,16 @@ Nodes (19): jobs, publish, name, on, push, workflow_dispatch, runs-on, steps (+1
 Cohesion: 0.17
 Nodes (8): SalesModule, SaleItem, Price, ProductId, ProductName, Quantity, StockOnHand, SalesFlowTests
 
-### Community 74 - "CurrentUser"
-Cohesion: 0.33
-Nodes (3): CurrentUser, ForAudit, Id
+### Community 71 - "CrudPage"
+Cohesion: 0.18
+Nodes (17): buildPayload(), CrudPage(), toInputValue(), ExercisesPanel(), addDays(), FisioPackagesPanel(), today(), MaintenanceEquipmentPanel() (+9 more)
+
+### Community 74 - "ServiceImplementation.cs"
+Cohesion: 0.14
+Nodes (4): GymService, CurrentUser, ForAudit, Id
 
 ### Community 77 - "EmailService"
-Cohesion: 0.24
+Cohesion: 0.22
 Nodes (4): EmailService, HasOutbox, IsConfigured, IsEnabled
 
 ### Community 82 - "DataCenter"
@@ -385,56 +390,40 @@ Cohesion: 0.18
 Nodes (8): DataCenter, BusinessProcess, Configuration, ConnectionData, DatabaseManager, DatabaseService, EmailService, WebServer
 
 ### Community 85 - "StaffShiftsPanel.jsx"
-Cohesion: 0.35
-Nodes (10): addDays(), buildDateTime(), dateValue(), emptyForm(), errorMessage(), formatDuration(), formatTime(), StaffShiftsPanel() (+2 more)
+Cohesion: 0.25
+Nodes (14): addDays(), buildDateTime(), dateValue(), emptyForm(), errorMessage(), formatDuration(), formatTime(), StaffShiftsPanel() (+6 more)
 
 ### Community 86 - "MembershipReceipt"
 Cohesion: 0.20
 Nodes (10): MembershipReceipt, Amount, Currency, EndDate, NoCharge, PaymentDate, PaymentMethod, PlanName (+2 more)
 
-### Community 87 - "PermissionCoverageTests.Every_Controller_Route_Has_A_Permission"
-Cohesion: 0.18
-Nodes (3): PermissionMatrix, PermissionCoverageTests, PermissionMatrixTests
-
 ### Community 88 - "ClassSessionsPanel.jsx"
 Cohesion: 0.36
 Nodes (9): addDaysInput(), ClassSessionsPanel(), errorMessage(), pad(), reservationStatusLabel, reservationStatusVariant, sessionStatusVariant, todayInput() (+1 more)
-
-### Community 89 - "FisioAppointmentsPanel.jsx"
-Cohesion: 0.36
-Nodes (8): defaultAppointmentDate(), errorMessage(), FisioAppointmentsPanel(), pad(), statusLabel, statusOptions, statusVariant, toLocalInput()
-
-### Community 93 - "dependencies"
-Cohesion: 0.25
-Nodes (8): dependencies, axios@^1.21.1, lucide-react@^1.75.0, react@^19.3.1, react-dom@^19.3.1, react-router-dom@^7.18.6, axios, react-dom
 
 ### Community 95 - ".oxlintrc.json"
 Cohesion: 0.33
 Nodes (5): plugins, rules, react/only-export-components, react/rules-of-hooks, $schema
 
-### Community 103 - "Finance.jsx"
-Cohesion: 0.46
-Nodes (7): AccountsPanel(), errorMessage(), Finance(), MovementsPanel(), normalize(), parseCsv(), TransactionButton()
-
 ## Knowledge Gaps
 - **523 isolated node(s):** `CREATED_BY`, `CREATION_DATETIME`, `InDatabase`, `IsChanged`, `LAST_UPDATE_LOG` (+518 more)
-  These have ≤1 connection - possible missing edges. (Counts symbols only; 796 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **40 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+  These have ≤1 connection - possible missing edges. (Counts symbols only; 798 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **43 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `GYM_USERS` connect `GYM_USERS` to `MaintenanceTests.Cleanup_Removes_Expired_Sessions_And_Otp_But_Keeps_Valid_Ones`, `system_collections_generic`, `GYM_KIOSK_DEVICES`, `Boolean`, `MappingObject`, `GYM_FISIO_APPOINTMENTS`, `GYM_PERMISSIONS`, `List`, `GYM_PUSH_SUBSCRIPTIONS`, `IdentityModule`, `IDatabaseObject`, `DateTime`?**
-  _High betweenness centrality (0.043) - this node is a cross-community bridge._
+- **Why does `EmailService` connect `EmailService` to `EmailServiceTests`, `DataCenter`, `IdentityModule`, `WebServerService.cs`, `IConfiguration`, `DatabaseFixture.Scalar`, `IdentityModule.RequestOtpByEmail`, `ServiceImplementation`?**
+  _High betweenness centrality (0.036) - this node is a cross-community bridge._
 - **What connects `CREATED_BY`, `CREATION_DATETIME`, `InDatabase` to the rest of the system?**
   _523 weakly-connected nodes found - possible missing edges._
 - **Should `Dictionary` be split into smaller, more focused modules?**
   _Cohesion score 0.050606568194507894 - nodes in this community are weakly interconnected._
-- **Why does `GYM_ROUTINE_PLAN_EXERCISES` connect `GYM_ROUTINE_PLAN_EXERCISES` to `system_collections_generic`, `GYM_KIOSK_DEVICES`, `Boolean`, `MappingObject`, `GYM_FISIO_APPOINTMENTS`, `GYM_PERMISSIONS`, `List`, `GYM_PUSH_SUBSCRIPTIONS`, `IDatabaseObject`, `RoutinesModule`, `DateTime`?**
-  _High betweenness centrality (0.034) - this node is a cross-community bridge._
+- **Why does `GYM_USERS` connect `GYM_USERS` to `GYM_ROUTINE_ASSIGNMENTS`, `system_collections_generic`, `Boolean`, `GYM_SUPPLIERS`, `MappingObject`, `GYM_PERMISSIONS`, `GYM_PURCHASE_ORDER_ITEMS`, `List`, `GYM_SALE_ITEMS`, `IdentityModule`, `IConfiguration`, `DateTime`?**
+  _High betweenness centrality (0.033) - this node is a cross-community bridge._
 - **Should `GYM_BANK_TRANSACTIONS` be split into smaller, more focused modules?**
   _Cohesion score 0.07957957957957958 - nodes in this community are weakly interconnected._
-- **Why does `GYM_CLASS_SESSIONS` connect `GYM_CLASS_SESSIONS` to `system_collections_generic`, `GYM_KIOSK_DEVICES`, `Boolean`, `MappingObject`, `GYM_FISIO_APPOINTMENTS`, `GYM_PERMISSIONS`, `List`, `GYM_PUSH_SUBSCRIPTIONS`, `ClassesModule`, `IDatabaseObject`, `DateTime`?**
+- **Why does `GYM_MEMBERS` connect `GYM_MEMBERS` to `GYM_ROUTINE_ASSIGNMENTS`, `system_collections_generic`, `BulkImportResult`, `Boolean`, `GYM_SUPPLIERS`, `MappingObject`, `GYM_PERMISSIONS`, `GYM_PURCHASE_ORDER_ITEMS`, `List`, `GYM_SALE_ITEMS`, `DatabaseFixture.Scalar`, `DateTime`?**
   _High betweenness centrality (0.033) - this node is a cross-community bridge._
 - **Should `xunit` be split into smaller, more focused modules?**
-  _Cohesion score 0.06568832983927324 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07467532467532467 - nodes in this community are weakly interconnected._

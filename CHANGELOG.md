@@ -6,6 +6,11 @@
 
 ## Backend (.NET)
 
+### Respaldos de log y tareas programadas (2026-11-20)
+- **`backup-log.ps1`:** `BACKUP LOG` con verificación y copia opcional; exige modelo FULL y un respaldo completo previo, con mensajes claros cuando no se cumple.
+- **`register-backup-tasks.ps1`:** registra `GymService-Full` (diario) y `GymService-Log` (cada 15 minutos); `-RunAsSystem` para servidores y `-Unregister` para retirarlas.
+- **Verificación:** log de 0.01 MB verificado; la tarea programada se ejecutó de verdad (`LastTaskResult 0` y nuevo `.trn`); se comprobaron los errores de modelo SIMPLE y de base sin respaldo completo; tareas, bases y archivos de prueba eliminados.
+
 ### Respaldos verificados de SQL Server (2026-11-20)
 - **`backup.ps1`:** respaldo completo con CHECKSUM y COMPRESSION, verificación `RESTORE VERIFYONLY`, tamaño, copia opcional (`-CopyTo`) y retención de esas copias.
 - **`verify-backup.ps1`:** restaura el `.bak` en una base temporal, valida tablas y socios, y la elimina; rechaza usar la base de producción como destino.
