@@ -215,6 +215,22 @@ cd C:\proyectos\gimnasio-dotnet
 Para integración: `.\build.ps1 -Integration` con las variables `GYM_TEST_DB_*` definidas.
 La ruta de las ANXO Libraries se puede sobrescribir con `-AnxoRoot` o `-p:AnxoRoot=...`.
 
+## Grafo del código (graphify)
+
+El repositorio incluye la skill y el plugin de
+[graphify](https://github.com/Graphify-Labs/graphify) en `.opencode/`, con las instrucciones
+en `AGENTS.md`. El grafo se genera en local con el AST de tree-sitter (sin LLM ni API):
+
+```powershell
+python -m pip install --user graphifyy   # o: uv tool install graphifyy
+graphify extract . --code-only           # construye graphify-out/
+graphify update .                        # tras cambiar código
+graphify explain "GymService/Modules/Members/MembersModule.cs::MembersModule"
+graphify query "como se valida el acceso de un socio"
+```
+
+`graphify-out/` (grafo, reporte y HTML) es generado y **no se versiona**.
+
 ## Pruebas
 
 ```powershell

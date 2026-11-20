@@ -6,6 +6,12 @@
 
 ## Backend (.NET)
 
+### Grafo del código con graphify (2026-11-20)
+- **Integración:** skill y plugin de graphify instalados con `graphify install --project --platform opencode`; reglas de consulta añadidas a `AGENTS.md`.
+- **Grafo:** 191 archivos, 2 679 nodos, 7 575 aristas y 103 comunidades (91 % aristas EXTRACTED); `GRAPH_REPORT.md` y `graph.html` generados en local.
+- **Uso:** `graphify query`, `graphify path` y `graphify explain`; se actualiza con `graphify update .` (AST local, sin coste de API).
+- **Repo:** `.opencode/` y las instrucciones se versionan; `graphify-out/` queda en `.gitignore` por ser generado.
+
 ### Auditoría de permisos por ruta (2026-11-20)
 - **Bug:** `POST /api/kiosk/devices/{id}/rotate` no tenía entrada en `PermissionMatrix`; como el middleware deja pasar las rutas desconocidas, la petición no comprobaba permisos. Ahora exige `admin.settings`.
 - **Endurecimiento:** cualquier ruta `/api/*` sin permiso registrado responde `403` (antes se dejaba pasar). Las rutas públicas de auth, validación de código de acceso, validación de kiosco y equipos no disponibles siguen exentas.

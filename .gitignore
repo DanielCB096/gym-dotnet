@@ -30,6 +30,9 @@ publish/
 .DS_Store
 Thumbs.db
 
+# Grafo generado por graphify (se reconstruye en local)
+graphify-out/
+
 # ===== Temporales =====
 *.tmp
 *.bak
