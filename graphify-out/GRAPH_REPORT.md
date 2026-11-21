@@ -1,7 +1,7 @@
 # Graph Report - gimnasio dotnet  (2026-11-21)
 
 ## Corpus Check
-- 219 files · ~224,362 words
+- 219 files · ~224,413 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 11 file(s) not represented in the graph (top: (none) 3, .css 2, .xml 2)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a3d12fa3`
+- Built from commit: `5df28680`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -588,16 +588,16 @@ Nodes (3): 2. Framework GymCore - Bibliotecas Usadas, Bibliotecas del framework:
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `GymService - Registro de Cambios y Correcciones` connect `GymService - Registro de Cambios y Correcciones` to `Frontend (React + Vite)`, `PermissionMatrix`, `Rediseño TailAdmin (Frontend)`, `Backend (.NET)`?**
-  _High betweenness centrality (0.119) - this node is a cross-community bridge._
+  _High betweenness centrality (0.110) - this node is a cross-community bridge._
 - **What connects `CREATED_BY`, `CREATION_DATETIME`, `InDatabase` to the rest of the system?**
   _535 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Dictionary` be split into smaller, more focused modules?**
   _Cohesion score 0.050606568194507894 - nodes in this community are weakly interconnected._
 - **Why does `Estado actual del sistema` connect `GymService - Registro de Cambios y Correcciones` to `react`?**
-  _High betweenness centrality (0.113) - this node is a cross-community bridge._
+  _High betweenness centrality (0.104) - this node is a cross-community bridge._
 - **Should `GYM_BANK_TRANSACTIONS` be split into smaller, more focused modules?**
   _Cohesion score 0.08253968253968254 - nodes in this community are weakly interconnected._
 - **Why does `useApiList()` connect `react` to `CrudPage`, `GymService - Registro de Cambios y Correcciones`, `App.jsx`?**
-  _High betweenness centrality (0.113) - this node is a cross-community bridge._
+  _High betweenness centrality (0.104) - this node is a cross-community bridge._
 - **Should `xunit` be split into smaller, more focused modules?**
   _Cohesion score 0.08333333333333333 - nodes in this community are weakly interconnected._

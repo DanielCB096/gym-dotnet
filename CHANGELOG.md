@@ -23,6 +23,7 @@
 - **Lanzador:** `deploy/kiosk-pc/Start-Kiosk.ps1` detecta la segunda pantalla y abre Edge en modo kiosco. `-ForcePrimary -Windowed` permite probar en la pantalla principal.
 - **Accesos directos:** “Kiosco segunda pantalla” en Escritorio e Inicio (el de Inicio solo abre si hay segunda pantalla) y “Kiosco ventana (prueba)”.
 - **Teclado físico:** verificado con `000000` + Enter → “Código inválido o expirado”; dígitos, Backspace, Enter y Escape funcionan.
+- **Acceso válido:** probado con un socio temporal y teclado físico; el kiosco mostró “Acceso concedido — Prueba Kiosco”, el log quedó `granted` y el código `used`; los datos temporales se eliminaron.
 - **Pendiente:** solo hay un monitor conectado; falta probar la apertura fullscreen en una segunda pantalla física.
 
 ### Audio de acceso en el kiosco (2026-11-21)
