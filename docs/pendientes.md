@@ -52,7 +52,10 @@ o la licencia lo permite.
 - [ ] **Implementar el flujo de login MFA** antes de activarlo: el backend devuelve
       `requiresMfa` sin token/sesión, `mfa/verify` exige una sesión autenticada y el frontend
       no tiene pantalla de MFA/OTP. Activarlo hoy dejaría al owner sin acceso.
-- [ ] Limpiar datos demo (6 socios, 2 productos, 1 acceso).
+- [x] Limpiar datos demo (2026-11-21): 6 socios, 2 productos, 2 membresías, 1 acceso,
+      1 crédito, 1 OTP y 11 sesiones eliminados. Se conservaron owner, 27 permisos y los
+      3 planes (Mensual/Trimestral/Anual). Respaldo verificado en
+      `D:\GymBackups\GymManager_20261121_101854.bak`; dashboard y tablas operativas en 0.
 - [x] SMTP real configurado y OTP por correo verificado (envío, verificación y uso único).
 - [ ] Copia offsite/NAS de los respaldos (hoy `D:` es otro disco físico, no otra ubicación).
 - [ ] Evaluar cuenta dedicada para el servicio en lugar de `LocalSystem`.

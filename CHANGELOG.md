@@ -18,6 +18,12 @@
 - **Versión:** **1.6.0**; MSI regenerado, MSI 1.5.1 desinstalado e instalado 1.6.0. Servicio `centrofitgymservice` en `C:\Program Files\Centro Fit\GymService`, `/health` healthy 1.6.0, login correcto, tareas `GymService-Full`/`GymService-Log` con `LastTaskResult=0` y restauración de 42 tablas/6 socios verificada. Certificado HTTPS y URL sin cambios.
 - **Riesgo pendiente:** `ANXO_SEQUENCES` se conserva porque es el nombre de tabla que usa la librería; cambiarlo requiere la fase C.
 
+### Limpieza de datos demo (2026-11-21)
+- **Eliminado:** 6 socios, 2 productos, 2 membresías, 1 acceso, 1 código de acceso, 1 crédito, 1 OTP y 11 sesiones. Las tablas operativas quedaron en 0.
+- **Conservado:** usuario owner, 27 permisos, 27 asignaciones de rol y los 3 planes (Mensual, Trimestral, Anual).
+- **Secuencias:** se reiniciaron a 0 las de las tablas limpiadas (socios, inventario, membresías, accesos, créditos, OTP y sesiones), para que los nuevos registros empiecen en 1.
+- **Verificación:** dashboard con 0 socios/membresías/ventas/accesos; login del owner correcto; `/health` healthy 1.6.0; tareas `GymService-Full`/`GymService-Log` con `LastTaskResult=0`. Respaldo previo verificado: `GymManager_20261121_101854.bak`.
+
 ### Credenciales del owner, SMTP y OTP (2026-11-21)
 - **Owner:** se actualizó su correo real y se reseteó la contraseña con el endpoint local de recuperación; login verificado y `/health` healthy. Las credenciales no se versionan.
 - **SMTP:** configurado `smtp.gmail.com:587` con contraseña de aplicación; `testemail` enviado correctamente. Se solicitó y verificó un OTP por correo, incluido el rechazo del segundo uso.
