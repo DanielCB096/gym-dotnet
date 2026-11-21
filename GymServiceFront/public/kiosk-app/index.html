@@ -475,6 +475,66 @@
       }, ok ? 4500 : 5000);
     };
 
+    let audioContext = null;
+
+    const getAudioContext = () => {
+      if (!audioContext) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return null;
+        audioContext = new AudioContextClass();
+      }
+      if (audioContext.state === 'suspended') {
+        audioContext.resume().catch(() => {});
+      }
+      window.__kioskAudioContext = audioContext;
+      return audioContext;
+    };
+
+    const playTone = (context, frequency, start, duration, type, volume) => {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(frequency, start);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(volume, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(start);
+      oscillator.stop(start + duration + 0.03);
+    };
+
+    const speakFeedback = (text) => {
+      if (!('speechSynthesis' in window)) return;
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'es-MX';
+        utterance.rate = 0.95;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        window.speechSynthesis.speak(utterance);
+      } catch {
+        // Si la voz no está disponible, el tono sigue funcionando.
+      }
+    };
+
+    const playFeedback = (granted) => {
+      document.body.dataset.feedback = granted ? 'success' : 'denied';
+      const context = getAudioContext();
+      if (context) {
+        const now = context.currentTime;
+        if (granted) {
+          playTone(context, 880, now, 0.16, 'sine', 0.25);
+          playTone(context, 1320, now + 0.18, 0.24, 'sine', 0.25);
+        } else {
+          playTone(context, 220, now, 0.22, 'square', 0.16);
+          playTone(context, 165, now + 0.24, 0.30, 'square', 0.16);
+        }
+      }
+      setTimeout(() => speakFeedback(granted ? 'Acceso concedido' : 'Acceso denegado'), granted ? 420 : 430);
+    };
+
     const setConnection = (online) => {
       elements.connection.classList.toggle('online', online);
       elements.connection.classList.toggle('offline', !online);
@@ -717,12 +777,14 @@
       if (validating) return;
 
       if (code.length !== 6) {
+        playFeedback(false);
         showResult(false, 'Ingresa los 6 dígitos del código de acceso.');
         return;
       }
 
       hideResult();
       setValidating(true);
+      getAudioContext();
       try {
         const response = await fetch(`${config.apiUrl}/api/access/code/validate`, {
           method: 'POST',
@@ -736,12 +798,15 @@
         setConnection(true);
 
         if (response.ok && data?.success) {
+          playFeedback(true);
           const memberName = typeof data.memberName === 'string' ? data.memberName.trim() : '';
           showResult(true, memberName ? `Acceso concedido · ${memberName}` : 'Acceso concedido');
         } else {
+          playFeedback(false);
           showResult(false, data?.message || 'Código inválido o vencido');
         }
       } catch {
+        playFeedback(false);
         setConnection(false);
         showResult(false, 'No hay conexión con el servidor. Inténtalo de nuevo.');
       } finally {

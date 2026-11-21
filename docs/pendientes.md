@@ -48,7 +48,8 @@ o la licencia lo permite.
       Un código inválido devuelve “Código inválido o expirado”. **Código válido probado**:
       el kiosco mostró “Acceso concedido — Prueba Kiosco”, el log quedó `granted` y el código
       `used`. El socio/membresía/código/acceso temporales se eliminaron y las secuencias se
-      restauraron a 1; el kiosco sigue activo.
+      restauraron a 1; el kiosco sigue activo. El **audio de concedido/denegado** también
+      quedó verificado en el tablet.
 
 ## 2. Otros pendientes de entrega
 
