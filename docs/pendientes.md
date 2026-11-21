@@ -65,8 +65,9 @@ o la licencia lo permite.
 - [x] **MFA completo** (2026-11-21, versión 1.7.0): login con desafío firmado de un solo uso,
       verificación TOTP o código de respaldo, pantalla **Seguridad** con QR/clave manual/códigos,
       activación, desactivación y estado. Probado 21/21 por API HTTPS y en navegador (activar,
-      login en dos pasos y desactivar). El owner sigue sin MFA activo; cuando lo active debe
-      guardar los códigos de respaldo fuera del servidor.
+      login en dos pasos y desactivar). **Owner con MFA activo** desde 2026-11-21; el login real
+      devuelve `requiresMfa` sin sesión. Quedan 9 códigos de respaldo de un solo uso: deben
+      guardarse fuera del servidor y borrar los archivos temporales del Escritorio.
 - [x] Limpiar datos demo (2026-11-21): 6 socios, 2 productos, 2 membresías, 1 acceso,
       1 crédito, 1 OTP y 11 sesiones eliminados. Se conservaron owner, 27 permisos y los
       3 planes (Mensual/Trimestral/Anual). Respaldo verificado en
