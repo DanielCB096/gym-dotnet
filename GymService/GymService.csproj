@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>GymService</RootNamespace>
     <AssemblyName>GymService</AssemblyName>
-    <Version>1.0.0</Version>
+    <Version>1.5.1</Version>
     <!-- Ruta de las ANXO Libraries (pilot). Prioridad: -p:AnxoRoot, ANXO_ROOT, ruta por defecto. -->
     <AnxoRoot Condition="'$(AnxoRoot)' == '' and '$(ANXO_ROOT)' != ''">$(ANXO_ROOT)</AnxoRoot>
     <AnxoRoot Condition="'$(AnxoRoot)' == ''">..\..\..\repositorios\pilot\ANXO LIBRARIES</AnxoRoot>

@@ -6,6 +6,12 @@
 
 ## Backend (.NET)
 
+### Versión 1.5.1 y tareas de respaldo (2026-11-20)
+- **Versión:** `GymService.csproj` pasa a **1.5.1** y el health check de readiness lee la versión del ensamblado en lugar de tener `1.0.0` fijo. El MSI 1.5.1 se regeneró, se reinstaló el servicio y `/health` reporta **1.5.1**.
+- **Respaldo:** la base `GymManager` queda en modelo **FULL**; se generó y verificó un respaldo completo.
+- **Tareas programadas:** `GymService-Full` (diaria 02:00, retención 14 días) y `GymService-Log` (cada 15 minutos, retención 3 días), ejecutadas como **SYSTEM**. Ambas se ejecutaron en vivo con `LastTaskResult=0` y generaron `.bak` y `.trn` en el servidor SQL.
+- **Dependencia operativa:** las tareas apuntan a los scripts del repositorio y a SQL Server en `localhost:1433`; requieren que el repositorio y el servidor SQL estén disponibles en la ruta/host configurados.
+
 ### Importación de socios con correos duplicados (2026-11-20)
 - **Bug:** la importación masiva de socios permitía correos repetidos contra la base y dentro del mismo archivo, aunque el alta manual sí los rechaza.
 - **Solución:** antes de importar se cargan los correos existentes y se rastrea el archivo; las filas con correo ya registrado o repetido se reportan por número de fila y no se insertan. `BulkImportService` acepta `DatabaseTools` en el constructor para pruebas.

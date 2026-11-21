@@ -194,7 +194,7 @@ namespace GymService.Services
                 ["status"] = "ready",
                 ["timestamp"] = DateTime.UtcNow.ToString("o"),
                 ["service"] = "GymService",
-                ["version"] = "1.0.0"
+                ["version"] = (typeof(GymReadinessCheck).Assembly.GetName().Version?.ToString(3)) ?? "0.0.0"
             };
 
             // Check if critical services are at least initialized
