@@ -6,6 +6,11 @@
 
 ## Backend (.NET)
 
+### Limpieza del contenedor Docker `gym-sql` (2026-11-21)
+- **Limpieza:** se eliminó el contenedor `gym-sql` (detenido desde la migración) y su volumen `gym-sql-data` (164.5 MB). Antes se comprobó que la base nativa `GymManager` está respaldada y restaurada en vivo (42 tablas, 6 socios) y que ningún otro contenedor usaba el volumen.
+- **Imagen:** `mcr.microsoft.com/mssql/server:2022-latest` (2.21 GB) permanece en la caché de Docker; no la usa ningún contenedor y puede eliminarse con `docker image rm` si se necesita espacio.
+- **Entorno:** Docker Desktop se cerró de nuevo al terminar, como estaba antes de la limpieza.
+
 ### Login SQL dedicado `gym_app` (2026-11-21)
 - **Seguridad:** la aplicación instalada dejó de usar `sa`. Se creó el login `gym_app` con `db_owner` sobre `GymManager`, `CHECK_POLICY=ON`, `DEFAULT_DATABASE=GymManager` y el permiso de servidor `CREATE ANY DATABASE`; sin `sysadmin` ni rol `dbcreator`.
 - **Permisos de respaldo:** `RESTORE VERIFYONLY`, `RESTORE HEADERONLY`/`FILELISTONLY` y la restauración de prueba exigen `CREATE DATABASE` en `master`. Sin ese permiso, `backup.ps1` fallaba con "CREATE DATABASE permission denied in database 'master'"; `verify-backup.ps1` tampoco podía crear la base temporal.
@@ -17,7 +22,7 @@
 - **Corrección:** SQL Server Express no admite `COMPRESSION` en `BACKUP`. `backup.ps1` y `backup-log.ps1` detectan `EngineEdition=4` y omiten la compresión; en ediciones superiores la conservan.
 - **Verificación:** las tareas `GymService-Full` y `GymService-Log` se ejecutaron contra el servidor nativo con `LastTaskResult=0` y generaron `.bak` y `.trn` en `C:\Program Files\Microsoft SQL Server\MSSQL17.MSSQLSERVER\MSSQL\Backup`. El servicio `anxogymmservice` quedó Running y `/health` healthy con versión **1.5.1**.
 - **Arranque tras reinicio:** el servicio se iniciaba antes que SQL y se detenía con "No se pudo conectar a la base de datos". Se configuró dependencia de `MSSQLSERVER` y arranque **delayed-auto**; el MSI ahora aplica ambos con `sc config` al instalar.
-- **Operación:** el contenedor `gym-sql` quedó detenido y sin reinicio automático; su volumen se conserva como respaldo de la migración.
+- **Operación:** el contenedor `gym-sql` quedó detenido y sin reinicio automático; su volumen se conservó como respaldo de la migración hasta su eliminación el 2026-11-21.
 
 ### Versión 1.5.1 y tareas de respaldo (2026-11-20)
 - **Versión:** `GymService.csproj` pasa a **1.5.1** y el health check de readiness lee la versión del ensamblado en lugar de tener `1.0.0` fijo. El MSI 1.5.1 se regeneró, se reinstaló el servicio y `/health` reporta **1.5.1**.
