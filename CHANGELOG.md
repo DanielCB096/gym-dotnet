@@ -21,12 +21,12 @@
 ### Kiosco registrado y validado (2026-11-21)
 - **Dispositivo:** id 1, “Kiosco recepcion”, activo; token válido hasta **2027-02-19**; tablet Android 16 configurado con CA, URL HTTPS y token.
 - **Verificación:** la página muestra el teclado de 6 dígitos y “Token válido”; un código inválido devuelve “Código inválido o expirado”.
-- **Pendiente:** probar un código válido con un socio y membresía real. El token se rota desde el panel si se pierde o se compromete.
+- **Prueba válida:** se creó un socio con membresía de cortesía temporal, se generó un código y el kiosco mostró “Acceso concedido — Prueba Kiosco”; el log quedó `granted` y el código `used`. Los datos temporales se eliminaron y las secuencias se restauraron a 1. El token se rota desde el panel si se pierde o se compromete.
 
 ### Limpieza de datos demo (2026-11-21)
 - **Eliminado:** 6 socios, 2 productos, 2 membresías, 1 acceso, 1 código de acceso, 1 crédito, 1 OTP y 11 sesiones. Las tablas operativas quedaron en 0.
 - **Conservado:** usuario owner, 27 permisos, 27 asignaciones de rol y los 3 planes (Mensual, Trimestral, Anual).
-- **Secuencias:** se reiniciaron a 0 las de las tablas limpiadas (socios, inventario, membresías, accesos, créditos, OTP y sesiones), para que los nuevos registros empiecen en 1.
+- **Secuencias:** se dejaron en **1** las de las tablas limpiadas (socios, inventario, membresías, accesos, créditos, OTP y sesiones). Un valor 0 hacía que el primer registro nuevo recibiera **ID 0**; se detectó al crear el socio temporal del kiosco y se corrigió.
 - **Verificación:** dashboard con 0 socios/membresías/ventas/accesos; login del owner correcto; `/health` healthy 1.6.0; tareas `GymService-Full`/`GymService-Log` con `LastTaskResult=0`. Respaldo previo verificado: `GymManager_20261121_101854.bak`.
 
 ### Credenciales del owner, SMTP y OTP (2026-11-21)

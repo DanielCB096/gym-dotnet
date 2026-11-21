@@ -45,8 +45,10 @@ o la licencia lo permite.
       (panel y kiosco cargan por HTTPS). Falta el resto de equipos.
 - [x] Registrar y validar el kiosco (2026-11-21): dispositivo **Kiosco recepcion** (id 1),
       tablet Android 16 configurado con URL HTTPS y token; token válido hasta **2027-02-19**.
-      Un código inválido devuelve “Código inválido o expirado”. Falta probar un código válido
-      con un socio y membresía real.
+      Un código inválido devuelve “Código inválido o expirado”. **Código válido probado**:
+      el kiosco mostró “Acceso concedido — Prueba Kiosco”, el log quedó `granted` y el código
+      `used`. El socio/membresía/código/acceso temporales se eliminaron y las secuencias se
+      restauraron a 1; el kiosco sigue activo.
 
 ## 2. Otros pendientes de entrega
 
