@@ -6,6 +6,12 @@
 
 ## Backend (.NET)
 
+### Importación de socios con correos duplicados (2026-11-20)
+- **Bug:** la importación masiva de socios permitía correos repetidos contra la base y dentro del mismo archivo, aunque el alta manual sí los rechaza.
+- **Solución:** antes de importar se cargan los correos existentes y se rastrea el archivo; las filas con correo ya registrado o repetido se reportan por número de fila y no se insertan. `BulkImportService` acepta `DatabaseTools` en el constructor para pruebas.
+- **Pruebas:** nueva `BulkImportMembersTests` (correo existente y repetido); **130 pruebas** en verde.
+- **Verificación en vivo:** importación desde el panel con 1 fila válida; API rechaza el correo existente y el repetido; exportación XLSX desde el navegador (6,849 bytes) y crédito proporcional verificado (cancelación genera $500, renovación con crédito y $0 a pagar).
+
 ### Compilación portable de ANXO (2026-11-20)
 - **ANXO_ROOT:** `GymService.csproj` y `AnxoModelGenerator.csproj` aceptan la variable de entorno, además de `-p:AnxoRoot`; prioridad parámetro > variable > ruta relativa.
 - **Error claro:** si falta la carpeta, la compilación muestra un mensaje con las opciones en vez de un error de referencia de proyecto.

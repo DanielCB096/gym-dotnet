@@ -480,15 +480,16 @@ auditadas, cobro manual y límite diario de entradas por plan.
 - ✅ Servicio Windows con AnxoServiceTools (`AssemblyName` correcto para `-install`)
 - ✅ Conexión a SQL Server con AnxoDatabase
 - ✅ Servidor Kestrel con ASP.NET Core
-- ✅ 35 tablas SQL Server definidas, con índices UNIQUE y foreign keys aplicadas
+- ✅ 41 tablas SQL Server definidas, con índices UNIQUE y foreign keys aplicadas
 - ✅ 18 controllers REST con ~67 endpoints operativos
 - ✅ Módulo Identity completo (login, MFA, OTP, RBAC)
 - ✅ AuthController con endpoints REST
 - ✅ Seguridad: PBKDF2-SHA256, MFA cifrado AES-256, SQL parametrizado, endpoints de personal autenticados
 - ✅ Frontend React 19 + Vite + Tailwind CSS 4 con 20 páginas
-- ✅ Importación masiva de socios e inventario desde el panel (CSV/Excel, UTF-8 o Latin-1)
-- ✅ 106 pruebas automatizadas (unitarias + integración)
-- ⏳ Instalador WiX
+- ✅ Importación masiva de socios e inventario desde el panel (CSV/Excel, UTF-8 o Latin-1), con validación de correos duplicados
+- ✅ Exportación a Excel, respaldos verificados, tareas programadas, correos SMTP y crédito proporcional al cancelar
+- ✅ 130 pruebas automatizadas (unitarias + integración)
+- ✅ Instalador MSI con WiX 5 (build y validación; la instalación per-machine requiere administrador)
 
 ## Migración desde PostgreSQL
 

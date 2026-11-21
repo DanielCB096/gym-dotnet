@@ -54,6 +54,22 @@ namespace GymService.Services
         /// </summary>
         private const int BatchSize = 200;
 
+        private readonly DatabaseTools? _tools;
+
+        public BulkImportService()
+        {
+        }
+
+        /// <summary>
+        /// Constructor para pruebas o ejecución fuera del arranque global del servicio.
+        /// </summary>
+        public BulkImportService(DatabaseTools tools)
+        {
+            _tools = tools;
+        }
+
+        private DatabaseTools? GetTools() => _tools ?? DataCenter.DatabaseManager?.Tools;
+
         private sealed class PendingImport<T> where T : IDatabaseObject
         {
             public PendingImport(int rowNumber, string rowData, T databaseObject)
@@ -180,7 +196,31 @@ namespace GymService.Services
             }
         }
 
-        private static GYM_MEMBERS? BuildMember(Dictionary<string, string> row, int rowNum, BulkImportResult result)
+        private static HashSet<string> LoadExistingMemberEmails(DatabaseTools tools)
+        {
+            var emails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var result = tools.ExecuteQueryResultSet(
+                "SELECT EMAIL FROM GYM_MEMBERS WHERE EMAIL IS NOT NULL AND EMAIL <> ''");
+
+            if (result == null)
+                return emails;
+
+            foreach (Row row in result.Rows)
+            {
+                var email = Convert.ToString(row.GetObject(0))?.Trim();
+                if (!string.IsNullOrWhiteSpace(email))
+                    emails.Add(email);
+            }
+
+            return emails;
+        }
+
+        private static GYM_MEMBERS? BuildMember(
+            Dictionary<string, string> row,
+            int rowNum,
+            BulkImportResult result,
+            HashSet<string> existingEmails,
+            HashSet<string> fileEmails)
         {
             var firstName = ReadColumn(row, "FirstName");
             var lastName = ReadColumn(row, "LastName");
@@ -205,7 +245,34 @@ namespace GymService.Services
             };
 
             var email = ReadColumn(row, "Email");
-            if (email.Length > 0) member.EMAIL = email;
+            if (email.Length > 0)
+            {
+                if (existingEmails.Contains(email))
+                {
+                    result.ErrorRows++;
+                    result.Errors.Add(new BulkImportError
+                    {
+                        RowNumber = rowNum,
+                        RowData = $"Nombre: {firstName} {lastName}",
+                        ErrorMessage = $"Ya existe un socio con el correo '{email}'"
+                    });
+                    return null;
+                }
+
+                if (!fileEmails.Add(email))
+                {
+                    result.ErrorRows++;
+                    result.Errors.Add(new BulkImportError
+                    {
+                        RowNumber = rowNum,
+                        RowData = $"Nombre: {firstName} {lastName}",
+                        ErrorMessage = $"El correo '{email}' está repetido en el archivo"
+                    });
+                    return null;
+                }
+
+                member.EMAIL = email;
+            }
 
             var phone = ReadColumn(row, "Phone");
             if (phone.Length > 0) member.PHONE = phone;
@@ -336,14 +403,7 @@ namespace GymService.Services
                     return result;
                 }
 
-                if (DataCenter.BusinessProcess.Members == null)
-                {
-                    result.Message = "Módulo de miembros no disponible";
-                    result.Success = false;
-                    return result;
-                }
-
-                var tools = DataCenter.DatabaseManager?.Tools;
+                var tools = GetTools();
                 if (tools == null)
                 {
                     result.Message = "Servicio de base de datos no disponible";
@@ -352,6 +412,8 @@ namespace GymService.Services
                 }
 
                 var pending = new List<PendingImport<GYM_MEMBERS>>();
+                var existingEmails = LoadExistingMemberEmails(tools);
+                var fileEmails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
                 for (int r = 0; r < rows.Count; r++)
                 {
@@ -360,7 +422,7 @@ namespace GymService.Services
                     var shouldFlush = false;
                     try
                     {
-                        var member = BuildMember(row, rowNum, result);
+                        var member = BuildMember(row, rowNum, result, existingEmails, fileEmails);
                         if (member == null)
                             continue;
 
@@ -434,14 +496,7 @@ namespace GymService.Services
 
                 result.TotalRows = rowsUsed.Count - 1; // Exclude header
 
-                if (DataCenter.BusinessProcess.Members == null)
-                {
-                    result.Message = "Módulo de miembros no disponible";
-                    result.Success = false;
-                    return result;
-                }
-
-                var tools = DataCenter.DatabaseManager?.Tools;
+                var tools = GetTools();
                 if (tools == null)
                 {
                     result.Message = "Servicio de base de datos no disponible";
@@ -450,6 +505,8 @@ namespace GymService.Services
                 }
 
                 var pending = new List<PendingImport<GYM_MEMBERS>>();
+                var existingEmails = LoadExistingMemberEmails(tools);
+                var fileEmails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
                 // Process data rows (skip header)
                 for (int i = 1; i < rowsUsed.Count; i++)
@@ -467,7 +524,7 @@ namespace GymService.Services
                             rowDict[headers[h]] = cells[h].GetString().Trim();
                         }
 
-                        var member = BuildMember(rowDict, rowNum, result);
+                        var member = BuildMember(rowDict, rowNum, result, existingEmails, fileEmails);
                         if (member == null)
                             continue;
 
@@ -565,7 +622,7 @@ namespace GymService.Services
                     return result;
                 }
 
-                var tools = DataCenter.DatabaseManager?.Tools;
+                var tools = GetTools();
                 if (tools == null)
                 {
                     result.Message = "Servicio de base de datos no disponible";
@@ -662,7 +719,7 @@ namespace GymService.Services
                     return result;
                 }
 
-                var tools = DataCenter.DatabaseManager?.Tools;
+                var tools = GetTools();
                 if (tools == null)
                 {
                     result.Message = "Servicio de base de datos no disponible";
