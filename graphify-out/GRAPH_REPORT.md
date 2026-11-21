@@ -1,7 +1,7 @@
 # Graph Report - gimnasio dotnet  (2026-11-21)
 
 ## Corpus Check
-- 224 files · ~230,208 words
+- 224 files · ~230,260 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 11 file(s) not represented in the graph (top: (none) 3, .css 2, .xml 2)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `796286a7`
+- Built from commit: `77432263`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -148,21 +148,21 @@
 5. `GYM_BANK_TRANSACTIONS` - 55 edges
 6. `GYM_INVENTORY` - 55 edges
 7. `GYM_MEMBERS` - 55 edges
-8. `GYM_MEMBERSHIPS` - 53 edges
-9. `IdentityModule` - 53 edges
-10. `Badge()` - 50 edges
+8. `IdentityModule` - 53 edges
+9. `GYM_MEMBERSHIPS` - 53 edges
+10. `GYM_MEMBERSHIP_PLANS` - 50 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Corrección de fechas locales frente a SQL en UTC (2026-11-20)` --references--> `AccessFlowTests`  [INFERRED]
-  CHANGELOG.md → GymService.Tests/Integration/AccessFlowTests.cs
-- `✅ F07 — Persistir el sidebar y accesibilidad en `Layout`` --references--> `Layout()`  [INFERRED]
-  TAREAS_DELEGADAS.md → GymServiceFront/src/components/Layout.jsx
-- `Estado actual del sistema` --references--> `useApiList()`  [INFERRED]
-  CHANGELOG.md → GymServiceFront/src/hooks/useApiList.js
 - `Obstáculo 1: Propiedad mal nombrada en DataCenter.cs` --references--> `BusinessProcess`  [INFERRED]
   OBSTACLES_AND_API.md → GymService/DataCenter.cs
+- `5. Tareas NO delegadas (las asume la IA grande / Daniel)` --references--> `IdentityModule`  [INFERRED]
+  TAREAS_DELEGADAS.md → GymService/Modules/Identity/IdentityModule.cs
 - `Membresías y socios` --references--> `GYM_MEMBER_CREDITS`  [INFERRED]
   docs/reglas-negocio.md → GymService/Models/Generated/GYM_MEMBER_CREDITS.cs
+- `Corrección de fechas locales frente a SQL en UTC (2026-11-20)` --references--> `AccessFlowTests`  [INFERRED]
+  CHANGELOG.md → GymService.Tests/Integration/AccessFlowTests.cs
+- `Operación y seguridad (2026-11-19)` --references--> `DatabaseService`  [INFERRED]
+  CHANGELOG.md → GymService/Services/DatabaseService.cs
 
 ## Import Cycles
 - None detected.
@@ -566,7 +566,7 @@ Cohesion: 0.40
 Nodes (5): Evidencia mínima, Excepción, Historial, Pruebas en vivo (obligatorias), Regla
 
 ## Knowledge Gaps
-- **535 isolated node(s):** `net10.0-windows7.0`, `Microsoft.NET.Test.Sdk (17.14.1)`, `xunit (2.9.3)`, `xunit.runner.visualstudio (3.1.5)`, `Microsoft.Data.SqlClient (5.2.2)` (+530 more)
+- **535 isolated node(s):** `CREATED_BY`, `CREATION_DATETIME`, `InDatabase`, `IsChanged`, `LAST_UPDATE_LOG` (+530 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1092 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **48 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -574,16 +574,16 @@ Nodes (5): Evidencia mínima, Excepción, Historial, Pruebas en vivo (obligatori
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `GymService - Registro de Cambios y Correcciones` connect `GymService - Registro de Cambios y Correcciones` to `Frontend (React + Vite)`, `PermissionMatrix`, `Rediseño TailAdmin (Frontend)`, `Backend (.NET)`?**
-  _High betweenness centrality (0.143) - this node is a cross-community bridge._
-- **What connects `net10.0-windows7.0`, `Microsoft.NET.Test.Sdk (17.14.1)`, `xunit (2.9.3)` to the rest of the system?**
+  _High betweenness centrality (0.130) - this node is a cross-community bridge._
+- **What connects `CREATED_BY`, `CREATION_DATETIME`, `InDatabase` to the rest of the system?**
   _535 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Dictionary` be split into smaller, more focused modules?**
   _Cohesion score 0.05004679572434855 - nodes in this community are weakly interconnected._
-- **Why does `Backend (.NET)` connect `Backend (.NET)` to `GYM_MEMBER_CREDITS`, `BulkImportService`, `GYM_MEMBERSHIPS`, `CurrentUser`, `MappingObject`, `GYM_ROUTINE_PLAN_EXERCISES`, `GymService - Registro de Cambios y Correcciones`, `PermissionMatrix`?**
-  _High betweenness centrality (0.136) - this node is a cross-community bridge._
+- **Why does `Estado actual del sistema` connect `GymService - Registro de Cambios y Correcciones` to `react`?**
+  _High betweenness centrality (0.125) - this node is a cross-community bridge._
 - **Should `GYM_BANK_TRANSACTIONS` be split into smaller, more focused modules?**
   _Cohesion score 0.06662770309760374 - nodes in this community are weakly interconnected._
-- **Why does `Estado actual del sistema` connect `GymService - Registro de Cambios y Correcciones` to `react`?**
-  _High betweenness centrality (0.130) - this node is a cross-community bridge._
+- **Why does `useApiList()` connect `react` to `GymService - Registro de Cambios y Correcciones`, `CrudPage`?**
+  _High betweenness centrality (0.124) - this node is a cross-community bridge._
 - **Should `xunit` be split into smaller, more focused modules?**
   _Cohesion score 0.059154929577464786 - nodes in this community are weakly interconnected._

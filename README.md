@@ -231,6 +231,11 @@ producción y CI.
   **Seguridad** en el panel, con QR, clave manual y 10 códigos de respaldo.
   `MfaMaxAttempts` limita los intentos por desafío. Los secretos se guardan cifrados con AES-256
   usando `MfaEncryptionKey`; sin esa clave MFA no se puede activar ni verificar.
+  **Recuperación:** si se pierden el teléfono y los códigos de respaldo, un administrador con
+  acceso al servidor puede desactivar MFA con
+  `UPDATE gym_users SET mfa_enabled=0, mfa_secret_encrypted=NULL, mfa_backup_codes=NULL WHERE username='...';`
+  y el usuario vuelve a configurarlo desde **Seguridad**. Guarda los códigos de respaldo fuera
+  del servidor.
 - **Rate limiting** por IP: `auth` (20/min), `strict` (5/min en OTP y validación de kiosco) y
   `general` (100/min) en `WebServerService`.
 - **OTP por correo real** con MailKit (`Email:SmtpServer/Port/User/Password/FromAddress/EnableSsl`).
