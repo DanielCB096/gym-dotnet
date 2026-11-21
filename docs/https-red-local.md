@@ -21,7 +21,7 @@
 | Certificado del servidor | `C:\ProgramData\GymService\certs\gymservice.pfx` (clave privada) |
 | CA raíz para clientes | `C:\ProgramData\GymService\certs\gymservice-root-ca.cer` |
 | Configuración | `Kestrel:Certificates:Default:Path` y `Password` en `appsettings.json` |
-| ACL | PFX y `appsettings.json`: solo `SYSTEM` y `Administradores` |
+| ACL | PFX y `appsettings.json`: `SYSTEM`, Administradores y lectura para `NT SERVICE\centrofitgymservice` |
 | Firewall | Regla `GymService HTTPS`, TCP 5055, remoto `192.168.100.0/24` |
 | Vigencia | Certificado del servidor: 825 días. CA raíz: 10 años |
 

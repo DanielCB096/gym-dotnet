@@ -200,6 +200,17 @@ if (-not (Get-Service -Name $serviceName -ErrorAction SilentlyContinue)) {
     throw "El servicio no quedó registrado. Revisa los logs de la instalación."
 }
 
+# Cuenta de servicio virtual con permisos mínimos (si el paquete incluye el script).
+$accountScript = Join-Path $InstallDir 'Set-ServiceAccount.ps1'
+if (Test-Path $accountScript) {
+    try {
+        & $accountScript -ServiceName $serviceName -ConfigPath $configPath -SkipRestart
+    } catch {
+        Write-Host "Aviso: no se pudo aplicar la cuenta virtual: $($_.Exception.Message)" -ForegroundColor Yellow
+        Write-Host "El servicio quedará como LocalSystem; ejecuta deploy\security\Set-ServiceAccount.ps1." -ForegroundColor Yellow
+    }
+}
+
 # Recuperación ante fallos.
 Invoke-Sc @('failure', $serviceName, 'reset=', '86400', 'actions=', 'restart/60000/restart/120000/restart/180000')
 Invoke-Sc @('description', $serviceName, 'Centro Fit Gym Service - API y panel web para la gestion del gimnasio.')

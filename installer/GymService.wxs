@@ -49,7 +49,7 @@
                       Type="ownProcess"
                       Start="auto"
                       ErrorControl="normal"
-                      Account="LocalSystem" />
+                      Account="NT SERVICE\centrofitgymservice" />
 
       <ServiceControl Id="ControlGymService"
                       Name="centrofitgymservice"
@@ -65,6 +65,13 @@
             Name="appsettings.json"
             KeyPath="yes" />
     </Component>
+
+    <CustomAction Id="GrantServiceAcls"
+                  Directory="SystemFolder"
+                  Execute="deferred"
+                  Impersonate="no"
+                  Return="ignore"
+                  ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]Set-ServiceAccount.ps1&quot; -ConfigPath &quot;[INSTALLFOLDER]appsettings.json&quot; -SkipRestart" />
 
     <CustomAction Id="ServiceDependsSql"
                   Directory="SystemFolder"
@@ -109,7 +116,8 @@
                   ExeCommand="netsh.exe advfirewall firewall delete rule name=&quot;GymService HTTP&quot;" />
 
     <InstallExecuteSequence>
-      <Custom Action="ServiceDependsSql" After="InstallServices" Condition="NOT Installed" />
+      <Custom Action="GrantServiceAcls" After="InstallServices" Condition="NOT REMOVE" />
+      <Custom Action="ServiceDependsSql" After="GrantServiceAcls" Condition="NOT Installed" />
       <Custom Action="ServiceDelayedStart" After="ServiceDependsSql" Condition="NOT Installed" />
       <Custom Action="ServiceRecovery" After="ServiceDelayedStart" Condition="NOT Installed" />
       <Custom Action="OpenFirewall" After="ServiceRecovery" Condition="OPEN_FIREWALL=1 AND NOT Installed" />

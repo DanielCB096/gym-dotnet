@@ -131,6 +131,17 @@ try {
     Write-Host "WARNING: Could not set description: $_" -ForegroundColor Yellow
 }
 
+# Cuenta de servicio virtual y permisos mínimos.
+$configPath = Join-Path (Split-Path -Parent $ExePath) 'appsettings.json'
+$accountScript = Join-Path $PSScriptRoot 'Set-ServiceAccount.ps1'
+if ((Test-Path $accountScript) -and (Test-Path $configPath)) {
+    try {
+        & $accountScript -ServiceName $ServiceName -ConfigPath $configPath -SkipRestart
+    } catch {
+        Write-Host "WARNING: no se pudo aplicar la cuenta virtual: $($_.Exception.Message)" -ForegroundColor Yellow
+    }
+}
+
 # Start the service
 Write-Host ""
 Write-Host "Starting service..." -ForegroundColor Cyan

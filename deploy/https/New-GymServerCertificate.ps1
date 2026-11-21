@@ -25,8 +25,16 @@ $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIden
 if (-not $isAdmin) { throw 'Ejecuta este script como Administrador.' }
 if (-not (Test-Path $ConfigPath)) { throw "No se encontró la configuración: $ConfigPath" }
 
+# La cuenta virtual del servicio necesita leer el PFX y appsettings.json.
+$serviceSid = $null
+$sidOutput = (sc.exe showsid $ServiceName 2>&1 | Out-String)
+$sidMatch = [regex]::Match($sidOutput, 'S-1-5-80-\d+(?:-\d+)+')
+if ($sidMatch.Success) { $serviceSid = $sidMatch.Value }
+
 New-Item -ItemType Directory -Force -Path $CertDir | Out-Null
-icacls $CertDir /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' '*S-1-5-32-545:(OI)(CI)R' | Out-Null
+$certAcls = @('/inheritance:r', '/grant:r', '*S-1-5-18:(OI)(CI)F', '*S-1-5-32-544:(OI)(CI)F', '*S-1-5-32-545:(OI)(CI)R')
+if ($serviceSid) { $certAcls += "*${serviceSid}:(OI)(CI)R" }
+icacls $CertDir @certAcls | Out-Null
 
 $rootSubject = 'CN=GymService LAN Root CA'
 $root = Get-ChildItem Cert:\LocalMachine\My |
@@ -74,7 +82,9 @@ $bytes = New-Object byte[] 24
 [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
 $pfxPassword = [Convert]::ToBase64String($bytes)
 Export-PfxCertificate -Cert $leaf -FilePath $pfxPath -Password (ConvertTo-SecureString $pfxPassword -AsPlainText -Force) -Force | Out-Null
-icacls $pfxPath /inheritance:r /grant:r '*S-1-5-18:F' '*S-1-5-32-544:F' | Out-Null
+$pfxAcls = @($pfxPath, '/inheritance:r', '/grant:r', '*S-1-5-18:F', '*S-1-5-32-544:F')
+if ($serviceSid) { $pfxAcls += "*${serviceSid}:(R)" }
+icacls @pfxAcls | Out-Null
 
 # Limpiar certificados anteriores del mismo sujeto emitidos por esta CA.
 Get-ChildItem Cert:\LocalMachine\My |
@@ -96,7 +106,9 @@ if (-not $cfg.Kestrel) {
 }
 $cfg.Kestrel | Add-Member -MemberType NoteProperty -Name Certificates -Value $certificates -Force
 [IO.File]::WriteAllText($ConfigPath, ($cfg | ConvertTo-Json -Depth 12), (New-Object Text.UTF8Encoding($false)))
-icacls $ConfigPath /inheritance:r /grant:r '*S-1-5-18:F' '*S-1-5-32-544:F' | Out-Null
+$configAcls = @($ConfigPath, '/inheritance:r', '/grant:r', '*S-1-5-18:F', '*S-1-5-32-544:F')
+if ($serviceSid) { $configAcls += "*${serviceSid}:(R)" }
+icacls @configAcls | Out-Null
 
 Write-Host "Certificado emitido: $leafSubject (vence $($leaf.NotAfter.ToString('yyyy-MM-dd')))"
 Write-Host "PFX: $pfxPath"

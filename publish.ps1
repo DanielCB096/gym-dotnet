@@ -85,6 +85,7 @@ if (-not $SkipFrontend) {
 # 4. Instalador y configuración de ejemplo
 Copy-Item (Join-Path $root 'GymServiceSetup\install.ps1') $Output -Force
 Copy-Item (Join-Path $root 'GymServiceSetup\uninstall.ps1') $Output -Force
+Copy-Item (Join-Path $root 'deploy\security\Set-ServiceAccount.ps1') $Output -Force
 Copy-Item (Join-Path $root 'GymService\appsettings.example.json') (Join-Path $Output 'appsettings.example.json') -Force
 
 # Nunca publicar credenciales locales

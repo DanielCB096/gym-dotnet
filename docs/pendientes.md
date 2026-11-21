@@ -80,4 +80,9 @@ o la licencia lo permite.
       `SYSTEM` (`LastTaskResult=0`), retención 30/7. Restauración verificada (hash idéntico y
       42 tablas). La contraseña está en un archivo protegido del servidor y en una copia del
       Escritorio; debe guardarse en un gestor y borrarse el archivo temporal.
-- [ ] Evaluar cuenta dedicada para el servicio en lugar de `LocalSystem`.
+- [x] **Cuenta dedicada del servicio** (2026-11-21, versión 1.7.1): el servicio corre como
+      `NT SERVICE\centrofitgymservice` (cuenta virtual), no `LocalSystem`. ACLs mínimas sobre
+      aplicación, logs, `appsettings.json` y PFX; el proceso se verificó con
+      `GetOwner = NT SERVICE\centrofitgymservice`, `/health` healthy, login, SMTP real y tarea
+      offsite con resultado 0. Script de aplicación/rollback:
+      `deploy/security/Set-ServiceAccount.ps1`; MSI e instaladores actualizados.

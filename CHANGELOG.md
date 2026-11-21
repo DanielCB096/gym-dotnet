@@ -11,6 +11,13 @@
 
 ## Backend (.NET)
 
+### Contención: cuenta virtual del servicio (2026-11-21, versión 1.7.1)
+- **Cambio:** `centrofitgymservice` pasó de `LocalSystem` a `NT SERVICE\centrofitgymservice` (cuenta virtual, sin contraseña ni inicio de sesión interactivo). El proceso quedó verificado con propietario `NT SERVICE\centrofitgymservice`.
+- **Permisos mínimos:** lectura/ejecución sobre `C:\Program Files\Centro Fit\GymService`, escritura sobre `logs`, lectura de `appsettings.json` y del PFX de HTTPS. No se dio acceso a `D:\GymBackups`, OneDrive, secretos offsite ni al resto de `ProgramData`.
+- **Automatización:** nuevo `deploy/security/Set-ServiceAccount.ps1` (aplica/rollback con `-Rollback`); `install.ps1`, `install-service.ps1`, MSI y `New-GymServerCertificate.ps1` conservan la cuenta y sus ACLs en instalaciones/renovaciones.
+- **Verificación:** servicio `Running`, `/health` healthy 1.7.1, panel HTTPS 200, login del owner con `requiresMfa`, logs escribiéndose, OTP real enviado por SMTP (código de prueba eliminado) y tarea `GymService-Offsite` con `LastTaskResult=0`. Sin errores en el visor de eventos tras el reinicio.
+- **Rollback:** `deploy/security/Set-ServiceAccount.ps1 -Rollback` vuelve a `LocalSystem` y arranca el servicio; las ACLs añadidas pueden quedarse sin riesgo funcional.
+
 ### MFA TOTP completo y pantalla Seguridad (2026-11-21, versión 1.7.0)
 - **Login en dos pasos:** con MFA activo, `/api/auth/login` ya no crea sesión ni revela `userId`; devuelve `requiresMfa` y un desafío firmado con HMAC de **5 minutos y un solo uso** (`MfaChallengeMinutes`, `MfaMaxAttempts`). `/api/auth/mfa/login` valida TOTP o código de respaldo y crea la sesión.
 - **Códigos de respaldo:** 10 códigos de un solo uso, hasheados con SHA-256; se consumen al usarlos. El secreto TOTP se guarda cifrado con AES-256.

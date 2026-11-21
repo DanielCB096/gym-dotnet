@@ -236,6 +236,14 @@ producción y CI.
   `UPDATE gym_users SET mfa_enabled=0, mfa_secret_encrypted=NULL, mfa_backup_codes=NULL WHERE username='...';`
   y el usuario vuelve a configurarlo desde **Seguridad**. Guarda los códigos de respaldo fuera
   del servidor.
+- **Cuenta de servicio:** el servicio corre como la cuenta virtual
+  `NT SERVICE\centrofitgymservice`, no como `LocalSystem`. Solo tiene lectura/ejecución sobre la
+  aplicación, escritura sobre `logs` y lectura de `appsettings.json` y del PFX de HTTPS.
+  `deploy/security/Set-ServiceAccount.ps1` aplica los permisos y la cuenta (con `-Rollback`
+  vuelve a `LocalSystem`). El instalador y el MSI aplican la misma configuración. La conexión a
+  SQL sigue usando el login `gym_app`; la cuenta de Windows no cambia permisos de base de datos.
+  Si se renueva el certificado, `New-GymServerCertificate.ps1` conserva el permiso de lectura
+  para esa cuenta.
 - **Rate limiting** por IP: `auth` (20/min), `strict` (5/min en OTP y validación de kiosco) y
   `general` (100/min) en `WebServerService`.
 - **OTP por correo real** con MailKit (`Email:SmtpServer/Port/User/Password/FromAddress/EnableSsl`).
@@ -483,6 +491,7 @@ Actualizar = ejecutar de nuevo `install.ps1` con el ZIP nuevo (detiene, reemplaz
 - [ ] Login SQL dedicado `gym_app` y contraseña fuerte (sin `sa`), probado con `/health` y respaldos.
 - [ ] `MfaEncryptionKey` generada para ese servidor.
 - [ ] MFA activado para el owner y códigos de respaldo guardados fuera del servidor.
+- [ ] Servicio con cuenta virtual (`NT SERVICE\centrofitgymservice`) y ACLs mínimas, no `LocalSystem`.
 - [ ] SMTP probado (código OTP real).
 - [ ] Backup programado de la base de datos.
 - [ ] HTTPS en la LAN con CA local instalada en los equipos cliente (o reverse proxy con `ForwardedHeaders` si se publica fuera).
