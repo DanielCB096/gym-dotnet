@@ -6,6 +6,12 @@
 
 ## Backend (.NET)
 
+### Login SQL dedicado `gym_app` (2026-11-21)
+- **Seguridad:** la aplicación instalada dejó de usar `sa`. Se creó el login `gym_app` con `db_owner` sobre `GymManager`, `CHECK_POLICY=ON`, `DEFAULT_DATABASE=GymManager` y el permiso de servidor `CREATE ANY DATABASE`; sin `sysadmin` ni rol `dbcreator`.
+- **Permisos de respaldo:** `RESTORE VERIFYONLY`, `RESTORE HEADERONLY`/`FILELISTONLY` y la restauración de prueba exigen `CREATE DATABASE` en `master`. Sin ese permiso, `backup.ps1` fallaba con "CREATE DATABASE permission denied in database 'master'"; `verify-backup.ps1` tampoco podía crear la base temporal.
+- **Verificación:** `/health` responde **healthy** con versión **1.5.1** y base **healthy**; el login del panel (`owner`) sigue funcionando. `backup.ps1` y `backup-log.ps1` generaron `.bak` y `.trn` con `Verified=True`; `verify-backup.ps1` restauró 42 tablas y 6 socios y eliminó la base temporal. Las tareas `GymService-Full` y `GymService-Log` terminaron con `LastTaskResult=0` y dejaron archivos nuevos en `D:\GymBackups`.
+- **Configuración:** la contraseña solo está en `C:\Program Files\Anxo\GymService\appsettings.json` y en el `GymService\appsettings.json` local (ambos fuera de Git); `appsettings.example.json` y el README usan `gym_app` como plantilla.
+
 ### SQL Server nativo y respaldos en Express (2026-11-20)
 - **Migración:** se reemplazó el contenedor SQL Server 2022 por **SQL Server 2025 Express** nativo (instancia `MSSQLSERVER`, puerto 1433, autenticación mixta, inicio automático). La base `GymManager` se restauró desde el respaldo del contenedor: **42 tablas, 6 socios, modelo FULL**.
 - **Corrección:** SQL Server Express no admite `COMPRESSION` en `BACKUP`. `backup.ps1` y `backup-log.ps1` detectan `EngineEdition=4` y omiten la compresión; en ediciones superiores la conservan.
@@ -17,7 +23,7 @@
 - **Versión:** `GymService.csproj` pasa a **1.5.1** y el health check de readiness lee la versión del ensamblado en lugar de tener `1.0.0` fijo. El MSI 1.5.1 se regeneró, se reinstaló el servicio y `/health` reporta **1.5.1**.
 - **Respaldo:** la base `GymManager` queda en modelo **FULL**; se generó y verificó un respaldo completo.
 - **Tareas programadas:** `GymService-Full` (diaria 02:00, retención 14 días) y `GymService-Log` (cada 15 minutos, retención 3 días), ejecutadas como **SYSTEM**. Ambas se ejecutaron en vivo con `LastTaskResult=0` y generaron `.bak` y `.trn` en el servidor SQL.
-- **Dependencia operativa:** las tareas apuntan a los scripts del repositorio y a SQL Server en `localhost:1433`; requieren que el repositorio y el servidor SQL estén disponibles en la ruta/host configurados.
+- **Dependencia operativa:** las tareas apuntan a los scripts y `appsettings.json` de `C:\Program Files\Anxo\GymService` (copia instalada, independiente del repositorio) y a SQL Server en `localhost:1433`.
 
 ### Importación de socios con correos duplicados (2026-11-20)
 - **Bug:** la importación masiva de socios permitía correos repetidos contra la base y dentro del mismo archivo, aunque el alta manual sí los rechaza.

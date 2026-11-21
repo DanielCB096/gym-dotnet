@@ -92,7 +92,23 @@ Express es suficiente para una tienda/gimnasio pequeño y es la edición usada e
 - La aplicación no usa funciones exclusivas de Enterprise; los scripts de respaldo detectan Express
   (`EngineEdition=4`) y omiten `COMPRESSION`, que Express no admite.
 - Instancia predeterminada `MSSQLSERVER` en el puerto 1433. Para producción, usar un **login SQL dedicado**
-  con permisos mínimos sobre `GymManager`; no usar `sa`.
+  (`gym_app`) con permisos mínimos sobre `GymManager`; no usar `sa`.
+- **Permisos del login dedicado:** `db_owner` sobre `GymManager` (el arranque crea/valida tablas, índices
+  y FK) y el permiso de servidor `CREATE ANY DATABASE`, que SQL Server exige para `RESTORE VERIFYONLY`,
+  `RESTORE HEADERONLY`/`FILELISTONLY` y para restaurar la base temporal de prueba. No se le asigna
+  `sysadmin` ni el rol `dbcreator`. Ejecutar en `master`:
+
+  ```sql
+  CREATE LOGIN [gym_app] WITH PASSWORD = N'<contraseña-fuerte>',
+      CHECK_POLICY = ON, CHECK_EXPIRATION = OFF, DEFAULT_DATABASE = [GymManager];
+  GRANT CREATE ANY DATABASE TO [gym_app];
+
+  USE [GymManager];
+  CREATE USER [gym_app] FOR LOGIN [gym_app];
+  ALTER ROLE [db_owner] ADD MEMBER [gym_app];
+  ```
+
+  La contraseña solo se guarda en `appsettings.json` (no versionado); no se documenta ni se sube al repositorio.
 
 Tablas:
 
@@ -170,7 +186,7 @@ Edita `appsettings.json`:
   "Database": {
     "Server": "localhost",
     "Database": "GymManager",
-    "User": "sa",
+    "User": "gym_app",
     "Password": "tu_password",
     "Port": 1433,
     "PoolSize": 10
@@ -189,7 +205,8 @@ Edita `appsettings.json`:
 > `appsettings.json` está en `.gitignore`: usa `appsettings.example.json` como plantilla.
 > `MfaEncryptionKey` es obligatoria para MFA (sin ella el setup/verify devuelve error controlado).
 > Si `AdminResetToken` está vacío, `/api/auth/reset-admin-password` queda deshabilitado (404); para usarlo, define un token y envíalo en el header `X-Admin-Reset-Token`.
-> En producción no uses `sa`: crea un login SQL con permisos mínimos sobre la base de datos del gimnasio.
+> En producción no uses `sa`: crea el login `gym_app` con los permisos de la sección
+> [SQL Server Express](#sql-server-express-instalación-local) y configura aquí sus credenciales.
 
 Cualquier clave de `appsettings.json` se puede sobrescribir con variables de entorno usando
 doble guion bajo (`Database__Server`, `WebServer__Port`, `Email__SmtpPassword`…), útil para
@@ -415,7 +432,7 @@ Actualizar = ejecutar de nuevo `install.ps1` con el ZIP nuevo (detiene, reemplaz
 
 ### 5. Checklist antes de entregar
 
-- [ ] Login SQL dedicado y contraseña fuerte (sin `sa`).
+- [ ] Login SQL dedicado `gym_app` y contraseña fuerte (sin `sa`), probado con `/health` y respaldos.
 - [ ] `MfaEncryptionKey` generada para ese servidor.
 - [ ] SMTP probado (código OTP real).
 - [ ] Backup programado de la base de datos.
@@ -428,6 +445,9 @@ Actualizar = ejecutar de nuevo `install.ps1` con el ZIP nuevo (detiene, reemplaz
 
 `backup.ps1` crea un respaldo completo con verificación (`RESTORE VERIFYONLY`) y
 `verify-backup.ps1` lo restaura en una base temporal para comprobar que es recuperable.
+El login usado por los scripts necesita `CREATE ANY DATABASE` en el servidor (además de `db_owner`
+sobre `GymManager`); sin ese permiso, `RESTORE VERIFYONLY` y la restauración de prueba fallan con
+"CREATE DATABASE permission denied in database 'master'".
 
 ```powershell
 # Respaldo (carpeta por defecto del servidor SQL, base de appsettings.json)
