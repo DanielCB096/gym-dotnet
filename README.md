@@ -453,6 +453,10 @@ Actualizar = ejecutar de nuevo `install.ps1` con el ZIP nuevo (detiene, reemplaz
   completo diario y log cada 15 minutos (`register-backup-tasks.ps1` lo deja configurado).
 - En **SQL Server Express** los respaldos se crean sin `COMPRESSION` automáticamente; en Standard o
   superior se conserva la compresión. Los `.bak` de Express ocupan más espacio.
+- En producción, copia `backup.ps1`, `backup-log.ps1`, `verify-backup.ps1` y
+  `register-backup-tasks.ps1` junto al servicio (`C:\Program Files\Anxo\GymService`) y registra las
+  tareas con `-ConfigPath` absoluto. Así no dependen del repositorio. Usa `-CopyTo` para una copia
+  secundaria en USB, NAS u otra unidad.
 - `register-backup-tasks.ps1` crea las tareas `GymService-Full` y `GymService-Log`. Sin
   `-RunAsSystem` corren con el usuario actual y solo con sesión iniciada; en un servidor usa
   `-RunAsSystem` desde una consola de Administrador.
