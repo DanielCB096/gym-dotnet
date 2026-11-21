@@ -73,7 +73,7 @@ gimnasio-dotnet/
 
 ## Base de Datos
 
-35 tablas SQL Server gestionadas por el modelo de objetos de Anxo. La fuente de verdad es
+41 tablas GYM (42 con `ANXO_SEQUENCES`) gestionadas por el modelo de objetos de Anxo. La fuente de verdad es
 `GymService/Models/_ModelGym.xml`; las entidades (`IDatabaseObject`) y el registro
 `ModelGym.MappingObjects` se generan en `GymService/Models/Generated/`.
 
@@ -82,6 +82,17 @@ gimnasio-dotnet/
   `LAST_UPDATED_BY`, `LAST_UPDATE_LOG`, `OBJECT_VERSION`.
 - El esquema se crea/valida al arrancar (`Services/DatabaseService.cs`) de forma aditiva:
   crea tablas, índices y FK que falten; nunca borra datos.
+
+### SQL Server Express (instalación local)
+
+Express es suficiente para una tienda/gimnasio pequeño y es la edición usada en la instalación local.
+
+- **Límites de la edición:** 1 CPU física, 1 GB de memoria y 50 GB por base de datos (SQL Server 2025 Express).
+- Si el negocio crece, se necesita varias sucursales o la base supera el límite, migrar a **Standard**.
+- La aplicación no usa funciones exclusivas de Enterprise; los scripts de respaldo detectan Express
+  (`EngineEdition=4`) y omiten `COMPRESSION`, que Express no admite.
+- Instancia predeterminada `MSSQLSERVER` en el puerto 1433. Para producción, usar un **login SQL dedicado**
+  con permisos mínimos sobre `GymManager`; no usar `sa`.
 
 Tablas:
 
@@ -440,6 +451,8 @@ Actualizar = ejecutar de nuevo `install.ps1` con el ZIP nuevo (detiene, reemplaz
 - Los respaldos de log usan `backup-log.ps1`; falla con un mensaje claro si la base está en
   modelo SIMPLE o si aún no existe un respaldo completo. Para RPO de 15 minutos: modelo FULL,
   completo diario y log cada 15 minutos (`register-backup-tasks.ps1` lo deja configurado).
+- En **SQL Server Express** los respaldos se crean sin `COMPRESSION` automáticamente; en Standard o
+  superior se conserva la compresión. Los `.bak` de Express ocupan más espacio.
 - `register-backup-tasks.ps1` crea las tareas `GymService-Full` y `GymService-Log`. Sin
   `-RunAsSystem` corren con el usuario actual y solo con sesión iniciada; en un servidor usa
   `-RunAsSystem` desde una consola de Administrador.
