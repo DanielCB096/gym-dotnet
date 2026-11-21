@@ -8,6 +8,7 @@ param(
     [string]$DatabaseUser = "",
     [string]$DatabasePassword = "",
     [switch]$OpenFirewall,
+    [string]$FirewallRemote = "localsubnet",
     [switch]$NoStart,
     [switch]$PrepareOnly
 )
@@ -206,7 +207,7 @@ Invoke-Sc @('description', $serviceName, 'GymService - API y panel web para la g
 if ($OpenFirewall) {
     $ruleName = "GymService (TCP $Port)"
     if (-not (Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue)) {
-        New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -Action Allow -Protocol TCP -LocalPort $Port | Out-Null
+        New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -Action Allow -Protocol TCP -LocalPort $Port -RemoteAddress $FirewallRemote -Profile Any | Out-Null
         Write-Host "Regla de firewall creada: $ruleName" -ForegroundColor Green
     }
 }

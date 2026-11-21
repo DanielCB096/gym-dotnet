@@ -17,6 +17,7 @@
 
     <Property Id="OPEN_FIREWALL" Value="0" />
     <Property Id="WEB_PORT" Value="5000" />
+    <Property Id="FIREWALL_REMOTE" Value="localsubnet" />
 
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="ANXOFOLDER" Name="Anxo">
@@ -91,9 +92,16 @@
                   Execute="deferred"
                   Impersonate="no"
                   Return="ignore"
-                  ExeCommand="netsh.exe advfirewall firewall add rule name=&quot;GymService HTTP&quot; dir=in action=allow protocol=TCP localport=[WEB_PORT]" />
+                  ExeCommand="netsh.exe advfirewall firewall add rule name=&quot;GymService HTTPS&quot; dir=in action=allow protocol=TCP localport=[WEB_PORT] remoteip=[FIREWALL_REMOTE] profile=any" />
 
     <CustomAction Id="RemoveFirewall"
+                  Directory="SystemFolder"
+                  Execute="deferred"
+                  Impersonate="no"
+                  Return="ignore"
+                  ExeCommand="netsh.exe advfirewall firewall delete rule name=&quot;GymService HTTPS&quot;" />
+
+    <CustomAction Id="RemoveFirewallLegacy"
                   Directory="SystemFolder"
                   Execute="deferred"
                   Impersonate="no"
@@ -106,6 +114,7 @@
       <Custom Action="ServiceRecovery" After="ServiceDelayedStart" Condition="NOT Installed" />
       <Custom Action="OpenFirewall" After="ServiceRecovery" Condition="OPEN_FIREWALL=1 AND NOT Installed" />
       <Custom Action="RemoveFirewall" Before="RemoveFiles" Condition="REMOVE=&quot;ALL&quot;" />
+      <Custom Action="RemoveFirewallLegacy" Before="RemoveFiles" Condition="REMOVE=&quot;ALL&quot;" />
     </InstallExecuteSequence>
 
   </Package>

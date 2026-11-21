@@ -6,6 +6,14 @@
 
 ## Backend (.NET)
 
+### HTTPS en red local con CA propia (2026-11-21)
+- **Cambio:** Kestrel pasa a `https://0.0.0.0:5055` con un certificado de la CA local `GymService LAN Root CA` (SAN `192.168.100.53` y `127.0.0.1`). Se descartó el reverse proxy: el rate limiting y los bloqueos usan `RemoteIpAddress`, y un proxy haría que todos los clientes compartieran `127.0.0.1` (el límite estricto de 5/min del kiosco se volvería global).
+- **Script:** `deploy/https/New-GymServerCertificate.ps1` crea o reutiliza la CA, emite el certificado, exporta el PFX con contraseña aleatoria, actualiza `Kestrel` y `WebServer:Urls`, aplica ACL, reinicia y verifica `/health`.
+- **Endurecimiento:** `appsettings.json` y el PFX quedan solo para `SYSTEM` y `Administradores`; la regla de firewall pasa a `GymService HTTPS` y se limita a `192.168.100.0/24`; HTTP plano en el puerto 5055 se rechaza.
+- **Instalador:** `OPEN_FIREWALL=1` crea la regla `GymService HTTPS` con `FIREWALL_REMOTE` (`localsubnet` por defecto); la desinstalación elimina también la regla antigua `GymService HTTP`.
+- **Verificación en vivo:** TLS 1.3, certificado con SAN correcto y vigencia hasta 2029-02-23; `/health` healthy 1.5.1 por `127.0.0.1` y `192.168.100.53`; login `owner` y dashboard en navegador real sin errores de consola; `http://` rechazado; solo una regla de firewall para 5055, limitada a la LAN.
+- **Clientes:** instalar `C:\ProgramData\GymService\certs\gymservice-root-ca.cer` en el almacén de raíces de confianza y configurar el kiosco con `apiUrl` HTTPS. Procedimiento y diagnóstico en `docs/https-red-local.md`.
+
 ### Limpieza del contenedor Docker `gym-sql` (2026-11-21)
 - **Limpieza:** se eliminó el contenedor `gym-sql` (detenido desde la migración) y su volumen `gym-sql-data` (164.5 MB). Antes se comprobó que la base nativa `GymManager` está respaldada y restaurada en vivo (42 tablas, 6 socios) y que ningún otro contenedor usaba el volumen.
 - **Imagen:** `mcr.microsoft.com/mssql/server:2022-latest` (2.21 GB) permanece en la caché de Docker; no la usa ningún contenedor y puede eliminarse con `docker image rm` si se necesita espacio.

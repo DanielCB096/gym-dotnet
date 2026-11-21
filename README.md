@@ -366,7 +366,8 @@ Copiar el ZIP al servidor y ejecutar **como Administrador**:
   -DatabaseName "GymManager" `
   -DatabaseUser "gym_app" `
   -DatabasePassword "********" `
-  -OpenFirewall
+  -OpenFirewall `
+  -FirewallRemote "192.168.100.0/24"
 ```
 
 El instalador:
@@ -375,9 +376,9 @@ El instalador:
 - Crea `appsettings.json` desde la plantilla **solo si no existe** (las actualizaciones conservan la configuración).
 - Restringe los permisos de `appsettings.json` a SYSTEM y Administradores.
 - Registra el servicio `anxogymmservice`, configura recuperación ante fallos y lo inicia.
-- Opcionalmente abre el puerto en el firewall (`-OpenFirewall`).
+- Opcionalmente abre el puerto en el firewall (`-OpenFirewall`), limitado a `-FirewallRemote` (`localsubnet` por defecto).
 
-Panel web y API quedan en `http://<servidor>:<puerto>` (por defecto `http://0.0.0.0:5000`).
+Panel web y API quedan en `http://<servidor>:<puerto>` (por defecto `http://0.0.0.0:5000`). Para producción en red local se recomienda HTTPS directo en Kestrel; ver [3b](#3b-https-en-red-local-solo-ip).
 
 ### 2b. Instalador MSI (WiX)
 
@@ -387,14 +388,14 @@ Alternativa al ZIP con PowerShell. Genera un MSI per-machine que instala en
 ```powershell
 dotnet tool install -g wix --version 5.0.2   # WiX 6+ exige aceptar el EULA OSMF
 .\build-msi.ps1                              # publica y genera artifacts\GymService-<version>-win-x64.msi
-msiexec /i "artifacts\GymService-1.0.0-win-x64.msi" OPEN_FIREWALL=1 WEB_PORT=5055   # Administrador
+msiexec /i "artifacts\GymService-1.0.0-win-x64.msi" OPEN_FIREWALL=1 WEB_PORT=5055 FIREWALL_REMOTE=192.168.100.0/24   # Administrador
 ```
 
 - El MSI instala `appsettings.json` desde la plantilla **solo si no existe** y lo conserva al
   desinstalar (`NeverOverwrite` + `Permanent`).
 - El servicio queda instalado en automático **sin arrancar**: edita `appsettings.json` y ejecuta
   `Start-Service anxogymmservice`.
-- `OPEN_FIREWALL=1` abre el puerto 5000; la regla se elimina al desinstalar.
+- `OPEN_FIREWALL=1` abre `WEB_PORT` solo para `FIREWALL_REMOTE` (`localsubnet` por defecto; por ejemplo `192.168.100.0/24`). La regla `GymService HTTPS` se elimina al desinstalar.
 - Configura recuperación ante fallos (`sc failure`) automáticamente.
 - Si ya instalaste con el ZIP/PowerShell, desinstala esa versión antes para no duplicar el servicio.
 - `build-msi.ps1` valida el MSI con `wix msi validate` y `-FrameworkDependent` reduce el tamaño.
@@ -407,12 +408,36 @@ Editar `C:\Program Files\Anxo\GymService\appsettings.json`:
 - `Authentication:MfaEncryptionKey`: clave aleatoria de 32 bytes en Base64.
 - `Authentication:AdminResetToken`: token largo y secreto (o vacío para deshabilitarlo).
 - `Email`: SMTP real y `ShowCodeInResponse: false`.
-- `WebServer:Urls`: por ejemplo `http://0.0.0.0:5000`; detrás de IIS/Nginx usar `http://localhost:5000`.
+- `WebServer:Urls`: `http://0.0.0.0:5000` en desarrollo o `https://0.0.0.0:5055` con TLS directo (ver 3b). No se recomienda IIS/Nginx delante: el rate limiting y los bloqueos usan `RemoteIpAddress`, y un proxy haría que todos los clientes compartieran `127.0.0.1` (el límite estricto de 5/min del kiosco pasaría a ser global).
 - `WebServer:CorsOrigins`: solo los orígenes necesarios si el panel se sirve aparte.
 - `Logging:LogPath` y retención según política del cliente.
 
 Cualquier valor se puede sobrescribir por variables de entorno con doble guion bajo:
 `Database__Password`, `WebServer__Port`, `Email__SmtpPassword`, etc.
+
+### 3b. HTTPS en red local (solo IP)
+
+Para acceso por IP dentro de la LAN, GymService termina TLS en Kestrel con un certificado
+emitido por una CA local; no hace falta dominio ni proxy inverso.
+
+```powershell
+# Administrador
+.\deploy\https\New-GymServerCertificate.ps1 -IpAddress 192.168.100.53
+```
+
+El script crea la CA `GymService LAN Root CA` (si no existe), emite el certificado con
+SAN de IP (`192.168.100.53` y `127.0.0.1`), guarda el PFX en
+`C:\ProgramData\GymService\certs`, actualiza `Kestrel` y `WebServer:Urls` en
+`appsettings.json`, restringe las ACL y reinicia el servicio.
+
+- Instala `C:\ProgramData\GymService\certs\gymservice-root-ca.cer` en
+  **Entidades de certificación raíz de confianza** de cada equipo/tablet que use el panel.
+- Abre `https://192.168.100.53:5055` (HTTP plano en ese puerto ya no responde).
+- Firewall: regla `GymService HTTPS`, TCP 5055, solo `192.168.100.0/24`.
+- En el kiosco, configura `apiUrl` como `https://192.168.100.53:5055`.
+- Renovación o cambio de IP: vuelve a ejecutar el script con la IP nueva; la CA raíz no cambia.
+
+Detalles por sistema operativo, diagnóstico y renovación: [`docs/https-red-local.md`](docs/https-red-local.md).
 
 ### 4. Operación
 
@@ -436,7 +461,7 @@ Actualizar = ejecutar de nuevo `install.ps1` con el ZIP nuevo (detiene, reemplaz
 - [ ] `MfaEncryptionKey` generada para ese servidor.
 - [ ] SMTP probado (código OTP real).
 - [ ] Backup programado de la base de datos.
-- [ ] HTTPS por reverse proxy si se publica fuera de la red local.
+- [ ] HTTPS en la LAN con CA local instalada en los equipos cliente (o reverse proxy con `ForwardedHeaders` si se publica fuera).
 - [ ] Firewall limitado a la red del gimnasio.
 - [ ] `GET /health` responde `healthy`.
 - [ ] Alta del owner y prueba de login/panel.
