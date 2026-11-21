@@ -1,7 +1,7 @@
 # Graph Report - gimnasio dotnet  (2026-11-21)
 
 ## Corpus Check
-- 217 files · ~222,983 words
+- 217 files · ~223,058 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 11 file(s) not represented in the graph (top: (none) 3, .css 2, .xml 2)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `c3b5fd03`
+- Built from commit: `4b0bc3c7`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -156,8 +156,6 @@
 10. `GYM_SALES` - 49 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Corrección de fechas locales frente a SQL en UTC (2026-11-20)` --references--> `AccessFlowTests`  [INFERRED]
-  CHANGELOG.md → GymService.Tests/Integration/AccessFlowTests.cs
 - `Operación y seguridad (2026-11-19)` --references--> `DatabaseService`  [INFERRED]
   CHANGELOG.md → GymService/Services/DatabaseService.cs
 - `Obstáculo 1: Propiedad mal nombrada en DataCenter.cs` --references--> `BusinessProcess`  [INFERRED]
@@ -166,6 +164,8 @@
   TAREAS_DELEGADAS.md → GymService/Modules/Identity/IdentityModule.cs
 - `Membresías y socios` --references--> `GYM_MEMBER_CREDITS`  [INFERRED]
   docs/reglas-negocio.md → GymService/Models/Generated/GYM_MEMBER_CREDITS.cs
+- `Corrección de fechas locales frente a SQL en UTC (2026-11-20)` --references--> `AccessFlowTests`  [INFERRED]
+  CHANGELOG.md → GymService.Tests/Integration/AccessFlowTests.cs
 
 ## Import Cycles
 - None detected.
@@ -569,16 +569,16 @@ Nodes (5): Bibliotecas principales, Estructura del Framework GymCore, Patrón de
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `GymService - Registro de Cambios y Correcciones` connect `GymService - Registro de Cambios y Correcciones` to `Frontend (React + Vite)`, `Rediseño TailAdmin (Frontend)`, `PermissionMatrix`, `Backend (.NET)`?**
-  _High betweenness centrality (0.137) - this node is a cross-community bridge._
+  _High betweenness centrality (0.139) - this node is a cross-community bridge._
 - **What connects `CREATED_BY`, `CREATION_DATETIME`, `InDatabase` to the rest of the system?**
   _535 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Dictionary` be split into smaller, more focused modules?**
   _Cohesion score 0.050606568194507894 - nodes in this community are weakly interconnected._
 - **Why does `Backend (.NET)` connect `Backend (.NET)` to `GYM_MEMBER_CREDITS`, `BulkImportMembersTests.Csv_RechazaCorreoExistenteYRepetidoEnArchivo`, `GYM_MEMBERSHIPS`, `CurrentUser`, `GYM_ROUTINE_PLAN_EXERCISES`, `PermissionMatrix`, `GymService - Registro de Cambios y Correcciones`, `ModelGym`?**
-  _High betweenness centrality (0.134) - this node is a cross-community bridge._
+  _High betweenness centrality (0.136) - this node is a cross-community bridge._
 - **Should `GYM_BANK_TRANSACTIONS` be split into smaller, more focused modules?**
   _Cohesion score 0.08253968253968254 - nodes in this community are weakly interconnected._
 - **Why does `Estado actual del sistema` connect `GymService - Registro de Cambios y Correcciones` to `CrudPage`?**
-  _High betweenness centrality (0.114) - this node is a cross-community bridge._
+  _High betweenness centrality (0.107) - this node is a cross-community bridge._
 - **Should `xunit` be split into smaller, more focused modules?**
   _Cohesion score 0.07653061224489796 - nodes in this community are weakly interconnected._

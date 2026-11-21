@@ -92,6 +92,11 @@ Import-Certificate -FilePath .\gymservice-root-ca.cer -CertStoreLocation Cert:\L
 2. **Ajustes → Seguridad → Cifrado y credenciales → Instalar un certificado → Certificado de CA**.
 3. Selecciona el archivo y confirma el aviso del sistema (es normal para CA de usuario).
 
+> Android exige un **bloqueo de pantalla** (PIN/patrón) para instalar una CA de usuario.
+> En HyperOS/MIUI puedes buscar “certificado” en Ajustes para llegar a “Instalar un certificado”.
+> Verificado en Android 16: el panel y el kiosco cargan por HTTPS sin advertencia tras instalar
+> la CA en **Credenciales de confianza → Usuario**.
+
 ### iOS / iPadOS
 
 1. Envía el `.cer` por AirDrop o correo y ábrelo.
