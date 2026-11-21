@@ -81,10 +81,14 @@ WHERE database_name = @db AND type = 'D'
     Write-Host "Respaldando el log de [$Database] en $backupFile ..."
     $started = Get-Date
 
+    # SQL Server Express no admite compresión de respaldos.
+    $edition = [int](Invoke-Command $connection "SELECT CAST(SERVERPROPERTY('EngineEdition') AS int)").ExecuteScalar()
+    $compression = if ($edition -ne 4) { ', COMPRESSION' } else { '' }
+
     $backupCommand = Invoke-Command $connection @"
 BACKUP LOG @db
 TO DISK = @path
-WITH INIT, CHECKSUM, COMPRESSION, NAME = @name
+WITH INIT, CHECKSUM$compression, NAME = @name
 "@ @{ '@db' = $Database; '@path' = $backupFile; '@name' = $backupName }
     $backupCommand.ExecuteNonQuery() | Out-Null
 
