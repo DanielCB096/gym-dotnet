@@ -16,7 +16,7 @@ param(
     [string]$Account = '',
     [switch]$Rollback,
     [switch]$SkipRestart,
-    [string]$HealthUrl = 'https://192.168.100.53:5055/health'
+    [string]$HealthUrl = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -60,6 +60,12 @@ if (-not [System.IO.Path]::IsPathRooted($logPath)) { $logPath = Join-Path $insta
 $certPath = $config.Kestrel.Certificates.Default.Path
 $certDir = if ($certPath) { Split-Path -Parent $certPath } else { $null }
 $outbox = $config.Email.OutboxDirectory
+
+if (-not $SkipRestart -and [string]::IsNullOrWhiteSpace($HealthUrl) -and $config.WebServer.Urls) {
+    $baseUrl = ($config.WebServer.Urls -split ',')[0].Trim()
+    $baseUrl = $baseUrl -replace '0\.0\.0\.0', '127.0.0.1' -replace '\+', '127.0.0.1'
+    $HealthUrl = $baseUrl.TrimEnd('/') + '/health'
+}
 
 Write-Host "Servicio: $ServiceName" -ForegroundColor Cyan
 Write-Host "Cuenta:   $targetAccount" -ForegroundColor Cyan
