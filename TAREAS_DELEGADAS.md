@@ -29,7 +29,7 @@ salvo que la tarea lo indique explícitamente.
 
 **Stack real:**
 - Frontend: React 19 + Vite 8 + Tailwind CSS 4 + axios + lucide-react. **No es Next.js.**
-- Backend: `GymService/` — .NET 10 (`net10.0-windows7.0`), Kestrel, SQL Server (instancia **LETO**), framework propietario **Anxo**.
+- Backend: `GymService/` - .NET 10 (`net10.0-windows7.0`), Kestrel, SQL Server (instancia **LETO**), framework propietario **GymCore**.
 - Config local: `GymService/appsettings.json` (ignorado por git; hay plantilla en `appsettings.example.json`).
 
 **Reglas del frontend:**
@@ -72,7 +72,7 @@ dotnet build
 - `GymService/Services/DatabaseService.cs`, `GymService/Models/ModelGym.cs`.
 - `GymService/Program.cs`, `DataCenter.cs`, `ServiceImplementation.cs`.
 - `GymService/appsettings.json` y cualquier archivo con contraseñas.
-- `C:\repositorios\pilot\ANXO LIBRARIES\` (framework compartido).
+- `third_party\gym-core\` (framework compartido).
 - Actualizar/eliminar paquetes NuGet.
 - Refactors masivos, renombrados o borrados de archivos.
 - Archivos reservados por la IA grande (ver sección 0).

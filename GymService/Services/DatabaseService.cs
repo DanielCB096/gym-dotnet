@@ -9,7 +9,7 @@ using AxObjectOrientedDatabase;
 namespace GymService.Services
 {
     /// <summary>
-    /// Crea y valida el esquema a partir del modelo de objetos de Anxo.
+    /// Crea y valida el esquema a partir del modelo de objetos de GymCore.
     ///
     /// El modelo es la unica fuente de verdad: Models/Generated contiene las entidades
     /// (IDatabaseObject) y ModelGym.MappingObjects, generados desde Models/_ModelGym.xml

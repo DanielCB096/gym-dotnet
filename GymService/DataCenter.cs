@@ -15,7 +15,7 @@ namespace GymService
     public static class DataCenter
     {
         /// <summary>
-        /// Nombre de assembly usado por el mecanismo NLS de Anxo.
+        /// Nombre de assembly usado por el mecanismo NLS de GymCore.
         /// El codigo NO es arbitrario: NlsTools lo calcula como hash del nombre del assembly.
         /// </summary>
         public const string NLS_ASSEMBLY_NAME = "GymService";
@@ -24,8 +24,8 @@ namespace GymService
         // Service definition
         public static readonly ServiceDefinition SERVICE_DATA = new ServiceDefinition
         {
-            ServiceName = "anxogymmservice",
-            ServiceDisplayName = "Anxo Gym Manager Service",
+            ServiceName = "centrofitgymservice",
+            ServiceDisplayName = "Centro Fit Gym Service",
             // Sin AssemblyName, ServiceConsole usa Assembly.GetExecutingAssembly() (la DLL de
             // AnxoServiceTools) al hacer -install y el servicio quedaria mal registrado.
             AssemblyName = "GymService.exe",

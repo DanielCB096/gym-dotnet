@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using AxLogger;
@@ -374,7 +374,7 @@ namespace GymService.Modules.Access
             {
                 var cutoffDate = DateTime.Now.AddDays(-daysOld);
 
-                // Reads stay as parameterized SQL; deletes are performed through Anxo objects by primary key
+                // Reads stay as parameterized SQL; deletes are performed through GymCore objects by primary key
                 var codesResult = _tools.ExecuteQueryResultSet(
                     "SELECT id FROM gym_access_codes WHERE generated_at < ? AND used = 0",
                     cutoffDate

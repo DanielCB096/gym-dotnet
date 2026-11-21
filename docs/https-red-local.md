@@ -43,7 +43,7 @@ Hace lo siguiente:
 2. Emite un certificado para `192.168.100.53` y `127.0.0.1` con EKU de servidor.
 3. Exporta el PFX con una contraseña aleatoria y lo protege con ACL.
 4. Actualiza `Kestrel` y `WebServer:Urls` (`https://0.0.0.0:5055`) en `appsettings.json`.
-5. Reinicia `anxogymmservice` y comprueba `/health` por HTTPS.
+5. Reinicia `centrofitgymservice` y comprueba `/health` por HTTPS.
 
 Para cambiar de IP o renovar antes del vencimiento, vuelve a ejecutar el script con la IP
 nueva. La CA raíz no cambia, así que los equipos cliente no necesitan volver a confiar en

@@ -2,14 +2,14 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
 
-  <Package Name="GymService - Centro Fit"
-           Manufacturer="ANXO / Centro Fit"
+  <Package Name="Centro Fit Gym Manager"
+           Manufacturer="Centro Fit"
            Version="$(var.ProductVersion)"
            UpgradeCode="6F2F2A2E-7B62-4E4E-9E1F-2B9E6B0C9A11"
            Scope="perMachine"
            Compressed="yes">
 
-    <MajorUpgrade DowngradeErrorMessage="Ya hay una version mas reciente de GymService instalada." />
+    <MajorUpgrade DowngradeErrorMessage="Ya hay una version mas reciente de Centro Fit Gym Manager instalada." />
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
     <WixVariable Id="WixUILicenseRtf" Value="$(var.LicenseFile)" />
@@ -20,12 +20,12 @@
     <Property Id="FIREWALL_REMOTE" Value="localsubnet" />
 
     <StandardDirectory Id="ProgramFiles64Folder">
-      <Directory Id="ANXOFOLDER" Name="Anxo">
+      <Directory Id="CENTROFITFOLDER" Name="Centro Fit">
         <Directory Id="INSTALLFOLDER" Name="GymService" />
       </Directory>
     </StandardDirectory>
 
-    <Feature Id="MainFeature" Title="GymService" Level="1">
+    <Feature Id="MainFeature" Title="Centro Fit Gym Manager" Level="1">
       <Files Directory="INSTALLFOLDER" Include="$(var.PublishDir)\**">
         <Exclude Files="$(var.PublishDir)\GymService.exe" />
         <Exclude Files="$(var.PublishDir)\install.ps1" />
@@ -43,8 +43,8 @@
       <File Id="GymServiceExe" Source="$(var.PublishDir)\GymService.exe" KeyPath="yes" />
 
       <ServiceInstall Id="InstallGymService"
-                      Name="anxogymmservice"
-                      DisplayName="Anxo Gym Manager Service"
+                      Name="centrofitgymservice"
+                      DisplayName="Centro Fit Gym Service"
                       Description="API y panel de Centro Fit"
                       Type="ownProcess"
                       Start="auto"
@@ -52,7 +52,7 @@
                       Account="LocalSystem" />
 
       <ServiceControl Id="ControlGymService"
-                      Name="anxogymmservice"
+                      Name="centrofitgymservice"
                       Stop="both"
                       Remove="uninstall"
                       Wait="yes" />
@@ -71,21 +71,21 @@
                   Execute="deferred"
                   Impersonate="no"
                   Return="ignore"
-                  ExeCommand="sc.exe config anxogymmservice depend= MSSQLSERVER" />
+                  ExeCommand="sc.exe config centrofitgymservice depend= MSSQLSERVER" />
 
     <CustomAction Id="ServiceDelayedStart"
                   Directory="SystemFolder"
                   Execute="deferred"
                   Impersonate="no"
                   Return="ignore"
-                  ExeCommand="sc.exe config anxogymmservice start= delayed-auto" />
+                  ExeCommand="sc.exe config centrofitgymservice start= delayed-auto" />
 
     <CustomAction Id="ServiceRecovery"
                   Directory="SystemFolder"
                   Execute="deferred"
                   Impersonate="no"
                   Return="ignore"
-                  ExeCommand="sc.exe failure anxogymmservice reset= 86400 actions= restart/60000/restart/120000/restart/180000" />
+                  ExeCommand="sc.exe failure centrofitgymservice reset= 86400 actions= restart/60000/restart/120000/restart/180000" />
 
     <CustomAction Id="OpenFirewall"
                   Directory="SystemFolder"

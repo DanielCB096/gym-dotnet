@@ -1,13 +1,13 @@
-# GymService - Centro Fit
+# Centro Fit Gym Manager
 
-Nueva versión del sistema de gestión de gimnasios **Centro Fit**, reescrita en **.NET 10** que corre como **servicio de Windows**, reutilizando las bibliotecas ANXO de PILOT TMS.
+Nueva versión del sistema de gestión de gimnasios **Centro Fit**, reescrita en **.NET 10** que corre como **servicio de Windows**, reutilizando las bibliotecas GymCore de PILOT TMS.
 
 ## Stack Técnico
 
 - **Backend**: .NET 10 con ASP.NET Core Kestrel
-- **Servicio Windows**: AnxoServiceTools
-- **Base de datos**: SQL Server con AnxoDatabase y AnxoObjectDatabaseManager
-- **Bibliotecas**: AnxoLibrary, AnxoServiceTools, AnxoDatabase, AnxoObjectDatabaseManager
+- **Servicio Windows**: GymCore ServiceTools (ensamblado `AnxoServiceTools`)
+- **Base de datos**: SQL Server con la capa de datos de GymCore (`AnxoDatabase`, `AnxoObjectDatabaseManager`)
+- **Bibliotecas**: GymCore Libraries (ensamblados `AnxoLibrary`, `AnxoServiceTools`, `AnxoDatabase`, `AnxoObjectDatabaseManager`)
 - **API REST**: Controllers con DTOs, Swagger/OpenAPI
 - **Autenticación**: Sesiones Bearer opacas, MFA TOTP, OTP por correo
 - **Frontend**: Panel web React 19 + Vite + Tailwind CSS 4
@@ -73,11 +73,11 @@ gimnasio-dotnet/
 
 ## Base de Datos
 
-41 tablas GYM (42 con `ANXO_SEQUENCES`) gestionadas por el modelo de objetos de Anxo. La fuente de verdad es
+41 tablas GYM (42 con `ANXO_SEQUENCES`) gestionadas por el modelo de objetos de GymCore. La fuente de verdad es
 `GymService/Models/_ModelGym.xml`; las entidades (`IDatabaseObject`) y el registro
 `ModelGym.MappingObjects` se generan en `GymService/Models/Generated/`.
 
-- Las PK son `BIGINT` **sin IDENTITY**: las asigna Anxo con secuencias (`ANXO_SEQUENCES`).
+- Las PK son `BIGINT` **sin IDENTITY**: las asigna GymCore con secuencias (`ANXO_SEQUENCES`).
 - Auditoría automática en todas las tablas: `CREATED_AT`, `UPDATED_AT`, `CREATED_BY`,
   `LAST_UPDATED_BY`, `LAST_UPDATE_LOG`, `OBJECT_VERSION`.
 - El esquema se crea/valida al arrancar (`Services/DatabaseService.cs`) de forma aditiva:
@@ -155,11 +155,11 @@ Tras editar `Models/_ModelGym.xml`:
 
 ```powershell
 cd C:\proyectos\gimnasio-dotnet\GymService\Models\Generated
-dotnet run --project "C:\proyectos\gimnasio-dotnet\Tools\AnxoModelGenerator\AnxoModelGenerator.csproj" -- ..\_ModelGym.xml
+dotnet run --project "C:\proyectos\gimnasio-dotnet\Tools\GymModelGenerator\GymModelGenerator.csproj" -- ..\_ModelGym.xml
 ```
 
-`Tools/AnxoModelGenerator` es un envoltorio **del repo del gimnasio**: compila los fuentes del
-generador de Anxo contra `net10.0` sin modificar `C:\repositorios\pilot`.
+`Tools/GymModelGenerator` es un envoltorio **del repo del gimnasio**: compila los fuentes del
+generador de GymCore contra `net10.0` sin modificar `C:\repositorios\pilot`.
 El generador sobreescribe `GYM_*.cs` y `_ModelGym.cs` en el directorio actual.
 No edites esos archivos a mano.
 
@@ -245,19 +245,22 @@ cd C:\proyectos\gimnasio-dotnet
 `build.ps1` compila `GymService.slnx` (Release) y ejecuta las pruebas unitarias.
 Para integración: `.\build.ps1 -Integration` con las variables `GYM_TEST_DB_*` definidas.
 
-### ANXO Libraries (solo para compilar)
+### GymCore Libraries (solo para compilar)
 
-El código fuente de las ANXO Libraries **no está en este repositorio** (es propietario).
-La ruta por defecto es `..\..\..\repositorios\pilot\ANXO LIBRARIES` (en este equipo,
-`C:\repositorios\pilot\ANXO LIBRARIES`). En otro equipo, copia esa carpeta o define la ruta:
+El código fuente de las GymCore Libraries **no está en este repositorio** (es propietario).
+La ruta por defecto es `..\third_party\gym-core` (en este equipo,
+`third_party\gym-core`). En otro equipo, copia esa carpeta o define la ruta:
+
+> Los ensamblados y proyectos de la librería conservan sus nombres `Anxo*` y sus namespaces
+> `Ax*`; renombrarlos es la **fase C** (white-label completo) descrita en `docs/pendientes.md`.
 
 ```powershell
-$env:ANXO_ROOT = "D:\libs\ANXO LIBRARIES"   # tiene prioridad sobre la ruta por defecto
+$env:GYM_LIBS_ROOT = "D:\libs\GymCore Libraries"   # tiene prioridad sobre la ruta por defecto
 dotnet build GymService.slnx -c Release
 
-.\build.ps1 -AnxoRoot "D:\libs\ANXO LIBRARIES"
-.\publish.ps1 -AnxoRoot "D:\libs\ANXO LIBRARIES"
-.\build-msi.ps1 -AnxoRoot "D:\libs\ANXO LIBRARIES"
+.\build.ps1 -GymLibsRoot "D:\libs\GymCore Libraries"
+.\publish.ps1 -GymLibsRoot "D:\libs\GymCore Libraries"
+.\build-msi.ps1 -GymLibsRoot "D:\libs\GymCore Libraries"
 ```
 
 Si la ruta no existe, la compilación se detiene con un mensaje claro. El **MSI y la
@@ -305,7 +308,7 @@ dotnet test GymService.Tests\GymService.Tests.csproj
 > [`docs/pruebas-en-vivo.md`](docs/pruebas-en-vivo.md).
 
 - **Unitarias (siempre):** hashing de tokens/OTP, contexto de auditoría (`CurrentUser`),
-  convertidor JSON y consistencia del modelo/entidades de Anxo.
+  convertidor JSON y consistencia del modelo/entidades de GymCore.
 - **Integración:** crean una base de datos temporal en el servidor configurado, aplican el
   esquema del modelo, ejecutan los flujos reales (identidad, socios, ventas, accesos,
   finanzas, catálogos) y **borran la BD al terminar**. Se omiten si no hay credenciales:
@@ -349,7 +352,7 @@ Opciones útiles:
 .\publish.ps1 -Version 1.2.0                 # versión del paquete
 .\publish.ps1 -FrameworkDependent            # requiere .NET 10 en el servidor
 .\publish.ps1 -SkipFrontend -NoZip           # solo backend, sin ZIP
-.\publish.ps1 -AnxoRoot "D:\libs\ANXO LIBRARIES"
+.\publish.ps1 -GymLibsRoot "D:\libs\GymCore Libraries"
 ```
 
 En CI, el workflow `Release` publica el ZIP al crear un tag `v*`.
@@ -372,10 +375,10 @@ Copiar el ZIP al servidor y ejecutar **como Administrador**:
 
 El instalador:
 
-- Copia los binarios a `C:\Program Files\Anxo\GymService`.
+- Copia los binarios a `C:\Program Files\Centro Fit\GymService`.
 - Crea `appsettings.json` desde la plantilla **solo si no existe** (las actualizaciones conservan la configuración).
 - Restringe los permisos de `appsettings.json` a SYSTEM y Administradores.
-- Registra el servicio `anxogymmservice`, configura recuperación ante fallos y lo inicia.
+- Registra el servicio `centrofitgymservice`, configura recuperación ante fallos y lo inicia.
 - Opcionalmente abre el puerto en el firewall (`-OpenFirewall`), limitado a `-FirewallRemote` (`localsubnet` por defecto).
 
 Panel web y API quedan en `http://<servidor>:<puerto>` (por defecto `http://0.0.0.0:5000`). Para producción en red local se recomienda HTTPS directo en Kestrel; ver [3b](#3b-https-en-red-local-solo-ip).
@@ -383,18 +386,18 @@ Panel web y API quedan en `http://<servidor>:<puerto>` (por defecto `http://0.0.
 ### 2b. Instalador MSI (WiX)
 
 Alternativa al ZIP con PowerShell. Genera un MSI per-machine que instala en
-`C:\Program Files\Anxo\GymService` y registra el servicio `anxogymmservice`.
+`C:\Program Files\Centro Fit\GymService` y registra el servicio `centrofitgymservice`.
 
 ```powershell
 dotnet tool install -g wix --version 5.0.2   # WiX 6+ exige aceptar el EULA OSMF
 .\build-msi.ps1                              # publica y genera artifacts\GymService-<version>-win-x64.msi
-msiexec /i "artifacts\GymService-1.0.0-win-x64.msi" OPEN_FIREWALL=1 WEB_PORT=5055 FIREWALL_REMOTE=192.168.100.0/24   # Administrador
+msiexec /i "artifacts\GymService-1.6.0-win-x64.msi" OPEN_FIREWALL=1 WEB_PORT=5055 FIREWALL_REMOTE=192.168.100.0/24   # Administrador
 ```
 
 - El MSI instala `appsettings.json` desde la plantilla **solo si no existe** y lo conserva al
   desinstalar (`NeverOverwrite` + `Permanent`).
 - El servicio queda instalado en automático **sin arrancar**: edita `appsettings.json` y ejecuta
-  `Start-Service anxogymmservice`.
+  `Start-Service centrofitgymservice`.
 - `OPEN_FIREWALL=1` abre `WEB_PORT` solo para `FIREWALL_REMOTE` (`localsubnet` por defecto; por ejemplo `192.168.100.0/24`). La regla `GymService HTTPS` se elimina al desinstalar.
 - Configura recuperación ante fallos (`sc failure`) automáticamente.
 - Si ya instalaste con el ZIP/PowerShell, desinstala esa versión antes para no duplicar el servicio.
@@ -402,7 +405,7 @@ msiexec /i "artifacts\GymService-1.0.0-win-x64.msi" OPEN_FIREWALL=1 WEB_PORT=505
 
 ### 3. Configuración mínima de producción
 
-Editar `C:\Program Files\Anxo\GymService\appsettings.json`:
+Editar `C:\Program Files\Centro Fit\GymService\appsettings.json`:
 
 - `Database`: servidor, base de datos y **login SQL con permisos mínimos** (no `sa`).
 - `Authentication:MfaEncryptionKey`: clave aleatoria de 32 bytes en Base64.
@@ -442,9 +445,9 @@ Detalles por sistema operativo, diagnóstico y renovación: [`docs/https-red-loc
 ### 4. Operación
 
 ```powershell
-Get-Service anxogymmservice
-Restart-Service anxogymmservice
-Get-Content "C:\Program Files\Anxo\GymService\logs\*.log" -Tail 50
+Get-Service centrofitgymservice
+Restart-Service centrofitgymservice
+Get-Content "C:\Program Files\Centro Fit\GymService\logs\*.log" -Tail 50
 
 # Desinstalar (conserva configuración y logs)
 .\uninstall.ps1
@@ -499,7 +502,7 @@ sobre `GymManager`); sin ese permiso, `RESTORE VERIFYONLY` y la restauración de
 - En **SQL Server Express** los respaldos se crean sin `COMPRESSION` automáticamente; en Standard o
   superior se conserva la compresión. Los `.bak` de Express ocupan más espacio.
 - En producción, copia `backup.ps1`, `backup-log.ps1`, `verify-backup.ps1` y
-  `register-backup-tasks.ps1` junto al servicio (`C:\Program Files\Anxo\GymService`) y registra las
+  `register-backup-tasks.ps1` junto al servicio (`C:\Program Files\Centro Fit\GymService`) y registra las
   tareas con `-ConfigPath` absoluto. Así no dependen del repositorio. Usa `-CopyTo` para una copia
   secundaria en USB, NAS u otra unidad.
 - `register-backup-tasks.ps1` crea las tareas `GymService-Full` y `GymService-Log`. Sin
@@ -539,7 +542,7 @@ auditadas, cobro manual y límite diario de entradas por plan.
 ## Estado del Proyecto
 
 - ✅ Estructura del proyecto .NET 10
-- ✅ Servicio Windows con AnxoServiceTools (`AssemblyName` correcto para `-install`)
+- ✅ Servicio Windows con GymCoreServiceTools (`AssemblyName` correcto para `-install`)
 - ✅ Conexión a SQL Server con AnxoDatabase
 - ✅ Servidor Kestrel con ASP.NET Core
 - ✅ 41 tablas SQL Server definidas, con índices UNIQUE y foreign keys aplicadas
@@ -564,4 +567,4 @@ El gimnasio actual usa PostgreSQL. Para migrar a SQL Server:
 
 ## Licencia
 
-Propietario - ANXO / Centro Fit
+Propietario - Centro Fit

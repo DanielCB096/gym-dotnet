@@ -1,9 +1,9 @@
-# Obstáculos y API del Framework Anxo - GymService
+# Obstáculos y API del Framework GymCore - GymService
 
 ## INSTRUCCIÓN OBLIGATORIA PARA FUTURAS IAs
 
 **ANTES de escribir cualquier código en GymService, LEA este documento completo.**
-Todos los errores de compilación encontrados se deben a que el código original usaba una API inventada que NO existe en el framework Anxo. Las secciones abajo documentan la API REAL que debe usarse.
+Todos los errores de compilación encontrados se deben a que el código original usaba una API inventada que NO existe en el framework GymCore. Las secciones abajo documentan la API REAL que debe usarse.
 
 ---
 
@@ -17,7 +17,7 @@ Todos los errores de compilación encontrados se deben a que el código original
 
 ### Obstáculo 2: Target Framework incompatible
 
-**Error:** `GymService.csproj` debe usar un TFM compatible con las ANXO Libraries.
+**Error:** `GymService.csproj` debe usar un TFM compatible con las GymCore Libraries.
 **Solución:** `<TargetFramework>net10.0-windows7.0</TargetFramework>` (AnxoLibrary/AnxoDatabase/AnxoObjectDatabaseManager son `net10.0` y AnxoServiceTools es `net10.0-windows`).
 
 ### Obstáculo 3: API de Query inventada (~458 errores)
@@ -222,7 +222,7 @@ Notas:
 
 ---
 
-## Estructura del Framework Anxo
+## Estructura del Framework GymCore
 
 ### Bibliotecas principales
 
@@ -251,7 +251,7 @@ OODatabaseManager (DataCenter.DatabaseManager)
 ### Modelo de objetos (OBLIGATORIO para escrituras)
 
 Las entidades están en `GymService/Models/Generated/GYM_*.cs` (namespace `AxDatabase`, clase = tabla).
-Las PK ya NO son IDENTITY: las asigna Anxo con secuencias.
+Las PK ya NO son IDENTITY: las asigna GymCore con secuencias.
 
 ```csharp
 // INSERT
@@ -282,7 +282,7 @@ s4.TryExecute();
 
 Reglas:
 - NUNCA escribir `id`, `created_at`, `updated_at`, `object_version` ni `created_by` en SQL:
-  Anxo los rellena (`created_by`/auditoría vienen de `Session.UserID`).
+  GymCore los rellena (`created_by`/auditoría vienen de `Session.UserID`).
 - Los SELECT de listados/reportes pueden seguir en SQL parametrizado con `?`.
 - Los nombres de propiedad son las columnas en MAYÚSCULAS; las columnas nullable generan tipos nullable.
 
@@ -336,7 +336,7 @@ public class MyModule(DatabaseTools tools)
 13. ServiceConsole.Execute requiere 3 args: `(args, serviceDefinition, serviceImplementation)`.
 14. Logger.ConfigLogger requiere: `(name, level, localtime, logToConsole, filePerSubModule, defaultPath)`.
 15. Los módulos de negocio reciben `DatabaseTools`, no `OODatabaseManager`.
-16. NUNCA escribas `id`, `created_at`, `updated_at`, `object_version` ni `created_by`: Anxo los gestiona.
+16. NUNCA escribas `id`, `created_at`, `updated_at`, `object_version` ni `created_by`: GymCore los gestiona.
 17. Si necesitas el ID antes de insertar (cabecera+detalle), usa `GenerateUniqueID(ENTIDAD.DatabaseMappingObject, 1)` + `InsertObjectWithID`.
 18. Las entidades se regeneran desde `Models/_ModelGym.xml` con `AnxoDatabaseGenerator`; no se editan a mano.
 
@@ -362,7 +362,7 @@ public class MyModule(DatabaseTools tools)
 
 - **PilotTmsService**: `C:\repositorios\pilot\TMS\PilotTmsService\`
 - **CombuExpressBusinessProcess**: `C:\repositorios\pilot\TMS\CombuExpressBusinessProcess\`
-- **Anxo Libraries**: `C:\repositorios\pilot\ANXO LIBRARIES\`
+- **GymCore Libraries**: `third_party\gym-core\`
 
 Para ver ejemplos reales de uso de DatabaseTools, consulta:
 - `CombuExpressBusinessProcess\Modules\Fuel\FuelRequestsModule.cs`
@@ -378,7 +378,7 @@ Si necesitas ver la API real de una clase del framework:
 dotnet tool install --global ilspycmd
 
 # Ver una clase específica:
-ilspycmd --type ClassName "C:\repositorios\pilot\ANXO LIBRARIES\AnxoLibrary\bin\Debug\net8.0\AnxoLibrary.dll"
+ilspycmd --type ClassName "third_party\gym-core\AnxoLibrary\bin\Debug\net8.0\AnxoLibrary.dll"
 
 # Ver métodos públicos:
 ilspycmd --type ClassName "path\to\assembly.dll" | Select-String -Pattern 'public '

@@ -858,7 +858,7 @@ namespace GymService.Modules.Identity
                 {
                     var permId = Convert.ToInt64(GetRowValue(row, allPermsResult, "id"));
 
-                    // GYM_ROLE_PERMISSIONS tiene PK surrogate: la asigna la secuencia Anxo.
+                    // GYM_ROLE_PERMISSIONS tiene PK surrogate: la asigna la secuencia GymCore.
                     session.InsertObject(new GYM_ROLE_PERMISSIONS
                     {
                         ROLE = "OWNER",

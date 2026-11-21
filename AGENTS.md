@@ -12,7 +12,7 @@
 
 ## Stack y estructura
 
-- Backend: .NET 10 + ASP.NET Core Kestrel + SQL Server mediante Anxo.
+- Backend: .NET 10 + ASP.NET Core Kestrel + SQL Server mediante GymCore.
 - Frontend: React 19 + Vite + Tailwind CSS 4.
 - Esquema: `GymService/Models/_ModelGym.xml`; entidades generadas en `Models/Generated/`.
 - Lógica de negocio en `GymService/Modules/`; los controladores solo validan y delegan.

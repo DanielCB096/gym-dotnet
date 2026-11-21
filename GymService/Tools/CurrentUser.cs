@@ -5,7 +5,7 @@ namespace GymService
     /// <summary>
     /// Usuario autenticado de la petición HTTP en curso.
     ///
-    /// Se usa para la auditoría de Anxo: las sesiones creadas con
+    /// Se usa para la auditoría de GymCore: las sesiones creadas con
     /// <c>CreateSession(SubModule, CurrentUser.ForAudit)</c> rellenan
     /// CREATED_BY / LAST_UPDATED_BY con el usuario real.
     ///

@@ -62,7 +62,7 @@ namespace GymService.Tools
                     return false;
                 }
 
-                // Usuario de la petición para la auditoría de las sesiones de Anxo.
+                // Usuario de la petición para la auditoría de las sesiones de GymCore.
                 CurrentUser.Id = GetUserId(userData!);
 
                 return true;

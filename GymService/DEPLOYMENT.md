@@ -82,10 +82,10 @@ The script will:
 .\GymService.exe -install
 
 # Configure startup type
-Set-Service -Name anxogymmservice -StartupType Automatic
+Set-Service -Name centrofitgymservice -StartupType Automatic
 
 # Configure recovery
-sc.exe failure anxogymmservice reset= 86400 actions= restart/60000/restart/120000/restart/180000
+sc.exe failure centrofitgymservice reset= 86400 actions= restart/60000/restart/120000/restart/180000
 
 # Start
 .\GymService.exe -start
@@ -121,26 +121,26 @@ sc.exe failure anxogymmservice reset= 86400 actions= restart/60000/restart/12000
 # Open Services console
 services.msc
 
-# Find "Anxo Gym Manager Service"
+# Find "Centro Fit Gym Service"
 ```
 
 ### PowerShell Management
 
 ```powershell
 # Check status
-Get-Service anxogymmservice
+Get-Service centrofitgymservice
 
 # Start
-Start-Service anxogymmservice
+Start-Service centrofitgymservice
 
 # Stop
-Stop-Service anxogymmservice
+Stop-Service centrofitgymservice
 
 # Restart
-Restart-Service anxogymmservice
+Restart-Service centrofitgymservice
 
 # Set startup type
-Set-Service -Name anxogymmservice -StartupType Automatic
+Set-Service -Name centrofitgymservice -StartupType Automatic
 ```
 
 ## Uninstallation
@@ -230,10 +230,10 @@ By default, the service runs as **Local System**. To change:
 
 ```powershell
 # Run as Network Service
-sc.exe config anxogymmservice obj= "NT AUTHORITY\NetworkService"
+sc.exe config centrofitgymservice obj= "NT AUTHORITY\NetworkService"
 
 # Run as specific user
-sc.exe config anxogymmservice obj= "DOMAIN\Username" password= "Password"
+sc.exe config centrofitgymservice obj= "DOMAIN\Username" password= "Password"
 ```
 
 ## First-Time Setup

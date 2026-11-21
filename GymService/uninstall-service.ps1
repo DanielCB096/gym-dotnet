@@ -3,7 +3,7 @@
 # This script stops and uninstalls the GymService Windows Service
 
 param(
-    [string]$ServiceName = "anxogymmservice",
+    [string]$ServiceName = "centrofitgymservice",
     [string]$ExePath = ""
 )
 

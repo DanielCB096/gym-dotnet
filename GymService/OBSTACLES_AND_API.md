@@ -1,9 +1,9 @@
-# Obstáculos y API del Framework Anxo - GymService
+# Obstáculos y API del Framework GymCore - GymService
 
 ## INSTRUCCIÓN OBLIGATORIA PARA FUTURAS IAs
 
 **ANTES de escribir cualquier código en GymService, LEA este documento completo.**
-Todos los errores de compilación encontrados se deben a que el código original usaba una API inventada que NO existe en el framework Anxo. Las secciones abajo documentan la API REAL que debe usarse.
+Todos los errores de compilación encontrados se deben a que el código original usaba una API inventada que NO existe en el framework GymCore. Las secciones abajo documentan la API REAL que debe usarse.
 
 ---
 
@@ -258,7 +258,7 @@ fk.ForeignKeyColumns.Add(new DatabaseForeignKeyColumn("local_col", "external_col
 
 ---
 
-## Estructura del Framework Anxo
+## Estructura del Framework GymCore
 
 ### Bibliotecas principales
 
@@ -361,7 +361,7 @@ public class MyModule(DatabaseTools tools)
 
 - **PilotTmsService**: `C:\repositorios\pilot\TMS\PilotTmsService\`
 - **CombuExpressBusinessProcess**: `C:\repositorios\pilot\TMS\CombuExpressBusinessProcess\`
-- **Anxo Libraries**: `C:\repositorios\pilot\ANXO LIBRARIES\`
+- **GymCore Libraries**: `third_party\gym-core\`
 
 Para ver ejemplos reales de uso de DatabaseTools, consulta:
 - `CombuExpressBusinessProcess\Modules\Fuel\FuelRequestsModule.cs`
@@ -377,7 +377,7 @@ Si necesitas ver la API real de una clase del framework:
 dotnet tool install --global ilspycmd
 
 # Ver una clase específica:
-ilspycmd --type ClassName "C:\repositorios\pilot\ANXO LIBRARIES\AnxoLibrary\bin\Debug\net8.0\AnxoLibrary.dll"
+ilspycmd --type ClassName "third_party\gym-core\AnxoLibrary\bin\Debug\net8.0\AnxoLibrary.dll"
 
 # Ver métodos públicos:
 ilspycmd --type ClassName "path\to\assembly.dll" | Select-String -Pattern 'public '
@@ -655,8 +655,8 @@ app.UseSwaggerUI(c =>
 - `GymService.exe -help` — Mostrar ayuda
 
 **ServiceDefinition opciones:**
-- `ServiceName`: "anxogymmservice"
-- `ServiceDisplayName`: "Anxo Gym Manager Service"
+- `ServiceName`: "centrofitgymservice"
+- `ServiceDisplayName`: "Centro Fit Gym Service"
 - `ServiceAccount`: "localsystem" (también localservice, networkservice, o cuenta personalizada)
 - `StartType`: "auto" (también manual, disable, delayed)
 

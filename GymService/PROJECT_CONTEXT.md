@@ -1,12 +1,12 @@
 # GymService - Contexto Completo del Proyecto
 
 > **Última actualización:** 20 de noviembre de 2026
-> **Estado:** .NET 10 (`net10.0-windows7.0`), 18 controllers, 15 módulos de negocio, 40 tablas gestionadas por el modelo de objetos de Anxo y 113 pruebas automatizadas. Frontend React 19 + Vite 8 + Tailwind CSS 4 con 20 páginas.
-> **Framework:** .NET 10 Windows + Anxo Libraries (framework propietario)
+> **Estado:** .NET 10 (`net10.0-windows7.0`), 18 controllers, 15 módulos de negocio, 40 tablas gestionadas por el modelo de objetos de GymCore y 113 pruebas automatizadas. Frontend React 19 + Vite 8 + Tailwind CSS 4 con 20 páginas.
+> **Framework:** .NET 10 Windows + GymCore Libraries (framework propietario)
 >
 > **Documentos vigentes:** `README.md` (estado y operación), `CHANGELOG.md` (últimos cambios),
 > `docs/reglas-negocio.md` (reglas) y `Models/_ModelGym.xml` (esquema). Este archivo conserva
-> el contexto y los patrones de la API de Anxo; si hay conflicto, mandan los documentos anteriores.
+> el contexto y los patrones de la API de GymCore; si hay conflicto, mandan los documentos anteriores.
 
 ---
 
@@ -94,10 +94,10 @@ GymService (Windows Service)
 
 ---
 
-## 2. Framework Anxo - Bibliotecas Usadas
+## 2. Framework GymCore - Bibliotecas Usadas
 
-El proyecto depende de **Anxo Libraries**, un framework propietario de .NET ubicado en:
-`C:\repositorios\pilot\ANXO LIBRARIES\`
+El proyecto depende de **GymCore Libraries**, un framework propietario de .NET ubicado en:
+`third_party\gym-core\`
 
 ### Bibliotecas del framework:
 
@@ -116,16 +116,16 @@ El proyecto depende de **Anxo Libraries**, un framework propietario de .NET ubic
 ### Referencias del proyecto (GymService.csproj):
 ```xml
 <ItemGroup>
-  <ProjectReference Include="..\..\..\repositorios\pilot\ANXO LIBRARIES\AnxoServiceTools\AnxoServiceTools.csproj" />
-  <ProjectReference Include="..\..\..\repositorios\pilot\ANXO LIBRARIES\AnxoLibrary\AnxoLibrary.csproj" />
-  <ProjectReference Include="..\..\..\repositorios\pilot\ANXO LIBRARIES\AnxoObjectDatabaseManager\AnxoObjectDatabaseManager.csproj" />
-  <ProjectReference Include="..\..\..\repositorios\pilot\ANXO LIBRARIES\AnxoDatabase\AnxoDatabase.csproj" />
+  <ProjectReference Include="..\third_party\gym-core\AnxoServiceTools\AnxoServiceTools.csproj" />
+  <ProjectReference Include="..\third_party\gym-core\AnxoLibrary\AnxoLibrary.csproj" />
+  <ProjectReference Include="..\third_party\gym-core\AnxoObjectDatabaseManager\AnxoObjectDatabaseManager.csproj" />
+  <ProjectReference Include="..\third_party\gym-core\AnxoDatabase\AnxoDatabase.csproj" />
 </ItemGroup>
 ```
 
 ---
 
-## 3. API REAL del Framework Anxo
+## 3. API REAL del Framework GymCore
 
 ### ⚠️ ADVERTENCIA CRÍTICA
 **El código original del proyecto usaba una API inventada que NO existe en el framework.**
@@ -187,7 +187,7 @@ if (result != null && result.Rows.Count > 0)
 // Crear una sesión de transacción con el usuario de auditoría
 var session = tools.CreateSession("MODULE_NAME", CurrentUser.ForAudit);
 
-// Insertar una entidad generada (la PK la asigna Anxo con secuencias)
+// Insertar una entidad generada (la PK la asigna GymCore con secuencias)
 session.InsertObject(new GYM_MEMBERS
 {
     FIRST_NAME = "John",
@@ -279,8 +279,8 @@ Logger.AddErrorDevExceptionSubModule("MODULE_NAME", "message");
 ```csharp
 var serviceDef = new ServiceDefinition
 {
-    ServiceName = "anxogymmservice",
-    ServiceDisplayName = "Anxo Gym Manager Service",
+    ServiceName = "centrofitgymservice",
+    ServiceDisplayName = "Centro Fit Gym Service",
     StartType = "auto",           // String, NO enum
     ServiceAccount = "localsystem" // String, NO enum
 };
@@ -336,7 +336,7 @@ if (result.IsError) { /* manejar error */ }
 ## 4. Estado Actual del Proyecto
 
 ### ✅ Completado
-- **Compilación:** .NET 10, 0 errores. Los warnings restantes son NU1902/NU1510 de dependencias heredadas de Anxo.
+- **Compilación:** .NET 10, 0 errores. Los warnings restantes son NU1902/NU1510 de dependencias heredadas de GymCore.
 - **Esquema:** 40 tablas, índices UNIQUE y 26 FK desde `Models/_ModelGym.xml`; creación y migración aditiva al arrancar.
 - **Módulos (15):** Identity, Members, Access, Sales, Cash, Inventory (productos, proveedores, órdenes y kardex), Classes (sesiones, reservas y lista de espera), Routines, Fisio, Maintenance, Billing, Finance (cuentas, movimientos y conciliación), Reports, Kiosk y Staff (turnos y asistencia).
 - **Frontend:** 20 páginas React 19 + Vite 8 + Tailwind 4, `CrudPage`, paneles por módulo, recibos en el panel, PWA de kiosco, importación CSV/Excel y exportación de reportes.
@@ -349,7 +349,7 @@ if (result.IsError) { /* manejar error */ }
 - Pasarela de pago, tokenización y renovación automática.
 - Bloqueo por adeudo, horarios por plan, aforo y antipassback.
 - Instalador WiX (hoy se usa el instalador PowerShell).
-- Vulnerabilidad moderada de `MySqlConnector` heredada de Anxo (MySQL no se usa en este despliegue).
+- Vulnerabilidad moderada de `MySqlConnector` heredada de GymCore (MySQL no se usa en este despliegue).
 
 ---
 
@@ -472,7 +472,7 @@ namespace GymService.Modules.ModuleName
 
 El esquema se declara en `Models/_ModelGym.xml` y se genera en `Models/Generated/`
 (`GYM_*.cs` y `ModelGym.MappingObjects`). No edites esos archivos a mano: usa
-`Tools/AnxoModelGenerator` (ver `README.md`). Son 40 tablas; por grupo:
+`Tools/GymModelGenerator` (ver `README.md`). Son 40 tablas; por grupo:
 
 | Grupo | Tablas |
 |---|---|
@@ -566,7 +566,7 @@ dotnet build
 dotnet tool install --global ilspycmd
 
 # Decompilar una clase específica
-ilspycmd --type ClassName "C:\repositorios\pilot\ANXO LIBRARIES\LibraryName\bin\Debug\net8.0\LibraryName.dll"
+ilspycmd --type ClassName "third_party\gym-core\LibraryName\bin\Debug\net8.0\LibraryName.dll"
 ```
 
 ---
@@ -591,8 +591,8 @@ Ver `OBSTACLES_AND_API.md` para la lista completa de obstáculos técnicos.
 - **Código de referencia del framework:** `C:\repositorios\pilot\TMS\CombuExpressBusinessProcess\Modules\`
 - **AuthorizationModule de referencia:** `CombuExpressBusinessProcess\Modules\Auth\AuthorizationModule.cs`
 - **FuelRequestsModule de referencia:** `CombuExpressBusinessProcess\Modules\Fuel\FuelRequestsModule.cs`
-- **DatabaseTools API:** `C:\repositorios\pilot\ANXO LIBRARIES\AnxoObjectDatabaseManager\Tools\DatabaseTools.cs`
-- **Logger API:** `C:\repositorios\pilot\ANXO LIBRARIES\AnxoLibrary\Logger\Logger.cs`
+- **DatabaseTools API:** `third_party\gym-core\AnxoObjectDatabaseManager\Tools\DatabaseTools.cs`
+- **Logger API:** `third_party\gym-core\AnxoLibrary\Logger\Logger.cs`
 
 ---
 
@@ -619,7 +619,7 @@ Los permisos por ruta y método están en `Services/RolePermissionMiddleware.cs`
 
 ### Sesión 1: Corrección de ~458 errores
 - Se identificó que el código usaba una API inventada
-- Se documentó la API real del framework Anxo
+- Se documentó la API real del framework GymCore
 - Se corrigió IdentityModule, ServiceImplementation, DataCenter, Program.cs, SecurityValidation, ModelGym
 - Se creó OBSTACLES_AND_API.md
 
@@ -685,7 +685,7 @@ if (!session.TryExecute().IsError)
 ```
 
 ### Sesión 6: DatabaseService implementado
-- Se investigó la API del framework Anxo para encontrar los métodos de creación de tablas
+- Se investigó la API del framework GymCore para encontrar los métodos de creación de tablas
 - Se descubrió `OODatabaseManager.DatabaseAdministrator` que expone `CreateTable()`, `ExistTable()`, `DropTable()`, `GetTableStructure()`
 - Se implementó DatabaseService completo que convierte `TableDefinition` de ModelGym a `DatabaseTable` del framework
 - Soporta: columnas con tipos, primary keys, identity, unique, default values, composite PKs, foreign keys
@@ -788,7 +788,7 @@ if (!session.TryExecute().IsError)
   - Troubleshooting
   - Configuración de service account
   - Bootstrap del primer usuario admin
-- **Hallazgo:** El framework Anxo ya tiene toda la infraestructura para Windows Service — no se necesita TopShelf ni InstallService manual
+- **Hallazgo:** El framework GymCore ya tiene toda la infraestructura para Windows Service — no se necesita TopShelf ni InstallService manual
 - El proyecto compila con 0 errores y 27 warnings de nullable references
 
 ### Sesión 14: Rate limiting para protección contra abuso

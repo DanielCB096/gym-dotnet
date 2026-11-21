@@ -11,8 +11,9 @@
 [CmdletBinding()]
 param(
     [string]$IpAddress = '192.168.100.53',
-    [string]$ConfigPath = 'C:\Program Files\Anxo\GymService\appsettings.json',
+    [string]$ConfigPath = 'C:\Program Files\Centro Fit\GymService\appsettings.json',
     [string]$CertDir = 'C:\ProgramData\GymService\certs',
+    [string]$ServiceName = 'centrofitgymservice',
     [int]$ValidDays = 825,
     [switch]$SkipRestart
 )
@@ -102,9 +103,9 @@ Write-Host "PFX: $pfxPath"
 Write-Host "CA raíz para clientes: $rootCer"
 
 if (-not $SkipRestart) {
-    Restart-Service anxogymmservice -Force
+    Restart-Service $ServiceName -Force
     Start-Sleep -Seconds 10
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $health = (Invoke-WebRequest "https://$IpAddress`:$port/health" -UseBasicParsing -TimeoutSec 20).Content | ConvertFrom-Json
-    Write-Host "Servicio: $((Get-Service anxogymmservice).Status); health: $($health.status); versión: $($health.components.'gym-readiness'.data.version)"
+    Write-Host "Servicio: $((Get-Service $ServiceName).Status); health: $($health.status); versión: $($health.components.'gym-readiness'.data.version)"
 }

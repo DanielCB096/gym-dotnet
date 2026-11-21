@@ -14,7 +14,7 @@ param(
     [switch]$FrameworkDependent,
     [switch]$SkipFrontend,
     [switch]$SkipPublish,
-    [string]$AnxoRoot = ""
+    [string]$GymLibsRoot = ""
 )
 
 $ErrorActionPreference = 'Stop'
@@ -40,7 +40,7 @@ if (-not $SkipPublish) {
         -Version $Version `
         -Configuration $Configuration `
         -Runtime $Runtime `
-        -AnxoRoot $AnxoRoot `
+        -GymLibsRoot $GymLibsRoot `
         -SkipFrontend:$SkipFrontend `
         -FrameworkDependent:$FrameworkDependent
 
@@ -89,4 +89,4 @@ Write-Host ""
 Write-Host "MSI: $output ($size MB)" -ForegroundColor Green
 Write-Host "Instalación (Administrador): msiexec /i `"$output`" OPEN_FIREWALL=1 WEB_PORT=5055 FIREWALL_REMOTE=192.168.100.0/24" -ForegroundColor Green
 Write-Host "  (FIREWALL_REMOTE admite localsubnet o la subred del gimnasio)" -ForegroundColor Gray
-Write-Host "Tras instalar: edita appsettings.json y arranca el servicio con Start-Service anxogymmservice" -ForegroundColor Yellow
+Write-Host "Tras instalar: edita appsettings.json y arranca el servicio con Start-Service centrofitgymservice" -ForegroundColor Yellow

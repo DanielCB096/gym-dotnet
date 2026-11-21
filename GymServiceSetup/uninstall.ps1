@@ -1,10 +1,10 @@
 param(
-    [string]$InstallDir = "$env:ProgramFiles\Anxo\GymService",
+    [string]$InstallDir = "$env:ProgramFiles\Centro Fit\GymService",
     [switch]$RemoveData
 )
 
 $ErrorActionPreference = 'Stop'
-$serviceName = "anxogymmservice"
+$serviceName = "centrofitgymservice"
 
 function Assert-Admin {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()

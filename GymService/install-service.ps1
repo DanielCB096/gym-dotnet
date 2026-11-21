@@ -3,8 +3,8 @@
 # This script installs GymService as a Windows Service with recovery options
 
 param(
-    [string]$ServiceName = "anxogymmservice",
-    [string]$ServiceDisplayName = "Anxo Gym Manager Service",
+    [string]$ServiceName = "centrofitgymservice",
+    [string]$ServiceDisplayName = "Centro Fit Gym Service",
     [string]$ExePath = "",
     [string]$StartType = "auto",
     [string]$ServiceAccount = "localsystem"
@@ -125,7 +125,7 @@ try {
 Write-Host ""
 Write-Host "Setting service description..." -ForegroundColor Cyan
 try {
-    sc.exe description $ServiceName "GymService - API REST para el sistema de gestión del gimnasio Centro Fit. Proporciona endpoints para gestión de socios, ventas, inventario, clases, y más."
+    sc.exe description $ServiceName "Centro Fit Gym Service - API REST para el sistema de gestión del gimnasio Centro Fit. Proporciona endpoints para gestión de socios, ventas, inventario, clases, y más."
     Write-Host "Description set" -ForegroundColor Green
 } catch {
     Write-Host "WARNING: Could not set description: $_" -ForegroundColor Yellow

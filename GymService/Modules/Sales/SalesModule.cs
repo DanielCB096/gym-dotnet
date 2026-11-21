@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using AxLogger;
@@ -226,7 +226,7 @@ namespace GymService.Modules.Sales
 
                 if (session.TryExecute().IsError)
                 {
-                    // Al ser una sola transacción, Anxo revierte cabecera, items e inventario juntos.
+                    // Al ser una sola transacción, GymCore revierte cabecera, items e inventario juntos.
                     Logger.AddErrorSubModule(SubModule, "Error al guardar los items o al descontar el inventario");
                     response["success"] = false;
                     response["message"] = "No se pudo actualizar el inventario; la venta fue cancelada.";

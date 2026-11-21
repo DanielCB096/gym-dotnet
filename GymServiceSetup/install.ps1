@@ -1,6 +1,6 @@
 param(
     [string]$Source = $PSScriptRoot,
-    [string]$InstallDir = "$env:ProgramFiles\Anxo\GymService",
+    [string]$InstallDir = "$env:ProgramFiles\Centro Fit\GymService",
     [int]$Port = 5000,
     [string]$BindAddress = "0.0.0.0",
     [string]$DatabaseServer = "",
@@ -14,7 +14,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$serviceName = "anxogymmservice"
+$serviceName = "centrofitgymservice"
 
 function Assert-Admin {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -202,7 +202,7 @@ if (-not (Get-Service -Name $serviceName -ErrorAction SilentlyContinue)) {
 
 # Recuperación ante fallos.
 Invoke-Sc @('failure', $serviceName, 'reset=', '86400', 'actions=', 'restart/60000/restart/120000/restart/180000')
-Invoke-Sc @('description', $serviceName, 'GymService - API y panel web para la gestion del gimnasio.')
+Invoke-Sc @('description', $serviceName, 'Centro Fit Gym Service - API y panel web para la gestion del gimnasio.')
 
 if ($OpenFirewall) {
     $ruleName = "GymService (TCP $Port)"

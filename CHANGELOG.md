@@ -2,9 +2,21 @@
 
 > Documento vivo que registra todos los bugs, errores y correcciones encontrados durante el desarrollo de GymService.
 
+> **Nota de marca:** las entradas anteriores al 2026-11-21 conservan las menciones a "Anxo"
+> como registro histórico. La marca actual del producto es **Centro Fit Gym Manager** y el
+> prefijo técnico es **GymCore**. Los ensamblados de la librería propietaria conservan sus
+> nombres `Anxo*`/`Ax*` (fase C pendiente).
+
 ---
 
 ## Backend (.NET)
+
+### Rebranding A+B: Centro Fit / GymCore (2026-11-21)
+- **Marca visible:** servicio `centrofitgymservice` ("Centro Fit Gym Service"), ruta `C:\Program Files\Centro Fit\GymService`, MSI "Centro Fit Gym Manager" con `Manufacturer="Centro Fit"`, licencia y textos. La URL `https://192.168.100.53:5055` y el certificado HTTPS no cambian.
+- **Build/repo:** `GYM_LIBS_ROOT` / `-GymLibsRoot` sustituyen a `ANXO_ROOT` / `-AnxoRoot`; `Tools/AnxoModelGenerator` pasa a `Tools/GymModelGenerator`; `third_party/anxo` pasa a `third_party/gym-core`. Los ensamblados y namespaces `Anxo*`/`Ax*` se mantienen (fase C).
+- **Código generado:** los 42 modelos usan "GymCore Code Generator" / "Centro Fit"; la plantilla local del generador se actualizó para no reintroducir la marca.
+- **Versión:** **1.6.0**; MSI regenerado, MSI 1.5.1 desinstalado e instalado 1.6.0. Servicio `centrofitgymservice` en `C:\Program Files\Centro Fit\GymService`, `/health` healthy 1.6.0, login correcto, tareas `GymService-Full`/`GymService-Log` con `LastTaskResult=0` y restauración de 42 tablas/6 socios verificada. Certificado HTTPS y URL sin cambios.
+- **Riesgo pendiente:** `ANXO_SEQUENCES` se conserva porque es el nombre de tabla que usa la librería; cambiarlo requiere la fase C.
 
 ### HTTPS en red local con CA propia (2026-11-21)
 - **Cambio:** Kestrel pasa a `https://0.0.0.0:5055` con un certificado de la CA local `GymService LAN Root CA` (SAN `192.168.100.53` y `127.0.0.1`). Se descartó el reverse proxy: el rate limiting y los bloqueos usan `RemoteIpAddress`, y un proxy haría que todos los clientes compartieran `127.0.0.1` (el límite estricto de 5/min del kiosco se volvería global).

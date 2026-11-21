@@ -67,7 +67,7 @@ public class EntityBehaviorTests
     public void Serialize_Deserialize_RoundTrips_All_Values()
     {
         // Se usa una entidad sin columnas DateTime2: DatabaseObjectTools.Deserialize
-        // no contempla DataType.DateTime2 (limitación del framework de Anxo).
+        // no contempla DataType.DateTime2 (limitación del framework de GymCore).
         var original = new GYM_CLASS_TYPES
         {
             ID = 42,

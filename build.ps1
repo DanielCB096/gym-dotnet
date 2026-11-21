@@ -1,14 +1,14 @@
 param(
     [switch]$Integration,
-    [string]$AnxoRoot = ""
+    [string]$GymLibsRoot = ""
 )
 
 $ErrorActionPreference = 'Stop'
 
 Write-Host "== Build =="
 $buildArgs = @('build', 'GymService.slnx', '-c', 'Release')
-if (-not [string]::IsNullOrWhiteSpace($AnxoRoot)) {
-    $buildArgs += "-p:AnxoRoot=$AnxoRoot"
+if (-not [string]::IsNullOrWhiteSpace($GymLibsRoot)) {
+    $buildArgs += "-p:GymLibsRoot=$GymLibsRoot"
 }
 dotnet @buildArgs
 

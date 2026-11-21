@@ -10,7 +10,7 @@ namespace GymService.Tests.Integration;
 
 /// <summary>
 /// Crea una base de datos temporal en el servidor indicado, aplica el esquema del
-/// modelo Anxo y la elimina al terminar. Las pruebas de integración se omiten
+/// modelo GymCore y la elimina al terminar. Las pruebas de integración se omiten
 /// (pasan sin ejecutar) si no se define GYM_TEST_DB_PASSWORD.
 ///
 /// Variables:

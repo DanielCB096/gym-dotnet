@@ -31,7 +31,7 @@ public class ModelGymTests
             Assert.True(primary.Count == 1, $"{mapping.ClassName}: se esperaba 1 PK y hay {primary.Count}");
             Assert.False(string.IsNullOrWhiteSpace(mapping.Sequence), $"{mapping.ClassName}: sin secuencia");
 
-            // Las PK las asigna Anxo con secuencias: no debe haber IDENTITY.
+            // Las PK las asigna GymCore con secuencias: no debe haber IDENTITY.
             Assert.False(primary[0].Autoincrement, $"{mapping.ClassName}: la PK usa IDENTITY");
             Assert.Equal(DataType.Int64, primary[0].ColumnDataType);
         }
@@ -68,7 +68,7 @@ public class ModelGymTests
 
                 foreach (var column in fk.Columns)
                 {
-                    // GetMappingAttributeByAttributeName normaliza a mayúsculas, igual que Anxo.
+                    // GetMappingAttributeByAttributeName normaliza a mayúsculas, igual que GymCore.
                     var local = mapping.MappingAttributes.GetMappingAttributeByAttributeName(column.LocalColumn);
                     var external = target!.MappingAttributes.GetMappingAttributeByAttributeName(column.ExternalColumn);
 

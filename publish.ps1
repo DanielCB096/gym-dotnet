@@ -5,7 +5,7 @@ param(
     [switch]$FrameworkDependent,
     [switch]$SkipFrontend,
     [switch]$NoZip,
-    [string]$AnxoRoot = "",
+    [string]$GymLibsRoot = "",
     [string]$Output = ""
 )
 
@@ -59,8 +59,8 @@ $publishArgs = @(
     "-p:Version=$Version",
     '-o', $Output
 )
-if (-not [string]::IsNullOrWhiteSpace($AnxoRoot)) {
-    $publishArgs += "-p:AnxoRoot=$AnxoRoot"
+if (-not [string]::IsNullOrWhiteSpace($GymLibsRoot)) {
+    $publishArgs += "-p:GymLibsRoot=$GymLibsRoot"
 }
 
 dotnet @publishArgs
