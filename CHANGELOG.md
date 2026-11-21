@@ -18,6 +18,11 @@
 - **Versión:** **1.6.0**; MSI regenerado, MSI 1.5.1 desinstalado e instalado 1.6.0. Servicio `centrofitgymservice` en `C:\Program Files\Centro Fit\GymService`, `/health` healthy 1.6.0, login correcto, tareas `GymService-Full`/`GymService-Log` con `LastTaskResult=0` y restauración de 42 tablas/6 socios verificada. Certificado HTTPS y URL sin cambios.
 - **Riesgo pendiente:** `ANXO_SEQUENCES` se conserva porque es el nombre de tabla que usa la librería; cambiarlo requiere la fase C.
 
+### Credenciales del owner, SMTP y OTP (2026-11-21)
+- **Owner:** se actualizó su correo real y se reseteó la contraseña con el endpoint local de recuperación; login verificado y `/health` healthy. Las credenciales no se versionan.
+- **SMTP:** configurado `smtp.gmail.com:587` con contraseña de aplicación; `testemail` enviado correctamente. Se solicitó y verificó un OTP por correo, incluido el rechazo del segundo uso.
+- **Bloqueo MFA:** MFA sigue desactivado. El login con MFA devuelve `requiresMfa` pero no crea sesión ni token, `mfa/verify` exige una sesión autenticada y el frontend no tiene pantalla de MFA/OTP. Hay que implementar el flujo antes de activarlo para no dejar al owner sin acceso.
+
 ### HTTPS en red local con CA propia (2026-11-21)
 - **Cambio:** Kestrel pasa a `https://0.0.0.0:5055` con un certificado de la CA local `GymService LAN Root CA` (SAN `192.168.100.53` y `127.0.0.1`). Se descartó el reverse proxy: el rate limiting y los bloqueos usan `RemoteIpAddress`, y un proxy haría que todos los clientes compartieran `127.0.0.1` (el límite estricto de 5/min del kiosco se volvería global).
 - **Script:** `deploy/https/New-GymServerCertificate.ps1` crea o reutiliza la CA, emite el certificado, exporta el PFX con contraseña aleatoria, actualiza `Kestrel` y `WebServer:Urls`, aplica ACL, reinicia y verifica `/health`.

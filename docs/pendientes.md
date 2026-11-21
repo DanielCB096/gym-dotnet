@@ -44,8 +44,12 @@ o la licencia lo permite.
 
 ## 2. Otros pendientes de entrega
 
-- [ ] Cambiar la contraseña del `owner` y su correo de prueba por datos reales; activar MFA.
+- [x] Correo real del owner y contraseña fuerte; login verificado. Las credenciales se
+      guardan fuera de Git y el archivo temporal debe moverse a un gestor de contraseñas.
+- [ ] **Implementar el flujo de login MFA** antes de activarlo: el backend devuelve
+      `requiresMfa` sin token/sesión, `mfa/verify` exige una sesión autenticada y el frontend
+      no tiene pantalla de MFA/OTP. Activarlo hoy dejaría al owner sin acceso.
 - [ ] Limpiar datos demo (6 socios, 2 productos, 1 acceso).
-- [ ] Configurar SMTP real y probar el flujo OTP.
+- [x] SMTP real configurado y OTP por correo verificado (envío, verificación y uso único).
 - [ ] Copia offsite/NAS de los respaldos (hoy `D:` es otro disco físico, no otra ubicación).
 - [ ] Evaluar cuenta dedicada para el servicio en lugar de `LocalSystem`.
