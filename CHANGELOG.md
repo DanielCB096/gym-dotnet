@@ -18,6 +18,11 @@
 - **Versión:** **1.6.0**; MSI regenerado, MSI 1.5.1 desinstalado e instalado 1.6.0. Servicio `centrofitgymservice` en `C:\Program Files\Centro Fit\GymService`, `/health` healthy 1.6.0, login correcto, tareas `GymService-Full`/`GymService-Log` con `LastTaskResult=0` y restauración de 42 tablas/6 socios verificada. Certificado HTTPS y URL sin cambios.
 - **Riesgo pendiente:** `ANXO_SEQUENCES` se conserva porque es el nombre de tabla que usa la librería; cambiarlo requiere la fase C.
 
+### Kiosco registrado y validado (2026-11-21)
+- **Dispositivo:** id 1, “Kiosco recepcion”, activo; token válido hasta **2027-02-19**; tablet Android 16 configurado con CA, URL HTTPS y token.
+- **Verificación:** la página muestra el teclado de 6 dígitos y “Token válido”; un código inválido devuelve “Código inválido o expirado”.
+- **Pendiente:** probar un código válido con un socio y membresía real. El token se rota desde el panel si se pierde o se compromete.
+
 ### Limpieza de datos demo (2026-11-21)
 - **Eliminado:** 6 socios, 2 productos, 2 membresías, 1 acceso, 1 código de acceso, 1 crédito, 1 OTP y 11 sesiones. Las tablas operativas quedaron en 0.
 - **Conservado:** usuario owner, 27 permisos, 27 asignaciones de rol y los 3 planes (Mensual, Trimestral, Anual).

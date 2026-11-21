@@ -42,8 +42,11 @@ o la licencia lo permite.
 - [ ] Instalar la CA raíz de HTTPS en todos los equipos cliente y en el kiosco; actualizar
       su `apiUrl` a `https://192.168.100.53:5055`. El paquete `CentroFit-CA.zip` está
       generado y probado en Windows; la CA ya se instaló y verificó en un tablet Android 16
-      (panel y kiosco cargan por HTTPS). Falta el resto de equipos y registrar/probar el
-      kiosco con un token real.
+      (panel y kiosco cargan por HTTPS). Falta el resto de equipos.
+- [x] Registrar y validar el kiosco (2026-11-21): dispositivo **Kiosco recepcion** (id 1),
+      tablet Android 16 configurado con URL HTTPS y token; token válido hasta **2027-02-19**.
+      Un código inválido devuelve “Código inválido o expirado”. Falta probar un código válido
+      con un socio y membresía real.
 
 ## 2. Otros pendientes de entrega
 
