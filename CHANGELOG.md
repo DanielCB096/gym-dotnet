@@ -10,6 +10,7 @@
 - **Migración:** se reemplazó el contenedor SQL Server 2022 por **SQL Server 2025 Express** nativo (instancia `MSSQLSERVER`, puerto 1433, autenticación mixta, inicio automático). La base `GymManager` se restauró desde el respaldo del contenedor: **42 tablas, 6 socios, modelo FULL**.
 - **Corrección:** SQL Server Express no admite `COMPRESSION` en `BACKUP`. `backup.ps1` y `backup-log.ps1` detectan `EngineEdition=4` y omiten la compresión; en ediciones superiores la conservan.
 - **Verificación:** las tareas `GymService-Full` y `GymService-Log` se ejecutaron contra el servidor nativo con `LastTaskResult=0` y generaron `.bak` y `.trn` en `C:\Program Files\Microsoft SQL Server\MSSQL17.MSSQLSERVER\MSSQL\Backup`. El servicio `anxogymmservice` quedó Running y `/health` healthy con versión **1.5.1**.
+- **Arranque tras reinicio:** el servicio se iniciaba antes que SQL y se detenía con "No se pudo conectar a la base de datos". Se configuró dependencia de `MSSQLSERVER` y arranque **delayed-auto**; el MSI ahora aplica ambos con `sc config` al instalar.
 - **Operación:** el contenedor `gym-sql` quedó detenido y sin reinicio automático; su volumen se conserva como respaldo de la migración.
 
 ### Versión 1.5.1 y tareas de respaldo (2026-11-20)

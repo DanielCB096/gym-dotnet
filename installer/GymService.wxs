@@ -65,6 +65,20 @@
             KeyPath="yes" />
     </Component>
 
+    <CustomAction Id="ServiceDependsSql"
+                  Directory="SystemFolder"
+                  Execute="deferred"
+                  Impersonate="no"
+                  Return="ignore"
+                  ExeCommand="sc.exe config anxogymmservice depend= MSSQLSERVER" />
+
+    <CustomAction Id="ServiceDelayedStart"
+                  Directory="SystemFolder"
+                  Execute="deferred"
+                  Impersonate="no"
+                  Return="ignore"
+                  ExeCommand="sc.exe config anxogymmservice start= delayed-auto" />
+
     <CustomAction Id="ServiceRecovery"
                   Directory="SystemFolder"
                   Execute="deferred"
@@ -87,7 +101,9 @@
                   ExeCommand="netsh.exe advfirewall firewall delete rule name=&quot;GymService HTTP&quot;" />
 
     <InstallExecuteSequence>
-      <Custom Action="ServiceRecovery" After="InstallServices" Condition="NOT Installed" />
+      <Custom Action="ServiceDependsSql" After="InstallServices" Condition="NOT Installed" />
+      <Custom Action="ServiceDelayedStart" After="ServiceDependsSql" Condition="NOT Installed" />
+      <Custom Action="ServiceRecovery" After="ServiceDelayedStart" Condition="NOT Installed" />
       <Custom Action="OpenFirewall" After="ServiceRecovery" Condition="OPEN_FIREWALL=1 AND NOT Installed" />
       <Custom Action="RemoveFirewall" Before="RemoveFiles" Condition="REMOVE=&quot;ALL&quot;" />
     </InstallExecuteSequence>
