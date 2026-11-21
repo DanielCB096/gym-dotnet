@@ -11,6 +11,15 @@
 
 ## Backend (.NET)
 
+### MFA TOTP completo y pantalla Seguridad (2026-11-21, versión 1.7.0)
+- **Login en dos pasos:** con MFA activo, `/api/auth/login` ya no crea sesión ni revela `userId`; devuelve `requiresMfa` y un desafío firmado con HMAC de **5 minutos y un solo uso** (`MfaChallengeMinutes`, `MfaMaxAttempts`). `/api/auth/mfa/login` valida TOTP o código de respaldo y crea la sesión.
+- **Códigos de respaldo:** 10 códigos de un solo uso, hasheados con SHA-256; se consumen al usarlos. El secreto TOTP se guarda cifrado con AES-256.
+- **Panel:** nueva pantalla **Seguridad** (`/security`) con estado, QR, clave manual, códigos de respaldo, activación y desactivación con código. El login muestra el paso de verificación en dos pasos.
+- **Endpoints:** `POST /api/auth/mfa/login`, `GET /api/auth/mfa/status`, `POST /api/auth/mfa/disable`; los existentes `setup`/`verify` se mantienen. Rate limit `auth` (20/min) para MFA; ya no se aplica `strict` al login MFA.
+- **Verificación:** 131 pruebas unitarias/integración en verde (incluye desafío de un solo uso y consumo de códigos), flujo real **21/21** por HTTPS y prueba en navegador (activar, login en dos pasos, desactivar) sin errores de consola. Usuario temporal eliminado; owner sin MFA activo.
+- **Despliegue:** servicio 1.7.0 en `C:\Program Files\Centro Fit\GymService`, `/health` healthy, `appsettings.json` y scripts offsite conservados.
+- **Secuencias:** la limpieza demo había dejado `GYM_SESSIONS_SEQ` por debajo de `max(ID)`, lo que produjo una PK duplicada al probar con una segunda instancia. Se añadió `deploy/maintenance/Sync-Sequences.ps1` (audita y sube cada secuencia por encima de `max(ID)`); ejecutado con `-Apply` y servicio reiniciado. **No reiniciar secuencias a 1 si quedan filas.**
+
 ### Rebranding A+B: Centro Fit / GymCore (2026-11-21)
 - **Marca visible:** servicio `centrofitgymservice` ("Centro Fit Gym Service"), ruta `C:\Program Files\Centro Fit\GymService`, MSI "Centro Fit Gym Manager" con `Manufacturer="Centro Fit"`, licencia y textos. La URL `https://192.168.100.53:5055` y el certificado HTTPS no cambian.
 - **Build/repo:** `GYM_LIBS_ROOT` / `-GymLibsRoot` sustituyen a `ANXO_ROOT` / `-AnxoRoot`; `Tools/AnxoModelGenerator` pasa a `Tools/GymModelGenerator`; `third_party/anxo` pasa a `third_party/gym-core`. Los ensamblados y namespaces `Anxo*`/`Ax*` se mantienen (fase C).

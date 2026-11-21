@@ -13,6 +13,7 @@ const menuSections = [
     title: 'MENU',
     items: [
       { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+      { to: '/security', label: 'Seguridad', icon: Shield },
     ],
   },
   {
@@ -57,6 +58,7 @@ const routeLabels = {
   '/kiosk': 'Kioscos',
   '/reports': 'Reportes',
   '/access-logs': 'Logs Acceso',
+  '/security': 'Seguridad',
 };
 
 export default function Layout({ children }) {

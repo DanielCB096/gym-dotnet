@@ -78,6 +78,10 @@ gimnasio-dotnet/
 `ModelGym.MappingObjects` se generan en `GymService/Models/Generated/`.
 
 - Las PK son `BIGINT` **sin IDENTITY**: las asigna GymCore con secuencias (`ANXO_SEQUENCES`).
+  **No reinicies secuencias a 1** si la tabla conserva filas: la siguiente inserción chocaría con
+  una PK existente. Tras una limpieza manual, ejecuta
+  `deploy/maintenance/Sync-Sequences.ps1 -Apply` (informa y sube cada secuencia por encima de
+  `max(ID)`), y reinicia el servicio para que tome un bloque nuevo.
 - Auditoría automática en todas las tablas: `CREATED_AT`, `UPDATED_AT`, `CREATED_BY`,
   `LAST_UPDATED_BY`, `LAST_UPDATE_LOG`, `OBJECT_VERSION`.
 - El esquema se crea/valida al arrancar (`Services/DatabaseService.cs`) de forma aditiva:
@@ -169,10 +173,13 @@ No edites esos archivos a mano.
 
 | Endpoint | Método | Descripción |
 |----------|--------|-------------|
-| `/api/auth/login` | POST | Login con username/password |
+| `/api/auth/login` | POST | Login con username/password. Si MFA está activo devuelve `requiresMfa` y `mfaToken` (5 min) |
+| `/api/auth/mfa/login` | POST | Verifica TOTP o código de respaldo y crea la sesión |
 | `/api/auth/logout` | POST | Cerrar sesión |
-| `/api/auth/mfa/setup` | POST | Configurar MFA TOTP |
-| `/api/auth/mfa/verify` | POST | Verificar código MFA |
+| `/api/auth/mfa/setup` | POST | Generar secreto TOTP, URI `otpauth` y códigos de respaldo |
+| `/api/auth/mfa/verify` | POST | Activar MFA verificando el primer código |
+| `/api/auth/mfa/status` | GET | Estado de MFA y códigos de respaldo restantes |
+| `/api/auth/mfa/disable` | POST | Desactivar MFA con un código válido |
 | `/api/auth/otp/request` | POST | Solicitar OTP por correo |
 | `/api/auth/otp/verify` | POST | Verificar OTP |
 | `/api/auth/bootstrap` | POST | Crear primer usuario dueño |
@@ -197,6 +204,8 @@ Edita `appsettings.json`:
   },
   "Authentication": {
     "MfaEncryptionKey": "clave_aleatoria_de_32_bytes_en_base64",
+    "MfaChallengeMinutes": 5,
+    "MfaMaxAttempts": 5,
     "AdminResetToken": ""
   }
 }
@@ -216,6 +225,12 @@ producción y CI.
 
 - **Bloqueo de cuenta**: tras `Authentication:MaxLoginAttempts` fallos, la cuenta queda bloqueada
   `Authentication:LockoutMinutes` minutos (`FAILED_LOGIN_ATTEMPTS` / `LOCKED_UNTIL` en `GYM_USERS`).
+- **MFA TOTP (opcional por usuario)**: la contraseña correcta no crea sesión si MFA está activo;
+  devuelve un desafío firmado (HMAC, `MfaChallengeMinutes`, un solo uso) y el segundo factor se
+  valida en `/api/auth/mfa/login`. Los códigos de respaldo son de un solo uso. Se configura desde
+  **Seguridad** en el panel, con QR, clave manual y 10 códigos de respaldo.
+  `MfaMaxAttempts` limita los intentos por desafío. Los secretos se guardan cifrados con AES-256
+  usando `MfaEncryptionKey`; sin esa clave MFA no se puede activar ni verificar.
 - **Rate limiting** por IP: `auth` (20/min), `strict` (5/min en OTP y validación de kiosco) y
   `general` (100/min) en `WebServerService`.
 - **OTP por correo real** con MailKit (`Email:SmtpServer/Port/User/Password/FromAddress/EnableSsl`).
@@ -462,6 +477,7 @@ Actualizar = ejecutar de nuevo `install.ps1` con el ZIP nuevo (detiene, reemplaz
 
 - [ ] Login SQL dedicado `gym_app` y contraseña fuerte (sin `sa`), probado con `/health` y respaldos.
 - [ ] `MfaEncryptionKey` generada para ese servidor.
+- [ ] MFA activado para el owner y códigos de respaldo guardados fuera del servidor.
 - [ ] SMTP probado (código OTP real).
 - [ ] Backup programado de la base de datos.
 - [ ] HTTPS en la LAN con CA local instalada en los equipos cliente (o reverse proxy con `ForwardedHeaders` si se publica fuera).

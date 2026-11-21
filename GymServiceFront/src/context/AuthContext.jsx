@@ -21,7 +21,7 @@ export function AuthProvider({ children }) {
           localStorage.removeItem('user');
         }
       }
-    } catch (err) {
+    } catch {
       // JSON.parse falló: datos corruptos, limpiar
       console.warn('AuthContext: datos de usuario corruptos, limpiando localStorage');
       localStorage.removeItem('token');
@@ -30,9 +30,11 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  const login = async (username, password) => {
-    const response = await api.post('/auth/login', { username, password });
-    const data = response.data;
+  const persistSession = (data) => {
+    if (!data || !data.token) {
+      throw new Error('Respuesta de autenticación inválida');
+    }
+
     // El backend devuelve: { token, userId, role, username, permissions, expiresIn }
     const userData = {
       userId: data.userId,
@@ -47,6 +49,27 @@ export function AuthProvider({ children }) {
     return userData;
   };
 
+  const login = async (username, password) => {
+    const response = await api.post('/auth/login', { username, password });
+    const data = response.data;
+
+    // La contraseña es correcta pero falta el segundo factor.
+    if (data?.requiresMfa) {
+      return {
+        requiresMfa: true,
+        mfaToken: data.mfaToken,
+        expiresIn: data.expiresIn
+      };
+    }
+
+    return persistSession(data);
+  };
+
+  const verifyMfaLogin = async (mfaToken, code) => {
+    const response = await api.post('/auth/mfa/login', { mfaToken, code });
+    return persistSession(response.data);
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -56,7 +79,7 @@ export function AuthProvider({ children }) {
   const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated, loading }}>
+    <AuthContext.Provider value={{ user, login, verifyMfaLogin, logout, isAuthenticated, loading }}>
       {children}
     </AuthContext.Provider>
   );

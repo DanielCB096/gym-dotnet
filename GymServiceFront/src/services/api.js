@@ -24,10 +24,17 @@ api.interceptors.response.use(
   (error) => {
     console.error('[API] Error:', error.response?.status, error.config?.url, error.message);
     
-    // No interceptar errores de login para que el componente los maneje
-    const isLoginRequest = error.config?.url?.includes('/auth/login');
+    // No interceptar errores de autenticación pública (login, MFA, OTP, bootstrap)
+    // para que el componente los maneje; el resto de 401 sí cierra la sesión.
+    const url = error.config?.url || '';
+    const isPublicAuthRequest =
+      url.includes('/auth/login') ||
+      url.includes('/auth/mfa/login') ||
+      url.includes('/auth/otp/') ||
+      url.includes('/auth/bootstrap') ||
+      url.includes('/auth/reset-admin-password');
     
-    if (error.response && error.response.status === 401 && !isLoginRequest) {
+    if (error.response && error.response.status === 401 && !isPublicAuthRequest) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';

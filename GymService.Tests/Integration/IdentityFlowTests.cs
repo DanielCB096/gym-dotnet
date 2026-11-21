@@ -103,6 +103,61 @@ public class IdentityFlowTests
     }
 
     [Fact]
+    public void Mfa_Login_Requires_Challenge_And_Consumes_Backup_Codes()
+    {
+        if (!_fx.Available) return;
+
+        var (identity, userId) = EnsureOwner();
+
+        try
+        {
+            Assert.True(identity.SetupMfa(userId, out var setup), setup.GetValueOrDefault("message")?.ToString());
+
+            string secret = Convert.ToString(setup["secret"]) ?? string.Empty;
+            Assert.False(string.IsNullOrWhiteSpace(secret));
+            var codes = Assert.IsType<List<string>>(setup["backupCodes"]);
+
+            Assert.True(identity.VerifyMfa(userId, Totp(secret), out var verify), verify.GetValueOrDefault("message")?.ToString());
+
+            // La contraseña sola ya no crea sesión y no revela el id del usuario.
+            Assert.False(identity.Login(OwnerName, Password, "tests", "127.0.0.1", out var login));
+            Assert.True(Convert.ToBoolean(login["requiresMfa"]));
+            Assert.False(login.ContainsKey("userId"));
+            string challenge = Convert.ToString(login["mfaToken"]) ?? string.Empty;
+            Assert.False(string.IsNullOrWhiteSpace(challenge));
+
+            // Un código incorrecto no crea sesión.
+            Assert.False(identity.VerifyMfaLogin(challenge, "000000", "tests", "127.0.0.1", out var bad));
+            Assert.False(bad.ContainsKey("token"));
+
+            // TOTP correcto: crea sesión y el desafío queda usado.
+            Assert.True(identity.VerifyMfaLogin(challenge, Totp(secret), "tests", "127.0.0.1", out var ok),
+                ok.GetValueOrDefault("message")?.ToString());
+            string token = Convert.ToString(ok["token"]) ?? string.Empty;
+            Assert.True(identity.ValidateSessionToken(token, out _));
+            Assert.False(identity.VerifyMfaLogin(challenge, Totp(secret), "tests", "127.0.0.1", out _));
+
+            // Un código de respaldo se consume y no se puede reutilizar.
+            Assert.False(identity.Login(OwnerName, Password, "tests", "127.0.0.1", out var loginWithBackup));
+            string backupChallenge = Convert.ToString(loginWithBackup["mfaToken"]) ?? string.Empty;
+            Assert.True(identity.VerifyMfaLogin(backupChallenge, codes[0], "tests", "127.0.0.1", out var backupOk),
+                backupOk.GetValueOrDefault("message")?.ToString());
+
+            string storedCodes = Convert.ToString(_fx.Scalar("SELECT MFA_BACKUP_CODES FROM GYM_USERS WHERE ID = @id", ("@id", userId))) ?? string.Empty;
+            Assert.Equal(codes.Count - 1, storedCodes.Split(',', StringSplitOptions.RemoveEmptyEntries).Length);
+
+            Assert.False(identity.Login(OwnerName, Password, "tests", "127.0.0.1", out var loginReuse));
+            string reuseChallenge = Convert.ToString(loginReuse["mfaToken"]) ?? string.Empty;
+            Assert.False(identity.VerifyMfaLogin(reuseChallenge, codes[0], "tests", "127.0.0.1", out _));
+        }
+        finally
+        {
+            _fx.Execute("UPDATE GYM_USERS SET MFA_ENABLED = 0, MFA_SECRET_ENCRYPTED = NULL, MFA_BACKUP_CODES = NULL, FAILED_LOGIN_ATTEMPTS = 0, LOCKED_UNTIL = NULL WHERE ID = @id",
+                ("@id", userId));
+        }
+    }
+
+    [Fact]
     public void Login_Locks_Account_After_Max_Failed_Attempts()
     {
         if (!_fx.Available) return;

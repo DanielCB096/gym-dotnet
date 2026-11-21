@@ -20,6 +20,7 @@ import Routines from './pages/Routines';
 import Kiosk from './pages/Kiosk';
 import Reports from './pages/Reports';
 import AccessLogs from './pages/AccessLogs';
+import Security from './pages/Security';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -194,6 +195,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <AccessLogs />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/security"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Security />
                 </Layout>
               </ProtectedRoute>
             }

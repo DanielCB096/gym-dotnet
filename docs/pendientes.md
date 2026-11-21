@@ -48,8 +48,8 @@ o la licencia lo permite.
       Un código inválido devuelve “Código inválido o expirado”. **Código válido probado**:
       el kiosco mostró “Acceso concedido — Prueba Kiosco”, el log quedó `granted` y el código
       `used`. El socio/membresía/código/acceso temporales se eliminaron y las secuencias se
-      restauraron a 1; el kiosco sigue activo. El **audio de concedido/denegado** también
-      quedó verificado en el tablet.
+      sincronizaron con `max(ID)` mediante `deploy/maintenance/Sync-Sequences.ps1`; el kiosco
+      sigue activo. El **audio de concedido/denegado** también quedó verificado en el tablet.
 - [x] Kiosco local en este PC (2026-11-21): dispositivo **Kiosco PC** (id 501), perfil
       dedicado de Edge, lanzador `deploy/kiosk-pc/Start-Kiosk.ps1` que detecta la segunda
       pantalla y accesos directos en Escritorio/Inicio. Teclado físico verificado
@@ -62,13 +62,17 @@ o la licencia lo permite.
 
 - [x] Correo real del owner y contraseña fuerte; login verificado. Las credenciales se
       guardan fuera de Git y el archivo temporal debe moverse a un gestor de contraseñas.
-- [ ] **Implementar el flujo de login MFA** antes de activarlo: el backend devuelve
-      `requiresMfa` sin token/sesión, `mfa/verify` exige una sesión autenticada y el frontend
-      no tiene pantalla de MFA/OTP. Activarlo hoy dejaría al owner sin acceso.
+- [x] **MFA completo** (2026-11-21, versión 1.7.0): login con desafío firmado de un solo uso,
+      verificación TOTP o código de respaldo, pantalla **Seguridad** con QR/clave manual/códigos,
+      activación, desactivación y estado. Probado 21/21 por API HTTPS y en navegador (activar,
+      login en dos pasos y desactivar). El owner sigue sin MFA activo; cuando lo active debe
+      guardar los códigos de respaldo fuera del servidor.
 - [x] Limpiar datos demo (2026-11-21): 6 socios, 2 productos, 2 membresías, 1 acceso,
       1 crédito, 1 OTP y 11 sesiones eliminados. Se conservaron owner, 27 permisos y los
       3 planes (Mensual/Trimestral/Anual). Respaldo verificado en
       `D:\GymBackups\GymManager_20261121_101854.bak`; dashboard y tablas operativas en 0.
+      **Corrección:** no se deben reiniciar las secuencias a 1 si quedan filas; usar
+      `deploy/maintenance/Sync-Sequences.ps1 -Apply` y reiniciar el servicio.
 - [x] SMTP real configurado y OTP por correo verificado (envío, verificación y uso único).
 - [x] Copia offsite cifrada en OneDrive (2026-11-21): 36 archivos `.7z` AES-256 en
       `C:\Users\PC\OneDrive\GymServiceBackups`; tarea `GymService-Offsite` cada 15 min como

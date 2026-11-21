@@ -92,6 +92,52 @@ namespace GymService.Controllers
         }
 
         [HttpPost]
+        [Route("api/auth/mfa/login")]
+        public ActionResult<Dictionary<string, object>> VerifyMfaLogin([FromBody] Dictionary<string, string> request)
+        {
+            if (DataCenter.BusinessProcess.Identity == null)
+                return BadRequest(new { returnCode = "ERROR", errorMessage = "Servicio no disponible" });
+
+            var mfaToken = request.GetValueOrDefault("mfaToken", "");
+            var code = request.GetValueOrDefault("code", "");
+            var deviceInfo = Request.Headers["User-Agent"].ToString();
+            var ipAddress = Request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+            var success = DataCenter.BusinessProcess.Identity.VerifyMfaLogin(mfaToken, code, deviceInfo, ipAddress, out var response);
+
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpGet]
+        [Route("api/auth/mfa/status")]
+        public ActionResult<Dictionary<string, object>> GetMfaStatus()
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { returnCode = "ERROR", errorMessage });
+
+            if (DataCenter.BusinessProcess.Identity == null)
+                return BadRequest(new { returnCode = "ERROR", errorMessage = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Identity.GetMfaStatus(SecurityValidation.GetUserId(userData!), out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPost]
+        [Route("api/auth/mfa/disable")]
+        public ActionResult<Dictionary<string, object>> DisableMfa([FromBody] Dictionary<string, string> request)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { returnCode = "ERROR", errorMessage });
+
+            if (DataCenter.BusinessProcess.Identity == null)
+                return BadRequest(new { returnCode = "ERROR", errorMessage = "Servicio no disponible" });
+
+            var code = request.GetValueOrDefault("code", "");
+            var success = DataCenter.BusinessProcess.Identity.DisableMfa(SecurityValidation.GetUserId(userData!), code, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPost]
         [Route("api/auth/otp/request")]
         [EnableRateLimiting("strict")]
         public ActionResult<Dictionary<string, object>> RequestOtp([FromBody] Dictionary<string, string> request)

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
@@ -46,6 +47,12 @@ namespace GymService.Modules.Identity
         private DatabaseTools _tools;
         private IConfiguration _configuration;
         private readonly EmailService _email;
+
+        // Desafíos MFA de un solo uso: nonce -> expiración (UTC) y intentos por nonce.
+        // Son de corta vida y viven en memoria; si el servicio se reinicia, el usuario
+        // simplemente vuelve a introducir su contraseña.
+        private static readonly ConcurrentDictionary<string, DateTime> MfaChallengeNonces = new(StringComparer.Ordinal);
+        private static readonly ConcurrentDictionary<string, int> MfaChallengeAttempts = new(StringComparer.Ordinal);
 
         public IdentityModule(DatabaseTools tools, IConfiguration configuration)
         {
@@ -160,22 +167,52 @@ namespace GymService.Modules.Identity
                     return false;
                 }
 
-                // Check MFA
+                // Check MFA: no se crea sesión hasta verificar el segundo factor.
                 if (mfaEnabled)
                 {
+                    if (GetMfaChallengeKey() == null)
+                    {
+                        Logger.AddErrorSubModule(SubModule, "Authentication:MfaEncryptionKey no está configurada; no se puede emitir el desafío MFA");
+                        response["success"] = false;
+                        response["message"] = "La configuración de MFA no está disponible";
+                        return false;
+                    }
+
+                    var challengeMinutes = int.Parse(_configuration["Authentication:MfaChallengeMinutes"] ?? "5");
+                    var challengeToken = CreateMfaChallengeToken(userId, challengeMinutes);
+
+                    Logger.AddInfoSubModule(SubModule, $"Login con contraseña válida para '{username}'; se requiere segundo factor");
+
                     response["success"] = false;
                     response["requiresMfa"] = true;
-                    response["userId"] = userId;
+                    response["mfaToken"] = challengeToken;
+                    response["expiresIn"] = challengeMinutes * 60;
                     return false;
                 }
 
-                // Create session
+                return CreateSessionResponse(userId, username, role, deviceInfo, ipAddress, response);
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en Login: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Crea la sesión persistida y completa la respuesta de login.
+        /// </summary>
+        private bool CreateSessionResponse(long userId, string username, string role, string deviceInfo, string ipAddress, Dictionary<string, object> response)
+        {
+            try
+            {
                 var token = SecurityValidation.GenerateToken(64);
                 var tokenHash = SecurityValidation.Sha256Hash(token);
                 var lifetimeHours = int.Parse(_configuration["Authentication:TokenLifetimeHours"] ?? "8");
                 var expiresAt = DateTime.Now.AddHours(lifetimeHours);
 
-                // Store session
                 var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.InsertObject(new GYM_SESSIONS
                 {
@@ -187,7 +224,6 @@ namespace GymService.Modules.Identity
                     IS_ACTIVE = true
                 });
 
-                // Update last login
                 session.UpdateObjectChanges(new GYM_USERS
                 {
                     ID = userId,
@@ -204,7 +240,6 @@ namespace GymService.Modules.Identity
                     return false;
                 }
 
-                // Get permissions
                 var permissions = GetPermissions(role);
 
                 response["success"] = true;
@@ -219,12 +254,281 @@ namespace GymService.Modules.Identity
             }
             catch (Exception ex)
             {
-                Logger.AddErrorSubModule(SubModule, $"Error en Login: {ex.Message}");
+                Logger.AddErrorSubModule(SubModule, $"Error al crear la sesión: {ex.Message}");
                 response["success"] = false;
                 response["message"] = "Error interno del servidor";
                 return false;
             }
         }
+
+        /// <summary>
+        /// Verifica el segundo factor de un login pendiente y, si es correcto,
+        /// crea la sesión. El desafío es de un solo uso y caduca en minutos.
+        /// </summary>
+        public bool VerifyMfaLogin(string challengeToken, string code, string deviceInfo, string ipAddress, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                if (!TryValidateMfaChallengeToken(challengeToken, out var userId, out var nonce, out var tokenError))
+                {
+                    response["success"] = false;
+                    response["message"] = tokenError;
+                    return false;
+                }
+
+                var cipher = CreateMfaCipher();
+                if (cipher == null)
+                {
+                    Logger.AddErrorSubModule(SubModule, "Authentication:MfaEncryptionKey no está configurada; no se puede verificar MFA");
+                    response["success"] = false;
+                    response["message"] = "La configuración de MFA no está disponible";
+                    return false;
+                }
+
+                var result = _tools.ExecuteQueryResultSet(
+                    "SELECT id, username, role, is_active, mfa_enabled, mfa_secret_encrypted, mfa_backup_codes " +
+                    "FROM gym_users WHERE id = ?",
+                    userId
+                );
+
+                if (result == null || result.Rows.Count == 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "Desafío de verificación inválido o expirado";
+                    return false;
+                }
+
+                var row = result.Rows[0];
+                var username = Convert.ToString(GetRowValue(row, result, "username")) ?? string.Empty;
+                var role = Convert.ToString(GetRowValue(row, result, "role")) ?? string.Empty;
+                var isActive = Convert.ToBoolean(GetRowValue(row, result, "is_active"));
+                var mfaEnabled = Convert.ToBoolean(GetRowValue(row, result, "mfa_enabled"));
+                var encryptedSecret = Convert.ToString(GetRowValue(row, result, "mfa_secret_encrypted")) ?? string.Empty;
+                var backupCodes = Convert.ToString(GetRowValue(row, result, "mfa_backup_codes")) ?? string.Empty;
+
+                if (!isActive)
+                {
+                    response["success"] = false;
+                    response["message"] = "Usuario desactivado";
+                    return false;
+                }
+
+                if (!mfaEnabled || string.IsNullOrEmpty(encryptedSecret))
+                {
+                    response["success"] = false;
+                    response["message"] = "MFA no está configurado";
+                    return false;
+                }
+
+                string secret;
+                try
+                {
+                    secret = DecryptMfaSecret(encryptedSecret, cipher);
+                }
+                catch (Exception ex)
+                {
+                    Logger.AddErrorSubModule(SubModule, $"Error al descifrar el secreto MFA en login: {ex.Message}");
+                    response["success"] = false;
+                    response["message"] = "No se pudo verificar la configuración MFA";
+                    return false;
+                }
+
+                var normalizedCode = (code ?? string.Empty).Replace(" ", string.Empty).Trim();
+                var totpValid = VerifyTotpCode(secret, normalizedCode);
+                var backupValid = false;
+                string remainingCodes = backupCodes;
+
+                if (!totpValid)
+                    backupValid = TryConsumeBackupCode(normalizedCode, backupCodes, out remainingCodes);
+
+                if (!totpValid && !backupValid)
+                {
+                    var maxAttempts = int.Parse(_configuration["Authentication:MfaMaxAttempts"] ?? "5");
+                    var attempts = MfaChallengeAttempts.AddOrUpdate(nonce, 1, (_, current) => current + 1);
+
+                    if (attempts >= maxAttempts)
+                    {
+                        MarkMfaChallengeUsed(nonce);
+                        MfaChallengeAttempts.TryRemove(nonce, out _);
+                        Logger.AddWarningSubModule(SubModule, $"Desafío MFA anulado por {attempts} intentos fallidos (usuario '{username}')");
+                        response["success"] = false;
+                        response["message"] = "Demasiados intentos. Vuelve a iniciar sesión.";
+                        return false;
+                    }
+
+                    Logger.AddWarningSubModule(SubModule, $"Código MFA inválido para '{username}' (intento {attempts} de {maxAttempts})");
+                    response["success"] = false;
+                    response["message"] = "Código inválido. Verifica el código de tu aplicación o usa un código de respaldo.";
+                    return false;
+                }
+
+                // El desafío es de un solo uso.
+                MarkMfaChallengeUsed(nonce);
+                MfaChallengeAttempts.TryRemove(nonce, out _);
+
+                // Un código de respaldo se consume al usarse.
+                if (backupValid)
+                {
+                    var session = _tools.CreateSession(SubModule, userId);
+                    session.UpdateObjectChanges(new GYM_USERS
+                    {
+                        ID = userId,
+                        MFA_BACKUP_CODES = remainingCodes
+                    });
+                    session.TryExecute();
+                    Logger.AddWarningSubModule(SubModule, $"Se usó un código de respaldo MFA para '{username}'");
+                }
+
+                Logger.AddInfoSubModule(SubModule, $"Segundo factor verificado para '{username}'");
+                return CreateSessionResponse(userId, username, role, deviceInfo, ipAddress, response);
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en VerifyMfaLogin: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Estado de MFA del usuario autenticado.
+        /// </summary>
+        public bool GetMfaStatus(long userId, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var result = _tools.ExecuteQueryResultSet(
+                    "SELECT mfa_enabled, mfa_backup_codes FROM gym_users WHERE id = ?",
+                    userId
+                );
+
+                if (result == null || result.Rows.Count == 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "Usuario no encontrado";
+                    return false;
+                }
+
+                var row = result.Rows[0];
+                var enabled = Convert.ToBoolean(GetRowValue(row, result, "mfa_enabled"));
+                var backupCodes = Convert.ToString(GetRowValue(row, result, "mfa_backup_codes")) ?? string.Empty;
+                var remaining = backupCodes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length;
+
+                response["success"] = true;
+                response["enabled"] = enabled;
+                response["backupCodesRemaining"] = enabled ? remaining : 0;
+                response["available"] = CreateMfaCipher() != null;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en GetMfaStatus: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Desactiva MFA. Exige un código válido del segundo factor.
+        /// </summary>
+        public bool DisableMfa(long userId, string code, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var cipher = CreateMfaCipher();
+                if (cipher == null)
+                {
+                    response["success"] = false;
+                    response["message"] = "La configuración de MFA no está disponible";
+                    return false;
+                }
+
+                var result = _tools.ExecuteQueryResultSet(
+                    "SELECT username, mfa_enabled, mfa_secret_encrypted, mfa_backup_codes FROM gym_users WHERE id = ?",
+                    userId
+                );
+
+                if (result == null || result.Rows.Count == 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "Usuario no encontrado";
+                    return false;
+                }
+
+                var row = result.Rows[0];
+                var username = Convert.ToString(GetRowValue(row, result, "username")) ?? string.Empty;
+                var enabled = Convert.ToBoolean(GetRowValue(row, result, "mfa_enabled"));
+                var encryptedSecret = Convert.ToString(GetRowValue(row, result, "mfa_secret_encrypted")) ?? string.Empty;
+                var backupCodes = Convert.ToString(GetRowValue(row, result, "mfa_backup_codes")) ?? string.Empty;
+
+                if (!enabled || string.IsNullOrEmpty(encryptedSecret))
+                {
+                    response["success"] = false;
+                    response["message"] = "MFA no está activo";
+                    return false;
+                }
+
+                string secret;
+                try
+                {
+                    secret = DecryptMfaSecret(encryptedSecret, cipher);
+                }
+                catch
+                {
+                    response["success"] = false;
+                    response["message"] = "No se pudo verificar la configuración MFA";
+                    return false;
+                }
+
+                var normalizedCode = (code ?? string.Empty).Replace(" ", string.Empty).Trim();
+                var isValid = VerifyTotpCode(secret, normalizedCode) ||
+                              VerifyBackupCode(normalizedCode, backupCodes);
+
+                if (!isValid)
+                {
+                    response["success"] = false;
+                    response["message"] = "Código inválido";
+                    return false;
+                }
+
+                var session = _tools.CreateSession(SubModule, userId);
+                session.UpdateObjectChanges(new GYM_USERS
+                {
+                    ID = userId,
+                    MFA_ENABLED = false,
+                    MFA_SECRET_ENCRYPTED = null,
+                    MFA_BACKUP_CODES = null
+                });
+
+                if (session.TryExecute().IsError)
+                {
+                    response["success"] = false;
+                    response["message"] = "Error interno del servidor";
+                    return false;
+                }
+
+                Logger.AddWarningSubModule(SubModule, $"MFA desactivado por el usuario '{username}'");
+                response["success"] = true;
+                response["message"] = "MFA desactivado correctamente";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en DisableMfa: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
 
         /// <summary>
         /// Validate session token and return user data
@@ -325,6 +629,20 @@ namespace GymService.Modules.Identity
                     return false;
                 }
 
+                // Si ya está activo, debe desactivarse antes de regenerar el secreto.
+                var current = _tools.ExecuteQueryResultSet(
+                    "SELECT mfa_enabled FROM gym_users WHERE id = ?",
+                    userId
+                );
+
+                if (current != null && current.Rows.Count > 0 &&
+                    Convert.ToBoolean(GetRowValue(current.Rows[0], current, "mfa_enabled")))
+                {
+                    response["success"] = false;
+                    response["message"] = "MFA ya está activo. Desactívalo antes de configurarlo de nuevo.";
+                    return false;
+                }
+
                 // Generate secret
                 var bytes = new byte[20];
                 using var rng = RandomNumberGenerator.Create();
@@ -333,7 +651,8 @@ namespace GymService.Modules.Identity
 
                 // Generate QR code URI
                 var email = GetUserEmail(userId);
-                var totpUri = $"otpauth://totp/CentroFit{email}?secret={secret}&issuer=CentroFit";
+                var label = Uri.EscapeDataString($"CentroFit:{email}");
+                var totpUri = $"otpauth://totp/{label}?secret={secret}&issuer=CentroFit";
 
                 // Generate backup codes
                 var backupCodes = new List<string>();
@@ -364,8 +683,11 @@ namespace GymService.Modules.Identity
 
                 response["success"] = true;
                 response["totpUri"] = totpUri;
+                response["secret"] = secret;
                 response["backupCodes"] = backupCodes;
                 response["message"] = "Escanea el código QR en tu app de autenticación";
+
+                Logger.AddInfoSubModule(SubModule, "Configuración MFA generada; pendiente de verificar el primer código");
 
                 return true;
             }
@@ -1102,6 +1424,185 @@ namespace GymService.Modules.Identity
                 return Convert.ToString(GetRowValue(result.Rows[0], result, "email")) ?? string.Empty;
 
             return string.Empty;
+        }
+
+        /// <summary>
+        /// Clave HMAC derivada de la configuración para firmar desafíos MFA.
+        /// </summary>
+        private byte[]? GetMfaChallengeKey()
+        {
+            var key = _configuration["Authentication:MfaEncryptionKey"];
+            if (string.IsNullOrWhiteSpace(key))
+                return null;
+
+            return SHA256.HashData(Encoding.UTF8.GetBytes(key + "|mfa-challenge-v1"));
+        }
+
+        /// <summary>
+        /// Emite un desafío MFA firmado y de corta vida. No requiere tabla nueva:
+        /// el servidor valida la firma, la expiración y que el nonce no se haya usado.
+        /// </summary>
+        private string CreateMfaChallengeToken(long userId, int minutes)
+        {
+            var nonce = SecurityValidation.GenerateToken(32);
+            var expiresAt = DateTimeOffset.UtcNow.AddMinutes(minutes).ToUnixTimeSeconds();
+            var payload = JsonSerializer.Serialize(new { uid = userId, exp = expiresAt, nonce });
+            var payloadBytes = Encoding.UTF8.GetBytes(payload);
+
+            var signature = HMACSHA256.HashData(GetMfaChallengeKey()!, payloadBytes);
+
+            return Base64UrlEncode(payloadBytes) + "." + Base64UrlEncode(signature);
+        }
+
+        /// <summary>
+        /// Valida firma, expiración y uso único de un desafío MFA.
+        /// </summary>
+        private bool TryValidateMfaChallengeToken(string token, out long userId, out string nonce, out string error)
+        {
+            userId = 0;
+            nonce = string.Empty;
+            error = "Desafío de verificación inválido o expirado";
+
+            if (string.IsNullOrWhiteSpace(token))
+                return false;
+
+            var key = GetMfaChallengeKey();
+            if (key == null)
+            {
+                error = "La configuración de MFA no está disponible";
+                return false;
+            }
+
+            var parts = token.Split('.', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length != 2)
+                return false;
+
+            byte[] payloadBytes;
+            byte[] providedSignature;
+
+            try
+            {
+                payloadBytes = Base64UrlDecode(parts[0]);
+                providedSignature = Base64UrlDecode(parts[1]);
+            }
+            catch
+            {
+                return false;
+            }
+
+            var expectedSignature = HMACSHA256.HashData(key, payloadBytes);
+            if (providedSignature.Length != expectedSignature.Length ||
+                !CryptographicOperations.FixedTimeEquals(providedSignature, expectedSignature))
+            {
+                return false;
+            }
+
+            try
+            {
+                using var document = JsonDocument.Parse(payloadBytes);
+                var root = document.RootElement;
+
+                userId = root.GetProperty("uid").GetInt64();
+                nonce = root.GetProperty("nonce").GetString() ?? string.Empty;
+                var expiresAt = DateTimeOffset.FromUnixTimeSeconds(root.GetProperty("exp").GetInt64()).UtcDateTime;
+
+                if (userId <= 0 || string.IsNullOrEmpty(nonce) || expiresAt <= DateTime.UtcNow)
+                    return false;
+            }
+            catch
+            {
+                return false;
+            }
+
+            // Limpieza de nonces caducados y del límite de intentos en memoria.
+            var now = DateTime.UtcNow;
+            foreach (var entry in MfaChallengeNonces)
+            {
+                if (entry.Value <= now)
+                    MfaChallengeNonces.TryRemove(entry.Key, out _);
+            }
+
+            if (MfaChallengeNonces.ContainsKey(nonce))
+            {
+                error = "Este desafío ya fue utilizado. Vuelve a iniciar sesión.";
+                return false;
+            }
+
+            if (MfaChallengeAttempts.Count > 500)
+                MfaChallengeAttempts.Clear();
+
+            return true;
+        }
+
+        private static void MarkMfaChallengeUsed(string nonce)
+        {
+            if (!string.IsNullOrEmpty(nonce))
+                MfaChallengeNonces[nonce] = DateTime.UtcNow.AddMinutes(10);
+        }
+
+        private static string Base64UrlEncode(byte[] bytes)
+        {
+            return Convert.ToBase64String(bytes)
+                .Replace("+", "-")
+                .Replace("/", "_")
+                .TrimEnd('=');
+        }
+
+        private static byte[] Base64UrlDecode(string value)
+        {
+            var normalized = value.Replace("-", "+").Replace("_", "/");
+            switch (normalized.Length % 4)
+            {
+                case 2: normalized += "=="; break;
+                case 3: normalized += "="; break;
+            }
+
+            return Convert.FromBase64String(normalized);
+        }
+
+        /// <summary>
+        /// Consume un código de respaldo: devuelve true y la lista restante si coincide.
+        /// Admite entradas hasheadas ("sha256:...") y legacy en texto plano.
+        /// </summary>
+        private static bool TryConsumeBackupCode(string code, string storedBackupCodes, out string remaining)
+        {
+            remaining = storedBackupCodes;
+
+            if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(storedBackupCodes))
+                return false;
+
+            var codeHashHex = Sha256Hex(code);
+            var entries = storedBackupCodes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var kept = new List<string>(entries.Length);
+            bool removed = false;
+
+            foreach (var entry in entries)
+            {
+                if (!removed)
+                {
+                    if (entry.StartsWith(BackupCodeHashPrefix, StringComparison.Ordinal))
+                    {
+                        if (FixedTimeEqualsStrings(entry.Substring(BackupCodeHashPrefix.Length), codeHashHex))
+                        {
+                            removed = true;
+                            continue;
+                        }
+                    }
+                    else if (FixedTimeEqualsStrings(entry, code))
+                    {
+                        removed = true;
+                        continue;
+                    }
+                }
+
+                kept.Add(entry);
+            }
+
+            if (!removed)
+                return false;
+
+            remaining = string.Join(",", kept);
+            return true;
         }
 
         /// <summary>
