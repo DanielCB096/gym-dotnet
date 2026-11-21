@@ -40,7 +40,9 @@ o la licencia lo permite.
       `C:\Program Files\Centro Fit\GymService`, versión 1.6.0; `/health`, login, respaldos y
       restauración verificados. El MSI 1.5.1 se desinstaló y queda una sola regla de firewall.
 - [ ] Instalar la CA raíz de HTTPS en todos los equipos cliente y en el kiosco; actualizar
-      su `apiUrl` a `https://192.168.100.53:5055`.
+      su `apiUrl` a `https://192.168.100.53:5055`. El paquete `CentroFit-CA.zip` ya está
+      generado y probado en Windows; falta instalarlo en los dispositivos y registrar/probar
+      el kiosco.
 
 ## 2. Otros pendientes de entrega
 

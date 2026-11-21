@@ -1,0 +1,58 @@
+Centro Fit Gym Manager - confianza HTTPS en equipos cliente
+===========================================================
+
+El servidor usa un certificado emitido por la CA local "GymService LAN Root CA".
+Para que el navegador no muestre advertencias, instala CentroFit-CA.cer en cada
+equipo o tablet que use el panel o el kiosco.
+
+IMPORTANTE
+- Instala solo CentroFit-CA.cer. No copies ni instales gymservice.pfx.
+- El archivo .cer es público; no contiene la clave privada.
+- Después de instalarlo, cierra y abre el navegador.
+
+WINDOWS (Chrome, Edge, panel de escritorio)
+1. Descomprime el ZIP completo.
+2. Ejecuta Instalar-CA-Windows.cmd (sin Administrador) para el usuario actual.
+   Para todos los usuarios: abre PowerShell como Administrador y ejecuta
+   .\Instalar-CA-Windows.ps1 -Machine
+3. Abre https://192.168.100.53:5055 y comprueba que no hay advertencia.
+
+ANDROID
+1. Copia CentroFit-CA.cer al dispositivo.
+2. Ajustes -> Seguridad -> Cifrado y credenciales -> Instalar un certificado
+   -> Certificado de CA -> selecciona CentroFit-CA.cer.
+3. El aviso "tu red puede ser supervisada" es normal para una CA de usuario.
+
+iOS / iPadOS
+1. Envía CentroFit-CA.cer por AirDrop o correo y ábrelo.
+2. Ajustes -> Perfil descargado -> Instalar.
+3. Ajustes -> General -> Información -> Ajustes de confianza de certificados
+   -> activa la confianza total para "GymService LAN Root CA".
+
+FIREFOX
+Firefox usa su propio almacén. Activa security.enterprise_roots.enabled = true
+en about:config, o importa el .cer en:
+Ajustes -> Privacidad y seguridad -> Certificados -> Ver certificados
+-> Autoridades -> Importar.
+
+KIOSCO
+1. Instala la CA en el dispositivo del kiosco (Android/iOS/Windows).
+2. Abre https://192.168.100.53:5055/kiosk-app/
+3. En el panel de administración, entra a Kioscos y crea/rota el token del
+   dispositivo.
+4. En la pantalla del kiosco, configura:
+   - URL del API: https://192.168.100.53:5055
+   - Token del kiosco: el token generado
+   Guarda y prueba la validación.
+5. No abras el kiosco como archivo local (file://): el navegador bloqueará
+   las peticiones.
+
+VERIFICACIÓN
+- Panel: https://192.168.100.53:5055
+- Salud: https://192.168.100.53:5055/health
+- Si aparece ERR_CERT_AUTHORITY_INVALID, la CA no está instalada en ese equipo.
+- Si aparece ERR_CERT_COMMON_NAME_INVALID, estás entrando por otra IP o nombre.
+
+SOPORTE
+La CA vence en 2036. Si se reinstala el servidor o se pierde la CA, habrá que
+generar una nueva y volver a instalarla en todos los equipos.

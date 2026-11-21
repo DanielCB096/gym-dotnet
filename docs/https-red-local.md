@@ -50,6 +50,22 @@ nueva. La CA raíz no cambia, así que los equipos cliente no necesitan volver a
 una CA distinta. Si el servidor se reinstala o se pierde la CA, hay que generar una nueva y
 reinstalarla en todos los clientes.
 
+### Paquete para clientes
+
+El repositorio incluye `deploy/https/Build-ClientPackage.ps1`, que genera un ZIP con:
+
+- `CentroFit-CA.cer` (solo la parte pública de la CA)
+- `Instalar-CA-Windows.cmd` y `Instalar-CA-Windows.ps1`
+- `LEEME.txt` con los pasos para Windows, Android, iOS, Firefox y kiosco
+
+```powershell
+.\deploy\https\Build-ClientPackage.ps1
+# Genera CentroFit-CA.zip en el Escritorio
+```
+
+El paquete no incluye el PFX ni la clave privada. En este servidor se generó en
+`C:\Users\PC\Desktop\CentroFit-CA.zip` y el instalador de Windows se probó desde el ZIP.
+
 ## Instalar la CA raíz en los clientes
 
 Sin este paso el navegador muestra una advertencia de certificado
