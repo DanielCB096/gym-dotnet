@@ -70,5 +70,9 @@ o la licencia lo permite.
       3 planes (Mensual/Trimestral/Anual). Respaldo verificado en
       `D:\GymBackups\GymManager_20261121_101854.bak`; dashboard y tablas operativas en 0.
 - [x] SMTP real configurado y OTP por correo verificado (envío, verificación y uso único).
-- [ ] Copia offsite/NAS de los respaldos (hoy `D:` es otro disco físico, no otra ubicación).
+- [x] Copia offsite cifrada en OneDrive (2026-11-21): 36 archivos `.7z` AES-256 en
+      `C:\Users\PC\OneDrive\GymServiceBackups`; tarea `GymService-Offsite` cada 15 min como
+      `SYSTEM` (`LastTaskResult=0`), retención 30/7. Restauración verificada (hash idéntico y
+      42 tablas). La contraseña está en un archivo protegido del servidor y en una copia del
+      Escritorio; debe guardarse en un gestor y borrarse el archivo temporal.
 - [ ] Evaluar cuenta dedicada para el servicio en lugar de `LocalSystem`.

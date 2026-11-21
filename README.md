@@ -520,6 +520,21 @@ sobre `GymManager`); sin ese permiso, `RESTORE VERIFYONLY` y la restauración de
   Nunca ejecutes una restauración destructiva sin autorización.
 - `verify-backup.ps1` nunca usa como destino la base configurada en `appsettings.json`.
 
+### Respaldo offsite cifrado
+
+`deploy/offsite/Sync-OffsiteBackups.ps1` copia los `.bak`/`.trn` de `D:\GymBackups`
+a una carpeta dentro de OneDrive, **comprimidos y cifrados con 7-Zip AES-256**
+(`-mhe=on`, cabeceras incluidas). La tarea `GymService-Offsite` se ejecuta como
+`SYSTEM` cada 15 minutos, omite los archivos ya cifrados y aplica retención de
+30 días para completos y 7 días para logs.
+
+- Destino actual: `C:\Users\PC\OneDrive\GymServiceBackups`.
+- Contraseña: archivo protegido del servidor y copia para el cliente; **no está en
+  Git**. Sin esa contraseña no se pueden restaurar los `.7z`.
+- Log: `C:\ProgramData\GymService\logs\offsite-backup.log`.
+- Si OneDrive no está en ejecución, la tarea falla para que se detecte.
+- Restauración, contraseña y reinstalación: [`deploy/offsite/README.md`](deploy/offsite/README.md).
+
 ## Reglas de negocio
 
 Las reglas de membresías, renovaciones y control de acceso se documentan en
