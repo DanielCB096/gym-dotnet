@@ -70,7 +70,7 @@
                   Directory="SystemFolder"
                   Execute="deferred"
                   Impersonate="no"
-                  Return="ignore"
+                  Return="check"
                   ExeCommand="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]Set-ServiceAccount.ps1&quot; -ConfigPath &quot;[INSTALLFOLDER]appsettings.json&quot; -SkipRestart" />
 
     <CustomAction Id="ServiceDependsSql"
