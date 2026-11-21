@@ -18,6 +18,13 @@
 - **Versión:** **1.6.0**; MSI regenerado, MSI 1.5.1 desinstalado e instalado 1.6.0. Servicio `centrofitgymservice` en `C:\Program Files\Centro Fit\GymService`, `/health` healthy 1.6.0, login correcto, tareas `GymService-Full`/`GymService-Log` con `LastTaskResult=0` y restauración de 42 tablas/6 socios verificada. Certificado HTTPS y URL sin cambios.
 - **Riesgo pendiente:** `ANXO_SEQUENCES` se conserva porque es el nombre de tabla que usa la librería; cambiarlo requiere la fase C.
 
+### Kiosco local en el PC (2026-11-21)
+- **Dispositivo:** `Kiosco PC` (id 501) activo; token válido hasta **2027-02-19**; perfil dedicado de Edge separado del navegador personal.
+- **Lanzador:** `deploy/kiosk-pc/Start-Kiosk.ps1` detecta la segunda pantalla y abre Edge en modo kiosco. `-ForcePrimary -Windowed` permite probar en la pantalla principal.
+- **Accesos directos:** “Kiosco segunda pantalla” en Escritorio e Inicio (el de Inicio solo abre si hay segunda pantalla) y “Kiosco ventana (prueba)”.
+- **Teclado físico:** verificado con `000000` + Enter → “Código inválido o expirado”; dígitos, Backspace, Enter y Escape funcionan.
+- **Pendiente:** solo hay un monitor conectado; falta probar la apertura fullscreen en una segunda pantalla física.
+
 ### Audio de acceso en el kiosco (2026-11-21)
 - **Acceso concedido:** chime ascendente (880 → 1320 Hz) + voz “Acceso concedido”; **denegado:** tono grave descendente + voz “Acceso denegado”.
 - El audio se desbloquea con el primer toque en el teclado; si la voz no está disponible, el tono sigue funcionando.

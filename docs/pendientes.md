@@ -50,6 +50,11 @@ o la licencia lo permite.
       `used`. El socio/membresía/código/acceso temporales se eliminaron y las secuencias se
       restauraron a 1; el kiosco sigue activo. El **audio de concedido/denegado** también
       quedó verificado en el tablet.
+- [x] Kiosco local en este PC (2026-11-21): dispositivo **Kiosco PC** (id 501), perfil
+      dedicado de Edge, lanzador `deploy/kiosk-pc/Start-Kiosk.ps1` que detecta la segunda
+      pantalla y accesos directos en Escritorio/Inicio. Teclado físico verificado
+      (`000000` + Enter → “Código inválido o expirado”). Solo hay un monitor conectado;
+      falta probar la apertura fullscreen en una segunda pantalla física.
 
 ## 2. Otros pendientes de entrega
 
