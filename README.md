@@ -563,6 +563,8 @@ a una carpeta dentro de OneDrive, **comprimidos y cifrados con 7-Zip AES-256**
   Git**. Sin esa contraseña no se pueden restaurar los `.7z`.
 - Log: `C:\ProgramData\GymService\logs\offsite-backup.log`.
 - Si OneDrive no está en ejecución, la tarea falla para que se detecte.
+- El script resetea la herencia del `.7z` después de moverlo (`icacls /reset`) para que el
+  usuario de OneDrive pueda sincronizarlo; sin eso queda en “Sincronización pendiente”.
 - Restauración, contraseña y reinstalación: [`deploy/offsite/README.md`](deploy/offsite/README.md).
 
 ## Reglas de negocio

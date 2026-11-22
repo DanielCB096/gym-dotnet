@@ -74,6 +74,18 @@ try {
         }
 
         Move-Item -LiteralPath $temp -Destination $archive -Force
+
+        # El temporal vive en ProgramData y al moverlo conserva los ACL del origen.
+        # OneDrive (el usuario) necesita heredar de la carpeta destino para poder
+        # sincronizar el archivo; sin esto queda en "Sincronización pendiente".
+        icacls $archive /reset /C | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Log "ERROR ajustando permisos de $archive (icacls=$LASTEXITCODE)"
+            Remove-Item -LiteralPath $archive -Force -ErrorAction SilentlyContinue
+            $errors++
+            continue
+        }
+
         $copied++
         Write-Log "OK $($file.Name) -> $archive"
     }

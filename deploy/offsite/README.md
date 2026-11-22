@@ -52,3 +52,30 @@ Copy-Item .\Sync-OffsiteBackups.ps1 "C:\Program Files\Centro Fit\GymService\" -F
 
 Para cambiar el destino o la retención, edita `Sync-OffsiteBackups.ps1` y
 vuelve a copiarlo; la tarea no necesita re-registrarse.
+
+## Sincronización con OneDrive
+
+El script mueve cada archivo temporal desde `C:\ProgramData\GymService\offsite-temp`
+hasta la carpeta de OneDrive. Al moverlo dentro del mismo volumen, Windows conserva
+los permisos del origen; el usuario de OneDrive solo tendría lectura y el archivo
+quedaría en **“Sincronización pendiente”**. Por eso el script ejecuta:
+
+```powershell
+icacls $archive /reset
+```
+
+Después de moverlo, el archivo hereda los permisos de la carpeta destino y OneDrive
+puede subirlo. Si actualizas el script, cópialo a la carpeta del servicio y ejecuta
+la tarea una vez para comprobar que los archivos nuevos quedan sincronizados.
+
+Verificación recomendada:
+
+1. La columna **Estado de disponibilidad** de los `.7z` no debe decir “Sincronización pendiente”.
+2. La tarea `GymService-Offsite` debe terminar con `LastTaskResult = 0`.
+3. `7z t -p"<contraseña>" archivo.7z` debe responder `Everything is Ok`.
+
+Los archivos existentes creados antes de esta corrección se arreglan una sola vez con:
+
+```powershell
+icacls "C:\Users\PC\OneDrive\GymServiceBackups\*.7z" /reset /C
+```

@@ -11,6 +11,13 @@
 
 ## Backend (.NET)
 
+### OneDrive: sincronización de respaldos corregida (2026-11-21)
+- **Síntoma:** los 40 `.7z` de `C:\Users\PC\OneDrive\GymServiceBackups` aparecían como **“Sincronización pendiente”**; OneDrive registraba `AccessDeniedErrorsSummary` y `UnexpectedFailure` al convertir los archivos en marcadores.
+- **Causa:** el script creaba el `.7z` como `SYSTEM` en `C:\ProgramData\GymService\offsite-temp` y lo movía al OneDrive del usuario. Al mover dentro del mismo volumen se conservaban los ACL del origen: `SYSTEM`/Administradores/Usuarios, sin `DANIELCB\PC` con control total. OneDrive podía leer el archivo pero no actualizar su estado de sincronización.
+- **Corrección:** `Sync-OffsiteBackups.ps1` ejecuta `icacls $archive /reset` después del movimiento para que herede los permisos de la carpeta destino. Los 40 archivos existentes se corrigieron con `icacls ...\*.7z /reset`.
+- **Verificación:** 41/41 archivos pasaron de “Sincronización pendiente” a “Disponible en este dispositivo”; el archivo nuevo creado por la tarea tiene `DANIELCB\PC: FullControl`, `7z t` responde `Everything is Ok` y `GymService-Offsite` terminó con `LastTaskResult=0`.
+- **Nota:** si se reinstala el script, hay que copiarlo a `C:\Program Files\Centro Fit\GymService`; la tarea no cambia.
+
 ### Contención: cuenta virtual del servicio (2026-11-21, versión 1.7.1)
 - **Cambio:** `centrofitgymservice` pasó de `LocalSystem` a `NT SERVICE\centrofitgymservice` (cuenta virtual, sin contraseña ni inicio de sesión interactivo). El proceso quedó verificado con propietario `NT SERVICE\centrofitgymservice`.
 - **Permisos mínimos:** lectura/ejecución sobre `C:\Program Files\Centro Fit\GymService`, escritura sobre `logs`, lectura de `appsettings.json` y del PFX de HTTPS. No se dio acceso a `D:\GymBackups`, OneDrive, secretos offsite ni al resto de `ProgramData`.

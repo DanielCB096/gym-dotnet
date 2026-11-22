@@ -75,11 +75,19 @@ o la licencia lo permite.
       **Corrección:** no se deben reiniciar las secuencias a 1 si quedan filas; usar
       `deploy/maintenance/Sync-Sequences.ps1 -Apply` y reiniciar el servicio.
 - [x] SMTP real configurado y OTP por correo verificado (envío, verificación y uso único).
-- [x] Copia offsite cifrada en OneDrive (2026-11-21): 36 archivos `.7z` AES-256 en
+- [x] Copia offsite cifrada en OneDrive (2026-11-21): **41 archivos** `.7z` AES-256 en
       `C:\Users\PC\OneDrive\GymServiceBackups`; tarea `GymService-Offsite` cada 15 min como
-      `SYSTEM` (`LastTaskResult=0`), retención 30/7. Restauración verificada (hash idéntico y
-      42 tablas). La contraseña está en un archivo protegido del servidor y en una copia del
-      Escritorio; debe guardarse en un gestor y borrarse el archivo temporal.
+      `SYSTEM` (`LastTaskResult=0`), retención 30/7. Restauración verificada (hash idéntico,
+      42 tablas) y **recuperación real**: se descifró el último respaldo, se restauró en una
+      base temporal, se arrancó una segunda instancia de la app, se validó login/panel/dashboard
+      y se eliminó todo. La contraseña está en un archivo protegido del servidor y en una copia
+      del Escritorio; debe guardarse en un gestor y borrarse el archivo temporal.
+- [x] **Sincronización OneDrive corregida** (2026-11-21): los `.7z` se movían desde
+      `ProgramData` conservando ACL de `SYSTEM`, por lo que OneDrive los dejaba en
+      “Sincronización pendiente”. `Sync-OffsiteBackups.ps1` ahora ejecuta `icacls /reset`
+      después de mover; los 40 archivos existentes se corrigieron y los 41 quedaron
+      “Disponible en este dispositivo”. Archivo nuevo validado con `7z t`.
+
 - [x] **Cuenta dedicada del servicio** (2026-11-21, versión 1.7.1): el servicio corre como
       `NT SERVICE\centrofitgymservice` (cuenta virtual), no `LocalSystem`. ACLs mínimas sobre
       aplicación, logs, `appsettings.json` y PFX; el proceso se verificó con
