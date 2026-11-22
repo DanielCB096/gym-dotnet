@@ -99,3 +99,24 @@ o la licencia lo permite.
       `GymService-Full`, `GymService-Log` y `GymService-Offsite` terminaron con resultado 0 y
       OneDrive quedó con 43/43 archivos disponibles. La administración SQL se hace con
       autenticación Windows del servidor.
+
+## 3. Hallazgos del QA completo (2026-11-21)
+
+Informe detallado: [`qa-2026-11-21.md`](qa-2026-11-21.md).
+
+- [ ] **P0 — Respaldar la clave MFA.** `MfaEncryptionKey` solo vive en `appsettings.json`; los
+      respaldos contienen solo la base. Si se restaura en un servidor con otra clave, fallan el
+      TOTP **y los códigos de respaldo** (probado). Guardar la clave en un gestor/almacén seguro,
+      incluir una copia cifrada de los secretos en el respaldo y permitir fallback de códigos de
+      respaldo sin descifrar el TOTP.
+- [ ] **P1 — Ciclo de vida de usuarios.** Agregar cambio de contraseña propia, reset
+      administrativo, edición de rol/correo y desactivación de usuarios; hoy solo se pueden crear
+      y listar.
+- [ ] **P1 — Endurecer producción.** Swagger y `UseDeveloperExceptionPage` están activos siempre;
+      agregar cabeceras de seguridad (CSP, X-Frame-Options, nosniff, Referrer-Policy, HSTS) y
+      poner `QueueLimit=0` en la política `auth` para devolver 429 inmediato.
+- [ ] **P2 — Completar funciones anunciadas.** Reportes programados sin ejecutor, push sin emisor,
+      búsqueda global y campana sin acción, PDF de facturas sin generación, auditoría sin visor.
+- [ ] **P2 — Monitoreo.** Verificación automática de restauración, alerta si falla Full/Log/Offsite,
+      control de espacio en `D:\GymBackups` y cuota de OneDrive.
+- [ ] **Ventana:** reinicio completo del servidor e instalación del MSI en una VM limpia.

@@ -11,6 +11,16 @@
 
 ## Backend (.NET)
 
+### QA completo y hallazgos (2026-11-21)
+- **Automatizado:** build 0 errores, **131/131** pruebas .NET, frontend build/lint sin errores.
+- **API:** 53 rutas GET recorridas sin 500; 401/403/400/404 correctos; inyección de login rechazada; logout invalida el token. Permisos STAFF/CASHIER correctos.
+- **UI:** 18 rutas y 15 modales de alta abiertos/cerrados sin errores graves; validación de campos obligatorios; 404 del panel correcta.
+- **Rendimiento:** 50 peticiones concurrentes al dashboard (0 errores, p95 21.9 ms) y 30 a `/health` (p95 127.9 ms).
+- **Hallazgo P0:** `MfaEncryptionKey` no está en el respaldo offsite. Al restaurar la base con otra clave, fallan TOTP **y códigos de respaldo** (probado 4/4). Documentado en `docs/qa-2026-11-21.md`; requiere respaldo seguro de la clave y fallback de códigos.
+- **Hallazgos P1:** no hay cambio/reset de contraseña ni ciclo de vida de usuarios; Swagger y `UseDeveloperExceptionPage` están activos en producción, sin cabeceras de seguridad; `auth` puede encolar solicitudes en vez de devolver 429.
+- **Hallazgos P2:** reportes programados sin ejecutor, push sin emisor, búsqueda/campana inertes, PDF de facturas sin generación, auditoría sin visor y falta de alertas de respaldo.
+- **Pruebas pendientes:** reinicio completo del servidor e instalación del MSI en VM limpia.
+
 ### SQL Server: login `sa` deshabilitado (2026-11-21)
 - **Cambio:** `ALTER LOGIN sa DISABLE` usando la cuenta Windows administradora del servidor. La aplicación y los scripts siguen usando el login dedicado `gym_app`; no hay sesiones ni tareas de producción que dependan de `sa`.
 - **Verificación:** `/health` healthy 1.7.1, login del owner con MFA, y tareas `GymService-Full`, `GymService-Log` y `GymService-Offsite` con `LastTaskResult=0`. Los archivos nuevos de offsite heredan `DANIELCB\PC: FullControl`; OneDrive quedó con **43/43** archivos disponibles.

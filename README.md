@@ -231,6 +231,9 @@ producción y CI.
   **Seguridad** en el panel, con QR, clave manual y 10 códigos de respaldo.
   `MfaMaxAttempts` limita los intentos por desafío. Los secretos se guardan cifrados con AES-256
   usando `MfaEncryptionKey`; sin esa clave MFA no se puede activar ni verificar.
+  **La clave debe guardarse fuera del servidor**: si se restaura la base en otro servidor con una
+  clave distinta, fallan el TOTP y los códigos de respaldo. Los respaldos de base no incluyen
+  `appsettings.json`; conserva una copia segura de los secretos.
   **Recuperación:** si se pierden el teléfono y los códigos de respaldo, un administrador con
   acceso al servidor puede desactivar MFA con
   `UPDATE gym_users SET mfa_enabled=0, mfa_secret_encrypted=NULL, mfa_backup_codes=NULL WHERE username='...';`
