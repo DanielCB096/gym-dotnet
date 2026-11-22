@@ -94,3 +94,8 @@ o la licencia lo permite.
       `GetOwner = NT SERVICE\centrofitgymservice`, `/health` healthy, login, SMTP real y tarea
       offsite con resultado 0. Script de aplicación/rollback:
       `deploy/security/Set-ServiceAccount.ps1`; MSI e instaladores actualizados.
+- [x] **Login `sa` deshabilitado** (2026-11-21): `ALTER LOGIN sa DISABLE` con la cuenta Windows
+      administradora del servidor. `gym_app` sigue operando la aplicación y los respaldos;
+      `GymService-Full`, `GymService-Log` y `GymService-Offsite` terminaron con resultado 0 y
+      OneDrive quedó con 43/43 archivos disponibles. La administración SQL se hace con
+      autenticación Windows del servidor.

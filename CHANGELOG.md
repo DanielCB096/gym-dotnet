@@ -11,6 +11,11 @@
 
 ## Backend (.NET)
 
+### SQL Server: login `sa` deshabilitado (2026-11-21)
+- **Cambio:** `ALTER LOGIN sa DISABLE` usando la cuenta Windows administradora del servidor. La aplicación y los scripts siguen usando el login dedicado `gym_app`; no hay sesiones ni tareas de producción que dependan de `sa`.
+- **Verificación:** `/health` healthy 1.7.1, login del owner con MFA, y tareas `GymService-Full`, `GymService-Log` y `GymService-Offsite` con `LastTaskResult=0`. Los archivos nuevos de offsite heredan `DANIELCB\PC: FullControl`; OneDrive quedó con **43/43** archivos disponibles.
+- **Nota:** la administración SQL se hace con autenticación Windows desde el servidor. Si se necesita un sysadmin SQL explícito en el futuro, crear un login nominativo en lugar de rehabilitar `sa`.
+
 ### Pruebas de recuperación y MFA (2026-11-21)
 - **Recuperación real:** se descifró el último `.bak.7z` offsite (hash SHA-256 idéntico al original), se restauró en `GymService_DRTest_20261121` (**42 tablas**), se arrancó una segunda instancia 1.7.1 en el puerto 5099 apuntando a esa base y se validó login del owner, panel, dashboard y 3 planes. La instancia y la base temporal se eliminaron; la producción no se tocó.
 - **MFA de borde:** **15/15** pruebas en una base temporal. TOTP con ±2 pasos rechazado, ±1 aceptado (ventana de tolerancia), código de respaldo consumido y no reutilizable, y desafío expirado rechazado sin crear sesión. Base temporal eliminada.

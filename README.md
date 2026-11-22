@@ -244,6 +244,9 @@ producción y CI.
   SQL sigue usando el login `gym_app`; la cuenta de Windows no cambia permisos de base de datos.
   Si se renueva el certificado, `New-GymServerCertificate.ps1` conserva el permiso de lectura
   para esa cuenta.
+- **SQL Server:** el login `sa` está deshabilitado. La aplicación usa el login dedicado `gym_app`;
+  la administración del servidor se hace con autenticación Windows desde el propio servidor.
+  Los respaldos completo, log y offsite siguen funcionando con `gym_app`.
 - **Rate limiting** por IP: `auth` (20/min), `strict` (5/min en OTP y validación de kiosco) y
   `general` (100/min) en `WebServerService`.
 - **OTP por correo real** con MailKit (`Email:SmtpServer/Port/User/Password/FromAddress/EnableSsl`).
