@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { AlertCircle, CheckCircle2, Plus, ShieldCheck } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Plus, ShieldCheck, ShieldOff } from 'lucide-react';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
 import Input from './ui/Input';
@@ -24,9 +25,11 @@ const roleOptions = [
 const errorMessage = (err, fallback) => err?.response?.data?.message || fallback;
 
 export default function StaffUsersPanel({ users, loading, onReload }) {
+  const { user: currentUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ username: '', fullName: '', email: '', role: 'STAFF', password: '' });
   const [saving, setSaving] = useState(false);
+  const [resettingId, setResettingId] = useState(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState(null);
 
@@ -61,6 +64,26 @@ export default function StaffUsersPanel({ users, loading, onReload }) {
     }
   };
 
+  const resetMfa = async (row) => {
+    const confirmed = window.confirm(
+      `¿Resetear el MFA de "${row.username}"?\n\nSe borrarán su secreto y códigos de respaldo, y se cerrarán sus sesiones activas.`
+    );
+    if (!confirmed) return;
+
+    setResettingId(row.id);
+    setError('');
+    setNotice(null);
+    try {
+      const response = await api.post('/auth/mfa/reset', { userId: row.id });
+      setNotice(response.data?.message || 'MFA reseteado correctamente.');
+      await onReload();
+    } catch (err) {
+      setError(errorMessage(err, 'No se pudo resetear el MFA.'));
+    } finally {
+      setResettingId(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -74,6 +97,13 @@ export default function StaffUsersPanel({ users, loading, onReload }) {
         <div className="flex items-start gap-2 rounded-lg border border-success-200 bg-success-50 px-3 py-2 text-sm text-success-700">
           <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0" />
           <span>{notice}</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="flex items-start gap-2 rounded-lg border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger-700">
+          <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <span>{error}</span>
         </div>
       )}
 
@@ -107,6 +137,15 @@ export default function StaffUsersPanel({ users, loading, onReload }) {
             ),
           },
           {
+            header: 'MFA',
+            accessor: 'mfaEnabled',
+            render: (value) => (
+              <Badge variant={value ? 'success' : 'neutral'} dot>
+                {value ? 'Activo' : 'Inactivo'}
+              </Badge>
+            ),
+          },
+          {
             header: 'Estado',
             accessor: 'isActive',
             render: (value) => (
@@ -114,6 +153,32 @@ export default function StaffUsersPanel({ users, loading, onReload }) {
                 {value ? 'Activo' : 'Inactivo'}
               </Badge>
             ),
+          },
+          {
+            header: 'Acciones',
+            accessor: 'id',
+            render: (value, row) => {
+              if (Number(value) === Number(currentUser?.userId)) {
+                return <span className="text-xs text-slate-400">Tu cuenta</span>;
+              }
+              if (row.role === 'OWNER' && currentUser?.role !== 'OWNER') {
+                return <span className="text-xs text-slate-400">—</span>;
+              }
+              if (!row.mfaEnabled) {
+                return <span className="text-xs text-slate-400">—</span>;
+              }
+              return (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={ShieldOff}
+                  loading={resettingId === row.id}
+                  onClick={() => resetMfa(row)}
+                >
+                  Resetear MFA
+                </Button>
+              );
+            },
           },
         ]}
         data={users}

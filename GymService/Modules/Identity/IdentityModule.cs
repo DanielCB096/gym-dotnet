@@ -315,33 +315,31 @@ namespace GymService.Modules.Identity
                     return false;
                 }
 
-                if (!mfaEnabled || string.IsNullOrEmpty(encryptedSecret))
+                if (!mfaEnabled || (string.IsNullOrEmpty(encryptedSecret) && string.IsNullOrEmpty(backupCodes)))
                 {
                     response["success"] = false;
                     response["message"] = "MFA no está configurado";
                     return false;
                 }
 
-                string secret;
+                string secret = string.Empty;
+                bool secretAvailable = false;
                 try
                 {
                     secret = DecryptMfaSecret(encryptedSecret, cipher);
+                    secretAvailable = true;
                 }
                 catch (Exception ex)
                 {
-                    Logger.AddErrorSubModule(SubModule, $"Error al descifrar el secreto MFA en login: {ex.Message}");
-                    response["success"] = false;
-                    response["message"] = "No se pudo verificar la configuración MFA";
-                    return false;
+                    // La clave puede haberse perdido al reconstruir el servidor. Los códigos
+                    // de respaldo se validan por hash y siguen siendo válidos para recuperar
+                    // la cuenta; el TOTP no se puede comprobar sin el secreto.
+                    Logger.AddWarningSubModule(SubModule, $"No se pudo descifrar el secreto MFA en login: {ex.Message}. Se intentará con código de respaldo.");
                 }
 
                 var normalizedCode = (code ?? string.Empty).Replace(" ", string.Empty).Trim();
-                var totpValid = VerifyTotpCode(secret, normalizedCode);
-                var backupValid = false;
-                string remainingCodes = backupCodes;
-
-                if (!totpValid)
-                    backupValid = TryConsumeBackupCode(normalizedCode, backupCodes, out remainingCodes);
+                var totpValid = secretAvailable && VerifyTotpCode(secret, normalizedCode);
+                var backupValid = TryConsumeBackupCode(normalizedCode, backupCodes, out var remainingCodes);
 
                 if (!totpValid && !backupValid)
                 {
@@ -469,27 +467,27 @@ namespace GymService.Modules.Identity
                 var encryptedSecret = Convert.ToString(GetRowValue(row, result, "mfa_secret_encrypted")) ?? string.Empty;
                 var backupCodes = Convert.ToString(GetRowValue(row, result, "mfa_backup_codes")) ?? string.Empty;
 
-                if (!enabled || string.IsNullOrEmpty(encryptedSecret))
+                if (!enabled || (string.IsNullOrEmpty(encryptedSecret) && string.IsNullOrEmpty(backupCodes)))
                 {
                     response["success"] = false;
                     response["message"] = "MFA no está activo";
                     return false;
                 }
 
-                string secret;
+                string secret = string.Empty;
+                bool secretAvailable = false;
                 try
                 {
                     secret = DecryptMfaSecret(encryptedSecret, cipher);
+                    secretAvailable = true;
                 }
-                catch
+                catch (Exception ex)
                 {
-                    response["success"] = false;
-                    response["message"] = "No se pudo verificar la configuración MFA";
-                    return false;
+                    Logger.AddWarningSubModule(SubModule, $"No se pudo descifrar el secreto MFA al desactivar: {ex.Message}. Se intentará con código de respaldo.");
                 }
 
                 var normalizedCode = (code ?? string.Empty).Replace(" ", string.Empty).Trim();
-                var isValid = VerifyTotpCode(secret, normalizedCode) ||
+                var isValid = (secretAvailable && VerifyTotpCode(secret, normalizedCode)) ||
                               VerifyBackupCode(normalizedCode, backupCodes);
 
                 if (!isValid)
@@ -529,6 +527,99 @@ namespace GymService.Modules.Identity
             }
         }
 
+
+        /// <summary>
+        /// Resetea MFA de otro usuario. Requiere permiso administrativo y queda auditado.
+        /// También invalida sus sesiones activas.
+        /// </summary>
+        public bool ResetMfa(long targetUserId, long actorUserId, string actorRole, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var result = _tools.ExecuteQueryResultSet(
+                    "SELECT id, username, role, mfa_enabled FROM gym_users WHERE id = ?",
+                    targetUserId
+                );
+
+                if (result == null || result.Rows.Count == 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "Usuario no encontrado";
+                    return false;
+                }
+
+                var row = result.Rows[0];
+                var targetUsername = Convert.ToString(GetRowValue(row, result, "username")) ?? string.Empty;
+                var targetRole = Convert.ToString(GetRowValue(row, result, "role")) ?? string.Empty;
+                var mfaEnabled = Convert.ToBoolean(GetRowValue(row, result, "mfa_enabled"));
+
+                if (string.Equals(targetRole, "OWNER", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(actorRole, "OWNER", StringComparison.OrdinalIgnoreCase))
+                {
+                    response["success"] = false;
+                    response["message"] = "Solo el owner puede resetear el MFA de otro owner";
+                    return false;
+                }
+
+                if (!mfaEnabled)
+                {
+                    response["success"] = false;
+                    response["message"] = "MFA no está activo para ese usuario";
+                    return false;
+                }
+
+                var session = _tools.CreateSession(SubModule, actorUserId);
+                session.UpdateObjectChanges(new GYM_USERS
+                {
+                    ID = targetUserId,
+                    MFA_ENABLED = false,
+                    MFA_SECRET_ENCRYPTED = null,
+                    MFA_BACKUP_CODES = null
+                });
+
+                if (session.TryExecute().IsError)
+                {
+                    response["success"] = false;
+                    response["message"] = "Error interno del servidor";
+                    return false;
+                }
+
+                // Invalida las sesiones del usuario para forzar un nuevo login.
+                var sessions = _tools.ExecuteQueryResultSet(
+                    "SELECT id FROM gym_sessions WHERE user_id = ? AND is_active = 1",
+                    targetUserId
+                );
+
+                if (sessions != null)
+                {
+                    foreach (Row sessionRow in sessions.Rows)
+                    {
+                        var sessionId = Convert.ToInt64(GetRowValue(sessionRow, sessions, "id"));
+                        var revoke = _tools.CreateSession(SubModule, actorUserId);
+                        revoke.UpdateObjectChanges(new GYM_SESSIONS { ID = sessionId, IS_ACTIVE = false });
+                        if (revoke.TryExecute().IsError)
+                            Logger.AddWarningSubModule(SubModule, $"No se pudo revocar la sesión {sessionId} de '{targetUsername}'");
+                    }
+                }
+
+                Logger.AddWarningSubModule(SubModule,
+                    $"MFA reseteado por usuario {actorUserId} ({actorRole}) para '{targetUsername}'");
+
+                response["success"] = true;
+                response["message"] = "MFA reseteado correctamente";
+                response["username"] = targetUsername;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en ResetMfa: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
 
         /// <summary>
         /// Validate session token and return user data

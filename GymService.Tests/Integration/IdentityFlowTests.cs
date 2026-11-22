@@ -13,7 +13,9 @@ public class IdentityFlowTests
     private const string Password = "TestOwner!2026";
     private const string OwnerName = "owner";
 
-    private static readonly IConfiguration Config = new ConfigurationBuilder()
+    private static readonly IConfiguration Config = ConfigWithKey("gym-tests-key-0123456789-ABCDEFGHIJ");
+
+    private static IConfiguration ConfigWithKey(string mfaKey) => new ConfigurationBuilder()
         .AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["Authentication:TokenLifetimeHours"] = "8",
@@ -21,7 +23,7 @@ public class IdentityFlowTests
             ["Authentication:OtpLength"] = "6",
             ["Authentication:MaxLoginAttempts"] = "3",
             ["Authentication:LockoutMinutes"] = "10",
-            ["Authentication:MfaEncryptionKey"] = "gym-tests-key-0123456789-ABCDEFGHIJ"
+            ["Authentication:MfaEncryptionKey"] = mfaKey
         })
         .Build();
 
@@ -149,6 +151,79 @@ public class IdentityFlowTests
             Assert.False(identity.Login(OwnerName, Password, "tests", "127.0.0.1", out var loginReuse));
             string reuseChallenge = Convert.ToString(loginReuse["mfaToken"]) ?? string.Empty;
             Assert.False(identity.VerifyMfaLogin(reuseChallenge, codes[0], "tests", "127.0.0.1", out _));
+        }
+        finally
+        {
+            _fx.Execute("UPDATE GYM_USERS SET MFA_ENABLED = 0, MFA_SECRET_ENCRYPTED = NULL, MFA_BACKUP_CODES = NULL, FAILED_LOGIN_ATTEMPTS = 0, LOCKED_UNTIL = NULL WHERE ID = @id",
+                ("@id", userId));
+        }
+    }
+
+    [Fact]
+    public void Mfa_Backup_Code_Works_With_Different_Encryption_Key()
+    {
+        if (!_fx.Available) return;
+
+        var (identity, userId) = EnsureOwner();
+
+        try
+        {
+            Assert.True(identity.SetupMfa(userId, out var setup), setup.GetValueOrDefault("message")?.ToString());
+            string secret = Convert.ToString(setup["secret"]) ?? string.Empty;
+            var codes = Assert.IsType<List<string>>(setup["backupCodes"]);
+            Assert.True(identity.VerifyMfa(userId, Totp(secret), out var verify), verify.GetValueOrDefault("message")?.ToString());
+
+            // Simula una reconstrucción del servidor con otra MfaEncryptionKey.
+            var identityWithOtherKey = new IdentityModule(_fx.Tools!, ConfigWithKey("gym-tests-key-OTRA-9876543210-ZYXWVUTS"));
+
+            Assert.False(identityWithOtherKey.Login(OwnerName, Password, "tests", "127.0.0.1", out var login));
+            Assert.True(Convert.ToBoolean(login["requiresMfa"]));
+            string challenge = Convert.ToString(login["mfaToken"]) ?? string.Empty;
+
+            // El TOTP no se puede descifrar, pero el código de respaldo sí debe funcionar.
+            Assert.True(identityWithOtherKey.VerifyMfaLogin(challenge, codes[0], "tests", "127.0.0.1", out var ok),
+                ok.GetValueOrDefault("message")?.ToString());
+            string token = Convert.ToString(ok["token"]) ?? string.Empty;
+            Assert.True(identityWithOtherKey.ValidateSessionToken(token, out _));
+
+            string storedCodes = Convert.ToString(_fx.Scalar("SELECT MFA_BACKUP_CODES FROM GYM_USERS WHERE ID = @id", ("@id", userId))) ?? string.Empty;
+            Assert.Equal(codes.Count - 1, storedCodes.Split(',', StringSplitOptions.RemoveEmptyEntries).Length);
+        }
+        finally
+        {
+            _fx.Execute("UPDATE GYM_USERS SET MFA_ENABLED = 0, MFA_SECRET_ENCRYPTED = NULL, MFA_BACKUP_CODES = NULL, FAILED_LOGIN_ATTEMPTS = 0, LOCKED_UNTIL = NULL WHERE ID = @id",
+                ("@id", userId));
+        }
+    }
+
+    [Fact]
+    public void ResetMfa_Clears_Secret_And_Revokes_Sessions()
+    {
+        if (!_fx.Available) return;
+
+        var (identity, userId) = EnsureOwner();
+
+        try
+        {
+            Assert.True(identity.SetupMfa(userId, out var setup), setup.GetValueOrDefault("message")?.ToString());
+            string secret = Convert.ToString(setup["secret"]) ?? string.Empty;
+            Assert.True(identity.VerifyMfa(userId, Totp(secret), out var verify), verify.GetValueOrDefault("message")?.ToString());
+
+            Assert.False(identity.Login(OwnerName, Password, "tests", "127.0.0.1", out var login));
+            string challenge = Convert.ToString(login["mfaToken"]) ?? string.Empty;
+            Assert.True(identity.VerifyMfaLogin(challenge, Totp(secret), "tests", "127.0.0.1", out var ok),
+                ok.GetValueOrDefault("message")?.ToString());
+            string token = Convert.ToString(ok["token"]) ?? string.Empty;
+            Assert.True(identity.ValidateSessionToken(token, out _));
+
+            Assert.True(identity.ResetMfa(userId, userId, "OWNER", out var reset), reset.GetValueOrDefault("message")?.ToString());
+
+            Assert.Equal(0, Convert.ToInt32(_fx.Scalar("SELECT MFA_ENABLED FROM GYM_USERS WHERE ID = @id", ("@id", userId))));
+            var secretValue = _fx.Scalar("SELECT MFA_SECRET_ENCRYPTED FROM GYM_USERS WHERE ID = @id", ("@id", userId));
+            var codesValue = _fx.Scalar("SELECT MFA_BACKUP_CODES FROM GYM_USERS WHERE ID = @id", ("@id", userId));
+            Assert.True(secretValue is null || secretValue is DBNull);
+            Assert.True(codesValue is null || codesValue is DBNull);
+            Assert.False(identity.ValidateSessionToken(token, out _));
         }
         finally
         {

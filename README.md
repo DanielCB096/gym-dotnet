@@ -232,10 +232,11 @@ producción y CI.
   `MfaMaxAttempts` limita los intentos por desafío. Los secretos se guardan cifrados con AES-256
   usando `MfaEncryptionKey`; sin esa clave MFA no se puede activar ni verificar.
   **La clave debe guardarse fuera del servidor**: si se restaura la base en otro servidor con una
-  clave distinta, fallan el TOTP y los códigos de respaldo. Los respaldos de base no incluyen
-  `appsettings.json`; conserva una copia segura de los secretos.
-  **Recuperación:** si se pierden el teléfono y los códigos de respaldo, un administrador con
-  acceso al servidor puede desactivar MFA con
+  clave distinta, el TOTP falla, pero los códigos de respaldo siguen funcionando para recuperar la
+  cuenta. El respaldo offsite incluye `mfa-key-*.7z`, cifrado con la misma contraseña AES-256.
+  **Recuperación:** si se pierden el teléfono y los códigos de respaldo, un administrador puede
+  usar **Personal → Usuarios → Resetear MFA** (solo owner para otro owner), que borra el secreto y
+  revoca las sesiones. Como último recurso con acceso al servidor:
   `UPDATE gym_users SET mfa_enabled=0, mfa_secret_encrypted=NULL, mfa_backup_codes=NULL WHERE username='...';`
   y el usuario vuelve a configurarlo desde **Seguridad**. Guarda los códigos de respaldo fuera
   del servidor.

@@ -79,3 +79,26 @@ Los archivos existentes creados antes de esta corrección se arreglan una sola v
 ```powershell
 icacls "C:\Users\PC\OneDrive\GymServiceBackups\*.7z" /reset /C
 ```
+
+## Respaldo de la clave MFA
+
+El script lee `Authentication:MfaEncryptionKey` de `appsettings.json` y crea, una vez
+por día y por clave, un archivo cifrado:
+
+```
+mfa-key-YYYYMMDD-<hash>.7z
+```
+
+- Contiene solo la clave MFA; no incluye toda la configuración.
+- Usa la misma contraseña AES-256 del respaldo offsite.
+- Se retiene 30 días, igual que los respaldos completos.
+- Si la clave cambia, el hash del nombre cambia y se conserva una copia de la anterior.
+
+**Para recuperar un servidor:**
+
+1. Restaura la base.
+2. Descifra el `mfa-key-*.7z` con la contraseña offsite.
+3. Coloca la clave en `Authentication:MfaEncryptionKey` del nuevo `appsettings.json`.
+4. Si no se conserva la clave, los usuarios MFA pueden entrar con un código de respaldo
+   (el TOTP no se puede descifrar) y luego un administrador debe resetear/reconfigurar MFA.
+5. Guarda también la contraseña offsite y la clave MFA en un gestor de contraseñas.

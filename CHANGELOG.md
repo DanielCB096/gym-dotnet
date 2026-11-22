@@ -11,6 +11,13 @@
 
 ## Backend (.NET)
 
+### P0 MFA: clave respaldada, fallback y reset administrativo (2026-11-21, versión 1.7.2)
+- **Fallback:** si la `MfaEncryptionKey` no puede descifrar el secreto, el login MFA acepta un **código de respaldo**; el TOTP sigue fallando. Antes ambos fallaban y la cuenta quedaba bloqueada. También aplica al desactivar MFA.
+- **Respaldo de la clave:** `Sync-OffsiteBackups.ps1` genera `mfa-key-YYYYMMDD-<hash>.7z`, cifrado AES-256 con la contraseña offsite, y lo retiene 30 días. Verificado: el archivo se descifra y la clave coincide con `appsettings.json`.
+- **Reset administrativo:** nuevo `POST /api/auth/mfa/reset` protegido por `admin.settings`; borra secreto/códigos y revoca sesiones. Un ADMIN no puede resetear a un OWNER; solo el owner puede. La UI **Personal → Usuarios** muestra el estado MFA y la acción **Resetear MFA** (oculta para el propio usuario y para owner si el actor no es owner).
+- **Verificación:** **133/133** pruebas (2 nuevas: fallback con clave distinta y reset+revocación), reset por API y UI, 403 para STAFF, 400 al intentar resetear owner desde ADMIN, login posterior sin MFA; tarea offsite `LastTaskResult=0`.
+- **Despliegue:** servicio 1.7.2 healthy; `appsettings.json`, cuenta virtual y scripts conservados.
+
 ### QA completo y hallazgos (2026-11-21)
 - **Automatizado:** build 0 errores, **131/131** pruebas .NET, frontend build/lint sin errores.
 - **API:** 53 rutas GET recorridas sin 500; 401/403/400/404 correctos; inyección de login rechazada; logout invalida el token. Permisos STAFF/CASHIER correctos.

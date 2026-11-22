@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using GymService.Tools;
@@ -134,6 +135,38 @@ namespace GymService.Controllers
 
             var code = request.GetValueOrDefault("code", "");
             var success = DataCenter.BusinessProcess.Identity.DisableMfa(SecurityValidation.GetUserId(userData!), code, out var response);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPost]
+        [Route("api/auth/mfa/reset")]
+        public ActionResult<Dictionary<string, object>> ResetMfa([FromBody] Dictionary<string, object> request)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { returnCode = "ERROR", errorMessage });
+
+            if (!SecurityValidation.HasPermission(userData!, "admin.settings"))
+                return StatusCode(StatusCodes.Status403Forbidden, new { success = false, message = "No tienes permiso para resetear MFA" });
+
+            if (DataCenter.BusinessProcess.Identity == null)
+                return BadRequest(new { returnCode = "ERROR", errorMessage = "Servicio no disponible" });
+
+            long targetUserId;
+            try
+            {
+                targetUserId = Convert.ToInt64(request.GetValueOrDefault("userId", 0));
+            }
+            catch
+            {
+                targetUserId = 0;
+            }
+
+            if (targetUserId <= 0)
+                return BadRequest(new { success = false, message = "userId es requerido" });
+
+            var actorUserId = SecurityValidation.GetUserId(userData!);
+            var actorRole = SecurityValidation.GetUserRole(userData!);
+            var success = DataCenter.BusinessProcess.Identity.ResetMfa(targetUserId, actorUserId, actorRole, out var response);
             return success ? Ok(response) : BadRequest(response);
         }
 

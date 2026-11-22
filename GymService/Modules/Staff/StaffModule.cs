@@ -474,7 +474,7 @@ namespace GymService.Modules.Staff
             try
             {
                 var result = _tools.ExecuteQueryResultSet(
-                    "SELECT u.id, u.username, u.email, u.role, u.full_name, u.is_active, u.is_owner, " +
+                    "SELECT u.id, u.username, u.email, u.role, u.full_name, u.is_active, u.is_owner, u.mfa_enabled, " +
                     "s.staff_id, s.employee_name " +
                     "FROM gym_users u " +
                     "OUTER APPLY (SELECT TOP 1 s2.id AS staff_id, s2.employee_name " +
@@ -497,6 +497,7 @@ namespace GymService.Modules.Staff
                             ["fullName"] = Convert.ToString(GetRowValue(row, result, "full_name")) ?? "",
                             ["isActive"] = GetRowValue(row, result, "is_active") != null && Convert.ToBoolean(GetRowValue(row, result, "is_active")),
                             ["isOwner"] = GetRowValue(row, result, "is_owner") != null && Convert.ToBoolean(GetRowValue(row, result, "is_owner")),
+                            ["mfaEnabled"] = GetRowValue(row, result, "mfa_enabled") != null && Convert.ToBoolean(GetRowValue(row, result, "mfa_enabled")),
                             ["staffId"] = GetRowValue(row, result, "staff_id") != null ? Convert.ToInt64(GetRowValue(row, result, "staff_id")) : (long?)null,
                             ["employeeName"] = Convert.ToString(GetRowValue(row, result, "employee_name")) ?? ""
                         });

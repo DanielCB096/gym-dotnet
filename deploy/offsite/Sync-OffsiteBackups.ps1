@@ -12,6 +12,7 @@ param(
     [string]$SourceDir = 'D:\GymBackups',
     [string]$Destination = 'C:\Users\PC\OneDrive\GymServiceBackups',
     [string]$PasswordFile = 'C:\ProgramData\GymService\secrets\offsite-backup.pass',
+    [string]$ConfigPath = 'C:\Program Files\Centro Fit\GymService\appsettings.json',
     [string]$SevenZip = 'C:\Program Files\7-Zip\7z.exe',
     [string]$LogFile = 'C:\ProgramData\GymService\logs\offsite-backup.log',
     [int]$FullRetentionDays = 30,
@@ -40,15 +41,74 @@ try {
     New-Item -ItemType Directory -Force -Path $Destination | Out-Null
     New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
 
-    $files = @(Get-ChildItem $SourceDir -File | Where-Object { $_.Extension -in '.bak', '.trn' })
-    if ($files.Count -eq 0) {
-        Write-Log 'Sin respaldos nuevos en el origen.'
-        exit 0
-    }
-
     $errors = 0
     $copied = 0
     $skipped = 0
+    $keyArchived = 0
+    $now = Get-Date
+
+    # Respaldo cifrado de la clave MFA. Sin esta clave, una base restaurada en otro
+    # servidor no puede validar TOTP ni los códigos de respaldo.
+    if (Test-Path $ConfigPath) {
+        try {
+            $cfg = Get-Content $ConfigPath -Raw | ConvertFrom-Json
+            $mfaKey = [string]$cfg.Authentication.MfaEncryptionKey
+
+            if ([string]::IsNullOrWhiteSpace($mfaKey)) {
+                Write-Log 'WARN: appsettings no contiene MfaEncryptionKey; no se respaldó la clave MFA.'
+            } else {
+                $sha = [System.Security.Cryptography.SHA256]::Create()
+                try {
+                    $hashBytes = $sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($mfaKey))
+                    $keyHash = ([BitConverter]::ToString($hashBytes)).Replace('-', '').Substring(0, 12).ToLowerInvariant()
+                } finally {
+                    $sha.Dispose()
+                }
+
+                $keyArchive = Join-Path $Destination ("mfa-key-" + $now.ToString('yyyyMMdd') + "-$keyHash.7z")
+                if (-not (Test-Path $keyArchive)) {
+                    $keyFile = Join-Path $tempDir ('tmp-mfa-' + [Guid]::NewGuid().ToString('N') + '.txt')
+                    $keyTemp = Join-Path $tempDir ('tmp-mfa-' + [Guid]::NewGuid().ToString('N') + '.7z')
+                    Set-Content -Path $keyFile -Value $mfaKey -NoNewline -Encoding UTF8
+
+                    Push-Location $tempDir
+                    try {
+                        & $SevenZip a -t7z -mhe=on -mx=5 -y "-p$password" $keyTemp (Split-Path $keyFile -Leaf) 2>&1 | Out-Null
+                        $keyCode = $LASTEXITCODE
+                    } finally {
+                        Pop-Location
+                    }
+
+                    if ($keyCode -ne 0 -or -not (Test-Path $keyTemp)) {
+                        if (Test-Path $keyTemp) { Remove-Item $keyTemp -Force -ErrorAction SilentlyContinue }
+                        Write-Log "ERROR cifrando la clave MFA (7z=$keyCode)"
+                        $errors++
+                    } else {
+                        Move-Item -LiteralPath $keyTemp -Destination $keyArchive -Force
+                        icacls $keyArchive /reset /C | Out-Null
+                        if ($LASTEXITCODE -ne 0) {
+                            Write-Log "ERROR ajustando permisos de $keyArchive (icacls=$LASTEXITCODE)"
+                            Remove-Item $keyArchive -Force -ErrorAction SilentlyContinue
+                            $errors++
+                        } else {
+                            $keyArchived = 1
+                            Write-Log "OK clave MFA -> $keyArchive"
+                        }
+                    }
+
+                    Remove-Item $keyFile -Force -ErrorAction SilentlyContinue
+                }
+            }
+        } catch {
+            Write-Log "WARN: no se pudo respaldar la clave MFA: $($_.Exception.Message)"
+            Get-ChildItem $tempDir -File -Filter 'tmp-mfa-*.txt' -ErrorAction SilentlyContinue |
+                Remove-Item -Force -ErrorAction SilentlyContinue
+        }
+    } else {
+        Write-Log "WARN: no existe $ConfigPath; no se respaldó la clave MFA."
+    }
+
+    $files = @(Get-ChildItem $SourceDir -File | Where-Object { $_.Extension -in '.bak', '.trn' })
 
     foreach ($file in $files) {
         $archive = Join-Path $Destination ($file.Name + '.7z')
@@ -90,7 +150,6 @@ try {
         Write-Log "OK $($file.Name) -> $archive"
     }
 
-    $now = Get-Date
     $removed = 0
     Get-ChildItem $Destination -File -Filter '*.bak.7z' |
         Where-Object { $_.LastWriteTime -lt $now.AddDays(-$FullRetentionDays) } |
@@ -98,8 +157,11 @@ try {
     Get-ChildItem $Destination -File -Filter '*.trn.7z' |
         Where-Object { $_.LastWriteTime -lt $now.AddDays(-$LogRetentionDays) } |
         ForEach-Object { Remove-Item $_.FullName -Force; $removed++ }
+    Get-ChildItem $Destination -File -Filter 'mfa-key-*.7z' |
+        Where-Object { $_.LastWriteTime -lt $now.AddDays(-$FullRetentionDays) } |
+        ForEach-Object { Remove-Item $_.FullName -Force; $removed++ }
 
-    Write-Log "Resumen: copiados=$copied omitidos=$skipped eliminados=$removed errores=$errors"
+    Write-Log "Resumen: copiados=$copied omitidos=$skipped claves=$keyArchived eliminados=$removed errores=$errors"
     if ($errors -gt 0) { exit 1 }
     exit 0
 } catch {
