@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import {
-  ShieldCheck, ShieldOff, KeyRound, Copy, CheckCircle2, AlertTriangle, RefreshCw
+  ShieldCheck, ShieldOff, KeyRound, Copy, CheckCircle2, AlertTriangle, RefreshCw, Lock
 } from 'lucide-react';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import PageHeader from '../components/ui/PageHeader';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -11,6 +13,8 @@ import Badge from '../components/ui/Badge';
 import Input from '../components/ui/Input';
 
 export default function Security() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -22,6 +26,14 @@ export default function Security() {
   const [code, setCode] = useState('');
   const [disableCode, setDisableCode] = useState('');
   const [copied, setCopied] = useState('');
+
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
 
   const loadStatus = useCallback(async () => {
     setLoading(true);
@@ -103,6 +115,35 @@ export default function Security() {
       setError(err.response?.data?.message || 'No se pudo desactivar MFA.');
     } finally {
       setBusy(false);
+    }
+  };
+
+  const changePassword = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('La confirmación no coincide con la nueva contraseña.');
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordError('La nueva contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+
+    setPasswordBusy(true);
+    try {
+      await api.post('/auth/change-password', {
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword
+      });
+      logout();
+      navigate('/login', { replace: true });
+    } catch (err) {
+      setPasswordError(err.response?.data?.message || 'No se pudo cambiar la contraseña.');
+    } finally {
+      setPasswordBusy(false);
     }
   };
 
@@ -318,6 +359,53 @@ export default function Security() {
               </div>
             </Card>
           )}
+
+          <Card
+            title="Cambiar contraseña"
+            subtitle="Al cambiarla se cerrarán todas tus sesiones y deberás iniciar sesión de nuevo."
+            className="mt-4"
+          >
+            <form onSubmit={changePassword} className="space-y-4">
+              <Input
+                label="Contraseña actual"
+                type="password"
+                value={passwordForm.currentPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                autoComplete="current-password"
+                required
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input
+                  label="Nueva contraseña"
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                  autoComplete="new-password"
+                  placeholder="Mínimo 8 caracteres"
+                  required
+                />
+                <Input
+                  label="Confirmar nueva contraseña"
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                  autoComplete="new-password"
+                  required
+                />
+              </div>
+
+              {passwordError && (
+                <div className="flex items-start gap-2 rounded-lg border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger-700">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <span>{passwordError}</span>
+                </div>
+              )}
+
+              <Button type="submit" icon={Lock} loading={passwordBusy}>
+                Actualizar contraseña
+              </Button>
+            </form>
+          </Card>
         </div>
 
         <Card title="Cómo funciona">

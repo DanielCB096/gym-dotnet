@@ -171,6 +171,24 @@ namespace GymService.Controllers
         }
 
         [HttpPost]
+        [Route("api/auth/change-password")]
+        public ActionResult<Dictionary<string, object>> ChangePassword([FromBody] Dictionary<string, string> request)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { returnCode = "ERROR", errorMessage });
+
+            if (DataCenter.BusinessProcess.Identity == null)
+                return BadRequest(new { returnCode = "ERROR", errorMessage = "Servicio no disponible" });
+
+            var currentPassword = request.GetValueOrDefault("currentPassword", "");
+            var newPassword = request.GetValueOrDefault("newPassword", "");
+            var success = DataCenter.BusinessProcess.Identity.ChangeOwnPassword(
+                SecurityValidation.GetUserId(userData!), currentPassword, newPassword, out var response);
+
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPost]
         [Route("api/auth/otp/request")]
         [EnableRateLimiting("strict")]
         public ActionResult<Dictionary<string, object>> RequestOtp([FromBody] Dictionary<string, string> request)

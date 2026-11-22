@@ -67,6 +67,47 @@ namespace GymService.Controllers
             return success ? Ok(response) : BadRequest(response);
         }
 
+        [HttpPut]
+        [Route("api/staff/users/{userId}")]
+        public ActionResult<Dictionary<string, object>> UpdateUser(long userId, [FromBody] Dictionary<string, object> userData)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userDataAuth, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Identity == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Identity.UpdateUser(
+                userId,
+                SecurityValidation.GetUserId(userDataAuth!),
+                SecurityValidation.GetUserRole(userDataAuth!),
+                userData,
+                out var response);
+
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPost]
+        [Route("api/staff/users/{userId}/password")]
+        public ActionResult<Dictionary<string, object>> ResetUserPassword(long userId, [FromBody] Dictionary<string, string> request)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userDataAuth, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Identity == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var newPassword = request.GetValueOrDefault("newPassword", "");
+            var success = DataCenter.BusinessProcess.Identity.ResetUserPassword(
+                userId,
+                SecurityValidation.GetUserId(userDataAuth!),
+                SecurityValidation.GetUserRole(userDataAuth!),
+                newPassword,
+                out var response);
+
+            return success ? Ok(response) : BadRequest(response);
+        }
+
         [HttpGet]
         [Route("api/staff/push-subscriptions")]
         public ActionResult<Dictionary<string, object>> GetPushSubscriptions([FromQuery] long? userId = null, [FromQuery] int page = 1, [FromQuery] int limit = 50)

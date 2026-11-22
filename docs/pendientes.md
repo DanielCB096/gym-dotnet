@@ -108,9 +108,9 @@ Informe detallado: [`qa-2026-11-21.md`](qa-2026-11-21.md).
       códigos de respaldo funciona aunque la clave de cifrado sea distinta; el offsite genera
       `mfa-key-*.7z` cifrado y se verificó que coincide con `appsettings.json`; reset administrativo
       por API y UI, con revocación de sesiones y protección del owner. Pruebas: 133/133.
-- [ ] **P1 — Ciclo de vida de usuarios.** Agregar cambio de contraseña propia, reset
-      administrativo, edición de rol/correo y desactivación de usuarios; hoy solo se pueden crear
-      y listar.
+- [x] **P1 — Ciclo de vida de usuarios** (2026-11-22, versión 1.7.3): cambio de contraseña
+      propia, reset administrativo, edición de correo/nombre/rol y activación/desactivación,
+      con revocación de sesiones y protecciones del owner/self. Probado por API y UI; 135/135.
 - [ ] **P1 — Endurecer producción.** Swagger y `UseDeveloperExceptionPage` están activos siempre;
       agregar cabeceras de seguridad (CSP, X-Frame-Options, nosniff, Referrer-Policy, HSTS) y
       poner `QueueLimit=0` en la política `auth` para devolver 429 inmediato.

@@ -451,7 +451,8 @@ namespace GymService.Services
             ["/api/staff/users"] = new Dictionary<string, string>
             {
                 ["GET"] = "staff.view",
-                ["POST"] = "staff.manage"
+                ["POST"] = "staff.manage",
+                ["PUT"] = "staff.manage"
             },
             ["/api/staff/users/all"] = new Dictionary<string, string>
             {

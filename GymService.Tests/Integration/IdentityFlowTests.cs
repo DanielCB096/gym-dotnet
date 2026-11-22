@@ -233,6 +233,101 @@ public class IdentityFlowTests
     }
 
     [Fact]
+    public void ChangeOwnPassword_Invalidates_Old_Password_And_Sessions()
+    {
+        if (!_fx.Available) return;
+
+        var (identity, _) = EnsureOwner();
+        string username = "pwd_" + DateTime.UtcNow.Ticks;
+        string email = username + "@test.local";
+
+        try
+        {
+            Assert.True(identity.CreateUser(new Dictionary<string, object>
+            {
+                ["username"] = username,
+                ["email"] = email,
+                ["password"] = "OldPass!2026",
+                ["fullName"] = "Cambio Password",
+                ["role"] = "STAFF"
+            }, out var created), created.GetValueOrDefault("message")?.ToString());
+
+            long userId = Convert.ToInt64(created["userId"]);
+            Assert.True(identity.Login(username, "OldPass!2026", "tests", "127.0.0.1", out var login));
+            string token = Convert.ToString(login["token"]) ?? string.Empty;
+
+            Assert.False(identity.ChangeOwnPassword(userId, "incorrecta", "NewPass!2026", out var wrong));
+            Assert.True(identity.ChangeOwnPassword(userId, "OldPass!2026", "NewPass!2026", out var changed),
+                changed.GetValueOrDefault("message")?.ToString());
+
+            Assert.False(identity.ValidateSessionToken(token, out _));
+            Assert.False(identity.Login(username, "OldPass!2026", "tests", "127.0.0.1", out _));
+            Assert.True(identity.Login(username, "NewPass!2026", "tests", "127.0.0.1", out _));
+        }
+        finally
+        {
+            _fx.Execute("DELETE FROM GYM_SESSIONS WHERE USER_ID IN (SELECT ID FROM GYM_USERS WHERE USERNAME = @u); DELETE FROM GYM_USERS WHERE USERNAME = @u",
+                ("@u", username));
+        }
+    }
+
+    [Fact]
+    public void Admin_ResetPassword_UpdateUser_And_Owner_Protection()
+    {
+        if (!_fx.Available) return;
+
+        var (identity, ownerId) = EnsureOwner();
+        string username = "adm_" + DateTime.UtcNow.Ticks;
+        string email = username + "@test.local";
+
+        try
+        {
+            Assert.True(identity.CreateUser(new Dictionary<string, object>
+            {
+                ["username"] = username,
+                ["email"] = email,
+                ["password"] = "OldPass!2026",
+                ["fullName"] = "Admin User",
+                ["role"] = "STAFF"
+            }, out var created), created.GetValueOrDefault("message")?.ToString());
+
+            long userId = Convert.ToInt64(created["userId"]);
+            Assert.True(identity.Login(username, "OldPass!2026", "tests", "127.0.0.1", out var login));
+            string token = Convert.ToString(login["token"]) ?? string.Empty;
+
+            // Un ADMIN no puede resetear al owner.
+            Assert.False(identity.ResetUserPassword(ownerId, userId, "ADMIN", "OwnerReset!2026", out var denied));
+            Assert.False(identity.UpdateUser(ownerId, userId, "ADMIN", new Dictionary<string, object>
+            {
+                ["email"] = "owner@test.local",
+                ["fullName"] = "Owner",
+                ["role"] = "ADMIN",
+                ["isActive"] = false
+            }, out _));
+
+            Assert.True(identity.ResetUserPassword(userId, ownerId, "OWNER", "ResetPass!2026", out var reset),
+                reset.GetValueOrDefault("message")?.ToString());
+            Assert.False(identity.ValidateSessionToken(token, out _));
+
+            Assert.True(identity.UpdateUser(userId, ownerId, "OWNER", new Dictionary<string, object>
+            {
+                ["email"] = "updated-" + email,
+                ["fullName"] = "Usuario Actualizado",
+                ["role"] = "CASHIER",
+                ["isActive"] = false
+            }, out var updated), updated.GetValueOrDefault("message")?.ToString());
+
+            Assert.Equal(0, Convert.ToInt32(_fx.Scalar("SELECT IS_ACTIVE FROM GYM_USERS WHERE ID = @id", ("@id", userId))));
+            Assert.False(identity.Login(username, "ResetPass!2026", "tests", "127.0.0.1", out _));
+        }
+        finally
+        {
+            _fx.Execute("DELETE FROM GYM_SESSIONS WHERE USER_ID IN (SELECT ID FROM GYM_USERS WHERE USERNAME = @u); DELETE FROM GYM_USERS WHERE USERNAME = @u",
+                ("@u", username));
+        }
+    }
+
+    [Fact]
     public void Login_Locks_Account_After_Max_Failed_Attempts()
     {
         if (!_fx.Available) return;

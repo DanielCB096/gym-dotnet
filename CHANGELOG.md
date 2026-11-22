@@ -11,6 +11,15 @@
 
 ## Backend (.NET)
 
+### Ciclo de vida de usuarios y contraseñas (2026-11-22, versión 1.7.3)
+- **Cambio de contraseña propia:** `POST /api/auth/change-password` valida la contraseña actual, exige mínimo 8 caracteres y distinta a la anterior; invalida todas las sesiones. Nueva tarjeta en **Seguridad**.
+- **Reset administrativo:** `POST /api/staff/users/{userId}/password` con permiso `staff.manage`; resetea hash, desbloquea la cuenta e invalida sesiones.
+- **Edición de usuario:** `PUT /api/staff/users/{userId}` permite correo, nombre, rol (`ADMIN`/`STAFF`/`CASHIER`) y estado activo/inactivo. Desactivar revoca sesiones. No se puede desactivar al owner ni a uno mismo, ni cambiar el propio rol.
+- **Protección del owner:** solo un OWNER puede modificar o resetear a otro owner. La UI oculta esas acciones a ADMIN.
+- **UI:** **Personal → Usuarios** muestra MFA, permite editar, resetear contraseña y resetear MFA; **Seguridad** permite cambiar la contraseña propia.
+- **Verificación:** **135/135** pruebas; API y UI en vivo: cambio propio, reset por admin, edición de rol/nombre, desactivación/reactivación, 403 para STAFF, 400 al intentar modificar al owner; sesiones revocadas y login con la nueva contraseña. Datos temporales eliminados.
+- **Despliegue:** servicio 1.7.3 healthy; cuenta virtual, `appsettings.json` y scripts conservados.
+
 ### P0 MFA: clave respaldada, fallback y reset administrativo (2026-11-21, versión 1.7.2)
 - **Fallback:** si la `MfaEncryptionKey` no puede descifrar el secreto, el login MFA acepta un **código de respaldo**; el TOTP sigue fallando. Antes ambos fallaban y la cuenta quedaba bloqueada. También aplica al desactivar MFA.
 - **Respaldo de la clave:** `Sync-OffsiteBackups.ps1` genera `mfa-key-YYYYMMDD-<hash>.7z`, cifrado AES-256 con la contraseña offsite, y lo retiene 30 días. Verificado: el archivo se descifra y la clave coincide con `appsettings.json`.

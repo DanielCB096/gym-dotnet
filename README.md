@@ -176,6 +176,7 @@ No edites esos archivos a mano.
 | `/api/auth/login` | POST | Login con username/password. Si MFA está activo devuelve `requiresMfa` y `mfaToken` (5 min) |
 | `/api/auth/mfa/login` | POST | Verifica TOTP o código de respaldo y crea la sesión |
 | `/api/auth/logout` | POST | Cerrar sesión |
+| `/api/auth/change-password` | POST | Cambiar la contraseña propia; invalida todas las sesiones |
 | `/api/auth/mfa/setup` | POST | Generar secreto TOTP, URI `otpauth` y códigos de respaldo |
 | `/api/auth/mfa/verify` | POST | Activar MFA verificando el primer código |
 | `/api/auth/mfa/status` | GET | Estado de MFA y códigos de respaldo restantes |
@@ -240,6 +241,10 @@ producción y CI.
   `UPDATE gym_users SET mfa_enabled=0, mfa_secret_encrypted=NULL, mfa_backup_codes=NULL WHERE username='...';`
   y el usuario vuelve a configurarlo desde **Seguridad**. Guarda los códigos de respaldo fuera
   del servidor.
+- **Gestión de usuarios:** cada usuario puede cambiar su contraseña desde **Seguridad** (se
+  invalidan todas sus sesiones). Un ADMIN/OWNER puede editar correo, nombre, rol y estado, y
+  resetear contraseñas desde **Personal → Usuarios**. No se puede desactivar al owner ni a uno
+  mismo, ni cambiar el propio rol.
 - **Cuenta de servicio:** el servicio corre como la cuenta virtual
   `NT SERVICE\centrofitgymservice`, no como `LocalSystem`. Solo tiene lectura/ejecución sobre la
   aplicación, escritura sobre `logs` y lectura de `appsettings.json` y del PFX de HTTPS.

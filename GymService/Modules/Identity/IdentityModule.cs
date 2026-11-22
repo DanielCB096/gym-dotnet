@@ -587,22 +587,7 @@ namespace GymService.Modules.Identity
                 }
 
                 // Invalida las sesiones del usuario para forzar un nuevo login.
-                var sessions = _tools.ExecuteQueryResultSet(
-                    "SELECT id FROM gym_sessions WHERE user_id = ? AND is_active = 1",
-                    targetUserId
-                );
-
-                if (sessions != null)
-                {
-                    foreach (Row sessionRow in sessions.Rows)
-                    {
-                        var sessionId = Convert.ToInt64(GetRowValue(sessionRow, sessions, "id"));
-                        var revoke = _tools.CreateSession(SubModule, actorUserId);
-                        revoke.UpdateObjectChanges(new GYM_SESSIONS { ID = sessionId, IS_ACTIVE = false });
-                        if (revoke.TryExecute().IsError)
-                            Logger.AddWarningSubModule(SubModule, $"No se pudo revocar la sesión {sessionId} de '{targetUsername}'");
-                    }
-                }
+                RevokeUserSessions(targetUserId, actorUserId);
 
                 Logger.AddWarningSubModule(SubModule,
                     $"MFA reseteado por usuario {actorUserId} ({actorRole}) para '{targetUsername}'");
@@ -618,6 +603,332 @@ namespace GymService.Modules.Identity
                 response["success"] = false;
                 response["message"] = "Error interno del servidor";
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Permite al usuario autenticado cambiar su propia contraseña.
+        /// Invalida todas sus sesiones para forzar un nuevo login.
+        /// </summary>
+        public bool ChangeOwnPassword(long userId, string currentPassword, string newPassword, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var result = _tools.ExecuteQueryResultSet(
+                    "SELECT username, password_hash FROM gym_users WHERE id = ? AND is_active = 1",
+                    userId
+                );
+
+                if (result == null || result.Rows.Count == 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "Usuario no encontrado o inactivo";
+                    return false;
+                }
+
+                var row = result.Rows[0];
+                var username = Convert.ToString(GetRowValue(row, result, "username")) ?? string.Empty;
+                var storedHash = Convert.ToString(GetRowValue(row, result, "password_hash")) ?? string.Empty;
+
+                if (!VerifyPassword(currentPassword ?? string.Empty, storedHash, userId))
+                {
+                    Logger.AddWarningSubModule(SubModule, $"Cambio de contraseña rechazado para '{username}': contraseña actual incorrecta");
+                    response["success"] = false;
+                    response["message"] = "La contraseña actual no es correcta";
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
+                {
+                    response["success"] = false;
+                    response["message"] = "La nueva contraseña debe tener al menos 8 caracteres";
+                    return false;
+                }
+
+                if (string.Equals(currentPassword, newPassword, StringComparison.Ordinal))
+                {
+                    response["success"] = false;
+                    response["message"] = "La nueva contraseña debe ser diferente a la actual";
+                    return false;
+                }
+
+                var session = _tools.CreateSession(SubModule, userId);
+                session.UpdateObjectChanges(new GYM_USERS
+                {
+                    ID = userId,
+                    PASSWORD_HASH = HashPassword(newPassword),
+                    FAILED_LOGIN_ATTEMPTS = 0,
+                    LOCKED_UNTIL = null
+                });
+
+                if (session.TryExecute().IsError)
+                {
+                    response["success"] = false;
+                    response["message"] = "Error interno del servidor";
+                    return false;
+                }
+
+                RevokeUserSessions(userId, userId);
+                Logger.AddInfoSubModule(SubModule, $"Contraseña cambiada por el usuario '{username}'");
+
+                response["success"] = true;
+                response["message"] = "Contraseña actualizada. Vuelve a iniciar sesión.";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en ChangeOwnPassword: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Reset administrativo de la contraseña de otro usuario.
+        /// </summary>
+        public bool ResetUserPassword(long targetUserId, long actorUserId, string actorRole, string newPassword, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var result = _tools.ExecuteQueryResultSet(
+                    "SELECT id, username, role, is_owner FROM gym_users WHERE id = ?",
+                    targetUserId
+                );
+
+                if (result == null || result.Rows.Count == 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "Usuario no encontrado";
+                    return false;
+                }
+
+                var row = result.Rows[0];
+                var targetUsername = Convert.ToString(GetRowValue(row, result, "username")) ?? string.Empty;
+                var targetRole = Convert.ToString(GetRowValue(row, result, "role")) ?? string.Empty;
+                var targetIsOwner = GetRowValue(row, result, "is_owner") != null && Convert.ToBoolean(GetRowValue(row, result, "is_owner"));
+
+                if ((targetIsOwner || string.Equals(targetRole, "OWNER", StringComparison.OrdinalIgnoreCase)) &&
+                    !string.Equals(actorRole, "OWNER", StringComparison.OrdinalIgnoreCase))
+                {
+                    response["success"] = false;
+                    response["message"] = "Solo el owner puede resetear la contraseña de otro owner";
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 8)
+                {
+                    response["success"] = false;
+                    response["message"] = "La nueva contraseña debe tener al menos 8 caracteres";
+                    return false;
+                }
+
+                var session = _tools.CreateSession(SubModule, actorUserId);
+                session.UpdateObjectChanges(new GYM_USERS
+                {
+                    ID = targetUserId,
+                    PASSWORD_HASH = HashPassword(newPassword),
+                    FAILED_LOGIN_ATTEMPTS = 0,
+                    LOCKED_UNTIL = null
+                });
+
+                if (session.TryExecute().IsError)
+                {
+                    response["success"] = false;
+                    response["message"] = "Error interno del servidor";
+                    return false;
+                }
+
+                RevokeUserSessions(targetUserId, actorUserId);
+                Logger.AddWarningSubModule(SubModule,
+                    $"Contraseña reseteada por usuario {actorUserId} ({actorRole}) para '{targetUsername}'");
+
+                response["success"] = true;
+                response["message"] = "Contraseña reseteada correctamente";
+                response["username"] = targetUsername;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en ResetUserPassword: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Actualiza datos administrativos de un usuario: correo, nombre, rol y estado.
+        /// No permite desactivar al owner ni a uno mismo, ni cambiar el propio rol.
+        /// </summary>
+        public bool UpdateUser(long targetUserId, long actorUserId, string actorRole, Dictionary<string, object> data, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var result = _tools.ExecuteQueryResultSet(
+                    "SELECT id, username, email, role, full_name, is_active, is_owner FROM gym_users WHERE id = ?",
+                    targetUserId
+                );
+
+                if (result == null || result.Rows.Count == 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "Usuario no encontrado";
+                    return false;
+                }
+
+                var row = result.Rows[0];
+                var username = Convert.ToString(GetRowValue(row, result, "username")) ?? string.Empty;
+                var currentEmail = Convert.ToString(GetRowValue(row, result, "email")) ?? string.Empty;
+                var currentRole = Convert.ToString(GetRowValue(row, result, "role")) ?? string.Empty;
+                var currentFullName = Convert.ToString(GetRowValue(row, result, "full_name")) ?? string.Empty;
+                var currentActive = GetRowValue(row, result, "is_active") != null && Convert.ToBoolean(GetRowValue(row, result, "is_active"));
+                var isOwner = GetRowValue(row, result, "is_owner") != null && Convert.ToBoolean(GetRowValue(row, result, "is_owner"));
+
+                if ((isOwner || string.Equals(currentRole, "OWNER", StringComparison.OrdinalIgnoreCase)) &&
+                    !string.Equals(actorRole, "OWNER", StringComparison.OrdinalIgnoreCase))
+                {
+                    response["success"] = false;
+                    response["message"] = "Solo el owner puede modificar a otro owner";
+                    return false;
+                }
+
+                var email = (Convert.ToString(data.GetValueOrDefault("email", currentEmail)) ?? string.Empty).Trim();
+                var fullName = (Convert.ToString(data.GetValueOrDefault("fullName", currentFullName)) ?? string.Empty).Trim();
+                var role = (Convert.ToString(data.GetValueOrDefault("role", currentRole)) ?? currentRole).Trim().ToUpperInvariant();
+                bool isActive = currentActive;
+                if (data.ContainsKey("isActive"))
+                {
+                    try { isActive = Convert.ToBoolean(data["isActive"]); }
+                    catch { isActive = currentActive; }
+                }
+
+                if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
+                {
+                    response["success"] = false;
+                    response["message"] = "El correo del usuario no es válido";
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(fullName))
+                {
+                    response["success"] = false;
+                    response["message"] = "El nombre completo es requerido";
+                    return false;
+                }
+
+                if (isOwner)
+                {
+                    if (!string.Equals(role, "OWNER", StringComparison.OrdinalIgnoreCase))
+                    {
+                        response["success"] = false;
+                        response["message"] = "No se puede cambiar el rol del owner";
+                        return false;
+                    }
+
+                    if (!isActive)
+                    {
+                        response["success"] = false;
+                        response["message"] = "No se puede desactivar el owner";
+                        return false;
+                    }
+                }
+                else if (!StaffUserRoles.Contains(role))
+                {
+                    response["success"] = false;
+                    response["message"] = "Rol no válido. Usa ADMIN, STAFF o CASHIER";
+                    return false;
+                }
+
+                if (targetUserId == actorUserId)
+                {
+                    if (!isActive)
+                    {
+                        response["success"] = false;
+                        response["message"] = "No puedes desactivar tu propia cuenta";
+                        return false;
+                    }
+
+                    if (!string.Equals(role, currentRole, StringComparison.OrdinalIgnoreCase))
+                    {
+                        response["success"] = false;
+                        response["message"] = "No puedes cambiar tu propio rol";
+                        return false;
+                    }
+                }
+
+                long duplicate = _tools.ExecuteQueryObjectCount(
+                    "SELECT COUNT(*) FROM gym_users WHERE email = ? AND id <> ?", email, targetUserId);
+                if (duplicate > 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "Ya existe otro usuario con ese correo";
+                    return false;
+                }
+
+                var session = _tools.CreateSession(SubModule, actorUserId);
+                session.UpdateObjectChanges(new GYM_USERS
+                {
+                    ID = targetUserId,
+                    EMAIL = email,
+                    FULL_NAME = fullName,
+                    ROLE = role,
+                    IS_ACTIVE = isActive
+                });
+
+                if (session.TryExecute().IsError)
+                {
+                    response["success"] = false;
+                    response["message"] = "Error interno del servidor";
+                    return false;
+                }
+
+                if (!isActive)
+                    RevokeUserSessions(targetUserId, actorUserId);
+
+                Logger.AddWarningSubModule(SubModule,
+                    $"Usuario '{username}' actualizado por {actorUserId} ({actorRole}): role={role} active={isActive}");
+
+                response["success"] = true;
+                response["message"] = isActive ? "Usuario actualizado correctamente" : "Usuario desactivado correctamente";
+                response["username"] = username;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en UpdateUser: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Invalida todas las sesiones activas de un usuario.
+        /// </summary>
+        private void RevokeUserSessions(long targetUserId, long actorUserId)
+        {
+            var sessions = _tools.ExecuteQueryResultSet(
+                "SELECT id FROM gym_sessions WHERE user_id = ? AND is_active = 1",
+                targetUserId
+            );
+
+            if (sessions == null)
+                return;
+
+            foreach (Row sessionRow in sessions.Rows)
+            {
+                var sessionId = Convert.ToInt64(GetRowValue(sessionRow, sessions, "id"));
+                var revoke = _tools.CreateSession(SubModule, actorUserId);
+                revoke.UpdateObjectChanges(new GYM_SESSIONS { ID = sessionId, IS_ACTIVE = false });
+                if (revoke.TryExecute().IsError)
+                    Logger.AddWarningSubModule(SubModule, $"No se pudo revocar la sesión {sessionId} del usuario {targetUserId}");
             }
         }
 
