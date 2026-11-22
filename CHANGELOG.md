@@ -11,6 +11,12 @@
 
 ## Backend (.NET)
 
+### Pruebas de recuperación y MFA (2026-11-21)
+- **Recuperación real:** se descifró el último `.bak.7z` offsite (hash SHA-256 idéntico al original), se restauró en `GymService_DRTest_20261121` (**42 tablas**), se arrancó una segunda instancia 1.7.1 en el puerto 5099 apuntando a esa base y se validó login del owner, panel, dashboard y 3 planes. La instancia y la base temporal se eliminaron; la producción no se tocó.
+- **MFA de borde:** **15/15** pruebas en una base temporal. TOTP con ±2 pasos rechazado, ±1 aceptado (ventana de tolerancia), código de respaldo consumido y no reutilizable, y desafío expirado rechazado sin crear sesión. Base temporal eliminada.
+- **OneDrive:** 41/41 archivos pasaron de “Sincronización pendiente” a “Disponible en este dispositivo” tras corregir ACL; el archivo nuevo de la tarea se abrió con `7z t` (`Everything is Ok`). La confirmación en OneDrive web requiere la sesión del usuario, que no está iniciada en el navegador del servidor.
+- **Pendiente de prueba:** instalación del MSI 1.7.1 en una VM limpia y reinicio completo del servidor. Son pruebas de ventana, no de código.
+
 ### OneDrive: sincronización de respaldos corregida (2026-11-21)
 - **Síntoma:** los 40 `.7z` de `C:\Users\PC\OneDrive\GymServiceBackups` aparecían como **“Sincronización pendiente”**; OneDrive registraba `AccessDeniedErrorsSummary` y `UnexpectedFailure` al convertir los archivos en marcadores.
 - **Causa:** el script creaba el `.7z` como `SYSTEM` en `C:\ProgramData\GymService\offsite-temp` y lo movía al OneDrive del usuario. Al mover dentro del mismo volumen se conservaban los ACL del origen: `SYSTEM`/Administradores/Usuarios, sin `DANIELCB\PC` con control total. OneDrive podía leer el archivo pero no actualizar su estado de sincronización.
