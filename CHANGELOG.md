@@ -17,7 +17,7 @@
 - **UI:** **Reportes** ahora pide destinatarios, muestra tipo, última y próxima ejecución; valida correos y frecuencia.
 - **Persistencia:** `NEXT_RUN` se calcula al crear y después de cada intento; `LAST_RUN` se actualiza aunque el envío falle para evitar reintentos cada 5 minutos. Los errores quedan en el log.
 - **Pruebas:** nueva prueba de ejecución con adjunto en outbox; **136/136** pruebas. Prueba temporal del hosted service: creó el reporte, ejecutó a los 30 s y actualizó `LAST_RUN`/`NEXT_RUN`; limpieza correcta.
-- **Nota:** el despliegue en vivo de 1.7.6 quedó pendiente por cancelación del UAC; el paquete está generado.
+- **Despliegue:** servicio **1.7.6** healthy. Reporte real de prueba ejecutado con envío de Excel a `daniel.cb096@gmail.com`, `LAST_RUN` actualizado y `NEXT_RUN` al día siguiente; UI verificada con el campo Destinatarios. Reporte y usuario de prueba eliminados.
 
 ### Monitoreo de respaldos y verificación automática (2026-11-22, versión 1.7.5)
 - **Monitor diario:** `GymService-BackupMonitor` (08:00, SYSTEM) revisa tareas Full/Log/Offsite, espacio de `D:\GymBackups`, OneDrive, antigüedad de `.7z` y copia de la clave MFA. Alerta por SMTP al owner.
