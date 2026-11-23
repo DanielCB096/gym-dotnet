@@ -111,9 +111,10 @@ Informe detallado: [`qa-2026-11-21.md`](qa-2026-11-21.md).
 - [x] **P1 — Ciclo de vida de usuarios** (2026-11-22, versión 1.7.3): cambio de contraseña
       propia, reset administrativo, edición de correo/nombre/rol y activación/desactivación,
       con revocación de sesiones y protecciones del owner/self. Probado por API y UI; 135/135.
-- [ ] **P1 — Endurecer producción.** Swagger y `UseDeveloperExceptionPage` están activos siempre;
-      agregar cabeceras de seguridad (CSP, X-Frame-Options, nosniff, Referrer-Policy, HSTS) y
-      poner `QueueLimit=0` en la política `auth` para devolver 429 inmediato.
+- [x] **P1 — Endurecimiento mínimo** (2026-11-22, versión 1.7.4): Swagger apagado por defecto
+      (`WebServer:EnableSwagger=false`, `/swagger` 404) y sin `DeveloperExceptionPage`; verificado
+      panel/API/health. CSP/cabeceras completas, HSTS, CORS y `QueueLimit=0` quedan **aplazados**
+      por riesgo bajo en LAN privada; reconsiderar si hay portal público o multi-sucursal.
 - [ ] **P2 — Completar funciones anunciadas.** Reportes programados sin ejecutor, push sin emisor,
       búsqueda global y campana sin acción, PDF de facturas sin generación, auditoría sin visor.
 - [ ] **P2 — Monitoreo.** Verificación automática de restauración, alerta si falla Full/Log/Offsite,

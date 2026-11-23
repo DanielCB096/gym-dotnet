@@ -279,10 +279,13 @@ namespace GymService.Services
         /// </summary>
         private void ConfigureApp(IApplicationBuilder app, string[] corsOrigins)
         {
-            // Enable Swagger in development
-            if (app.ServerFeatures != null)
+            // Swagger solo si se habilita explícitamente (desarrollo/diagnóstico).
+            // En producción se deja apagado para no exponer el mapa de la API.
+            bool enableSwagger = string.Equals(
+                _configuration["WebServer:EnableSwagger"], "true", StringComparison.OrdinalIgnoreCase);
+
+            if (enableSwagger)
             {
-                app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI(c =>
                 {

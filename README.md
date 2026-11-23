@@ -201,7 +201,8 @@ Edita `appsettings.json`:
   },
   "WebServer": {
     "Port": 5000,
-    "Urls": "http://localhost:5000"
+    "Urls": "http://localhost:5000",
+    "EnableSwagger": false
   },
   "Authentication": {
     "MfaEncryptionKey": "clave_aleatoria_de_32_bytes_en_base64",
@@ -245,6 +246,9 @@ producción y CI.
   invalidan todas sus sesiones). Un ADMIN/OWNER puede editar correo, nombre, rol y estado, y
   resetear contraseñas desde **Personal → Usuarios**. No se puede desactivar al owner ni a uno
   mismo, ni cambiar el propio rol.
+- **Superficie HTTP:** Swagger está apagado por defecto (`WebServer:EnableSwagger=false`) y no se
+  usa `DeveloperExceptionPage`. Para diagnóstico, habilita Swagger explícitamente y solo en un
+  entorno controlado; en producción `/swagger` responde 404.
 - **Cuenta de servicio:** el servicio corre como la cuenta virtual
   `NT SERVICE\centrofitgymservice`, no como `LocalSystem`. Solo tiene lectura/ejecución sobre la
   aplicación, escritura sobre `logs` y lectura de `appsettings.json` y del PFX de HTTPS.

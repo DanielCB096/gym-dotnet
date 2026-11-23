@@ -11,6 +11,12 @@
 
 ## Backend (.NET)
 
+### Endurecimiento mínimo de producción (2026-11-22, versión 1.7.4)
+- **Swagger apagado por defecto:** `WebServer:EnableSwagger=false`; `/swagger` y `/swagger/v1/swagger.json` responden **404** en producción. Se puede habilitar explícitamente para diagnóstico.
+- **Sin `DeveloperExceptionPage`:** se eliminó la página de excepciones de desarrollo; un error no controlado ya no expone stack traces ni detalles internos al cliente.
+- **Verificación:** `/swagger*` 404, panel 200, API sin token 401, `/health` healthy 1.7.4. Sin cambios funcionales en el panel.
+- **Decisión:** CSP/cabeceras completas, HSTS, CORS y `QueueLimit=0` quedan aplazados por riesgo bajo en LAN privada; se revisarán si se publica un portal de socios o fuera de la red.
+
 ### Ciclo de vida de usuarios y contraseñas (2026-11-22, versión 1.7.3)
 - **Cambio de contraseña propia:** `POST /api/auth/change-password` valida la contraseña actual, exige mínimo 8 caracteres y distinta a la anterior; invalida todas las sesiones. Nueva tarjeta en **Seguridad**.
 - **Reset administrativo:** `POST /api/staff/users/{userId}/password` con permiso `staff.manage`; resetea hash, desbloquea la cuenta e invalida sesiones.
