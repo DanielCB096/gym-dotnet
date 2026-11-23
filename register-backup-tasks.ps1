@@ -64,6 +64,14 @@ $settings = New-ScheduledTaskSettingsSet `
     -MultipleInstances IgnoreNew `
     -ExecutionTimeLimit (New-TimeSpan -Hours 2)
 
+# El respaldo completo diario puede despertar el equipo. Los de log/offsite no,
+# para no despertarlo cada 15 minutos.
+$fullSettings = New-ScheduledTaskSettingsSet `
+    -StartWhenAvailable `
+    -MultipleInstances IgnoreNew `
+    -ExecutionTimeLimit (New-TimeSpan -Hours 2) `
+    -WakeToRun
+
 function Quote-Argument([string]$value) {
     if ($value -match '\s') { return '"' + $value + '"' }
     return $value
@@ -97,7 +105,7 @@ $logTrigger = New-ScheduledTaskTrigger -Once -At ((Get-Date).AddMinutes(1)) `
 Register-ScheduledTask -TaskName $fullTask `
     -Action $fullAction `
     -Trigger $fullTrigger `
-    -Settings $settings `
+    -Settings $fullSettings `
     -Principal $principal `
     -Description "Respaldo completo de $Database (GymService)" `
     -Force | Out-Null

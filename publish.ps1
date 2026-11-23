@@ -86,6 +86,8 @@ if (-not $SkipFrontend) {
 Copy-Item (Join-Path $root 'GymServiceSetup\install.ps1') $Output -Force
 Copy-Item (Join-Path $root 'GymServiceSetup\uninstall.ps1') $Output -Force
 Copy-Item (Join-Path $root 'deploy\security\Set-ServiceAccount.ps1') $Output -Force
+Copy-Item (Join-Path $root 'deploy\monitoring\Test-GymBackupHealth.ps1') $Output -Force
+Copy-Item (Join-Path $root 'deploy\monitoring\Register-GymBackupMonitor.ps1') $Output -Force
 Copy-Item (Join-Path $root 'GymService\appsettings.example.json') (Join-Path $Output 'appsettings.example.json') -Force
 
 # Nunca publicar credenciales locales

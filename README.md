@@ -583,6 +583,19 @@ a una carpeta dentro de OneDrive, **comprimidos y cifrados con 7-Zip AES-256**
   usuario de OneDrive pueda sincronizarlo; sin eso queda en “Sincronización pendiente”.
 - Restauración, contraseña y reinstalación: [`deploy/offsite/README.md`](deploy/offsite/README.md).
 
+### Monitoreo de respaldos
+
+`deploy/monitoring/Test-GymBackupHealth.ps1` revisa tareas Full/Log/Offsite, espacio en
+`D:\GymBackups`, OneDrive, antigüedad de los `.7z` y la copia de la clave MFA. Si algo falla,
+envía un correo al owner con el detalle.
+
+- `GymService-BackupMonitor`: diario 08:00.
+- `GymService-RestoreVerify`: domingos 03:00; descifra el último `.bak.7z` y prueba una
+  restauración real en una base temporal.
+- Log: `C:\ProgramData\GymService\logs\backup-monitor.log`.
+- El respaldo completo tiene `WakeToRun` para despertar el equipo a las 02:00.
+- Detalle y comandos: [`deploy/monitoring/README.md`](deploy/monitoring/README.md).
+
 ## Reglas de negocio
 
 Las reglas de membresías, renovaciones y control de acceso se documentan en

@@ -117,6 +117,8 @@ Informe detallado: [`qa-2026-11-21.md`](qa-2026-11-21.md).
       por riesgo bajo en LAN privada; reconsiderar si hay portal público o multi-sucursal.
 - [ ] **P2 — Completar funciones anunciadas.** Reportes programados sin ejecutor, push sin emisor,
       búsqueda global y campana sin acción, PDF de facturas sin generación, auditoría sin visor.
-- [ ] **P2 — Monitoreo.** Verificación automática de restauración, alerta si falla Full/Log/Offsite,
-      control de espacio en `D:\GymBackups` y cuota de OneDrive.
+- [x] **P2 — Monitoreo de respaldos** (2026-11-22, versión 1.7.5): monitor diario con alerta
+      SMTP, verificación semanal de restauración real, control de espacio local y copia de clave
+      MFA; el respaldo completo ahora tiene `WakeToRun`. Queda pendiente consultar la **cuota de
+      OneDrive** (requiere Graph/API); el resto está cubierto.
 - [ ] **Ventana:** reinicio completo del servidor e instalación del MSI en una VM limpia.

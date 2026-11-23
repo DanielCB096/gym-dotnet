@@ -11,6 +11,14 @@
 
 ## Backend (.NET)
 
+### Monitoreo de respaldos y verificación automática (2026-11-22, versión 1.7.5)
+- **Monitor diario:** `GymService-BackupMonitor` (08:00, SYSTEM) revisa tareas Full/Log/Offsite, espacio de `D:\GymBackups`, OneDrive, antigüedad de `.7z` y copia de la clave MFA. Alerta por SMTP al owner.
+- **Verificación semanal:** `GymService-RestoreVerify` (domingos 03:00) descifra el último `.bak.7z` y ejecuta `verify-backup.ps1` en una base temporal. Verificado con `GymManager_20261122_210250.bak.7z`.
+- **Hallazgo real:** el monitor detectó que `GymService-Full` no había corrido el 2026-11-22 a las 02:00. Se ejecutó manualmente, se habilitó `WakeToRun` en la tarea completa y se mantiene `StartWhenAvailable`. Las tareas de log/offsite no despiertan el equipo.
+- **Alertas:** correo real enviado correctamente (`Correo enviado` en el log); los fallos generan asunto `ALERTA: respaldos GymService`.
+- **Scripts:** `deploy/monitoring/Test-GymBackupHealth.ps1`, `Register-GymBackupMonitor.ps1`, documentación en `deploy/monitoring/README.md`; incluidos en ZIP/MSI.
+- **Verificación:** monitor `OK`, restauración semanal `OK`, tareas con resultado 0, servicio healthy 1.7.5.
+
 ### Endurecimiento mínimo de producción (2026-11-22, versión 1.7.4)
 - **Swagger apagado por defecto:** `WebServer:EnableSwagger=false`; `/swagger` y `/swagger/v1/swagger.json` responden **404** en producción. Se puede habilitar explícitamente para diagnóstico.
 - **Sin `DeveloperExceptionPage`:** se eliminó la página de excepciones de desarrollo; un error no controlado ya no expone stack traces ni detalles internos al cliente.
