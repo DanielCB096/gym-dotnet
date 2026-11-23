@@ -197,6 +197,7 @@ namespace GymService.Services
             {
                 services.AddSingleton(_ => new MaintenanceService(DataCenter.DatabaseManager.Tools, _configuration, DataCenter.EmailService));
                 services.AddHostedService<CleanupHostedService>();
+                services.AddHostedService<ScheduledReportHostedService>();
             }
 
             // Add Rate Limiting

@@ -4,6 +4,8 @@ using GymService.Modules.Kiosk;
 using GymService.Modules.Members;
 using GymService.Modules.Reports;
 using GymService.Modules.Routines;
+using GymService.Services;
+using Microsoft.Extensions.Configuration;
 using Xunit;
 
 namespace GymService.Tests.Integration;
@@ -92,7 +94,8 @@ public class CatalogFlowTests
         {
             ["reportName"] = name,
             ["reportType"] = "sales",
-            ["schedule"] = "daily"
+            ["schedule"] = "daily",
+            ["emailRecipients"] = "qa@test.local"
         }, out var created), created.GetValueOrDefault("message")?.ToString());
 
         long id = Convert.ToInt64(_fx.Scalar("SELECT ID FROM GYM_SCHEDULED_REPORTS WHERE REPORT_NAME = @n", ("@n", name)));
@@ -103,6 +106,56 @@ public class CatalogFlowTests
 
         Assert.True(module.DeleteScheduledReport(id, out _));
         Assert.Equal(0, Convert.ToInt32(_fx.Scalar("SELECT COUNT(*) FROM GYM_SCHEDULED_REPORTS WHERE ID = @id", ("@id", id))));
+    }
+
+    [Fact]
+    public void ScheduledReport_Runs_Due_And_Writes_Outbox_Attachment()
+    {
+        if (!_fx.Available) return;
+
+        string outbox = Path.Combine(Path.GetTempPath(), "gym-report-tests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(outbox);
+        string name = $"Auto_{Guid.NewGuid():N}"[..20];
+        long id = 0;
+
+        try
+        {
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["Email:OutboxDirectory"] = outbox,
+                    ["Reports:ScheduledHour"] = "8"
+                })
+                .Build();
+
+            var email = new EmailService(config);
+            var module = new ReportsModule(_fx.Tools!, email, config);
+
+            Assert.True(module.CreateScheduledReport(new Dictionary<string, object>
+            {
+                ["reportName"] = name,
+                ["reportType"] = "sales",
+                ["schedule"] = "daily",
+                ["emailRecipients"] = "qa@test.local"
+            }, out var created), created.GetValueOrDefault("message")?.ToString());
+
+            id = Convert.ToInt64(_fx.Scalar("SELECT ID FROM GYM_SCHEDULED_REPORTS WHERE REPORT_NAME = @n", ("@n", name)));
+            _fx.Execute("UPDATE GYM_SCHEDULED_REPORTS SET NEXT_RUN = @d WHERE ID = @id",
+                ("@d", DateTime.Now.AddMinutes(-1)), ("@id", id));
+
+            Assert.True(module.RunDueScheduledReports() >= 1);
+
+            Assert.Single(Directory.GetFiles(outbox, "*.xlsx"));
+            Assert.NotNull(_fx.Scalar("SELECT LAST_RUN FROM GYM_SCHEDULED_REPORTS WHERE ID = @id", ("@id", id)));
+            var nextRun = _fx.Scalar("SELECT NEXT_RUN FROM GYM_SCHEDULED_REPORTS WHERE ID = @id", ("@id", id));
+            Assert.True(nextRun is not null && nextRun is not DBNull && Convert.ToDateTime(nextRun) > DateTime.Now);
+        }
+        finally
+        {
+            if (id > 0)
+                _fx.Execute("DELETE FROM GYM_SCHEDULED_REPORTS WHERE ID = @id", ("@id", id));
+            Directory.Delete(outbox, recursive: true);
+        }
     }
 
     [Fact]

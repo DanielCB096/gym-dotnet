@@ -115,8 +115,11 @@ Informe detallado: [`qa-2026-11-21.md`](qa-2026-11-21.md).
       (`WebServer:EnableSwagger=false`, `/swagger` 404) y sin `DeveloperExceptionPage`; verificado
       panel/API/health. CSP/cabeceras completas, HSTS, CORS y `QueueLimit=0` quedan **aplazados**
       por riesgo bajo en LAN privada; reconsiderar si hay portal público o multi-sucursal.
-- [ ] **P2 — Completar funciones anunciadas.** Reportes programados sin ejecutor, push sin emisor,
-      búsqueda global y campana sin acción, PDF de facturas sin generación, auditoría sin visor.
+- [x] **P2 — Reportes programados** (2026-11-22, versión 1.7.6): ejecución real por hosted
+      service, Excel adjunto por SMTP, destinatarios en UI, `NEXT_RUN`/`LAST_RUN` y prueba de
+      outbox. Pendiente de despliegue en vivo por UAC.
+- [ ] **P2 — Otras funciones anunciadas.** Push sin emisor, búsqueda global y campana sin
+      acción, PDF de facturas sin generación, auditoría sin visor.
 - [x] **P2 — Monitoreo de respaldos** (2026-11-22, versión 1.7.5): monitor diario con alerta
       SMTP, verificación semanal de restauración real, control de espacio local y copia de clave
       MFA; el respaldo completo ahora tiene `WakeToRun`. Queda pendiente consultar la **cuota de

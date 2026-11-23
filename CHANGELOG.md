@@ -11,6 +11,14 @@
 
 ## Backend (.NET)
 
+### Reportes programados con ejecución real (2026-11-22, versión 1.7.6)
+- **Ejecución:** nuevo `ScheduledReportHostedService` revisa cada `Reports:CheckIntervalMinutes` (5 min por defecto) y ejecuta los reportes cuya `NEXT_RUN` venció. Hora local configurable con `Reports:ScheduledHour` (8 por defecto).
+- **Generación y envío:** genera Excel con `ReportExportService` (ventas, miembros, asistencia, inventario, caja, membresías, kardex) y lo envía como adjunto por SMTP a los destinatarios. Si no hay SMTP, usa el outbox.
+- **UI:** **Reportes** ahora pide destinatarios, muestra tipo, última y próxima ejecución; valida correos y frecuencia.
+- **Persistencia:** `NEXT_RUN` se calcula al crear y después de cada intento; `LAST_RUN` se actualiza aunque el envío falle para evitar reintentos cada 5 minutos. Los errores quedan en el log.
+- **Pruebas:** nueva prueba de ejecución con adjunto en outbox; **136/136** pruebas. Prueba temporal del hosted service: creó el reporte, ejecutó a los 30 s y actualizó `LAST_RUN`/`NEXT_RUN`; limpieza correcta.
+- **Nota:** el despliegue en vivo de 1.7.6 quedó pendiente por cancelación del UAC; el paquete está generado.
+
 ### Monitoreo de respaldos y verificación automática (2026-11-22, versión 1.7.5)
 - **Monitor diario:** `GymService-BackupMonitor` (08:00, SYSTEM) revisa tareas Full/Log/Offsite, espacio de `D:\GymBackups`, OneDrive, antigüedad de `.7z` y copia de la clave MFA. Alerta por SMTP al owner.
 - **Verificación semanal:** `GymService-RestoreVerify` (domingos 03:00) descifra el último `.bak.7z` y ejecuta `verify-backup.ps1` en una base temporal. Verificado con `GymManager_20261122_210250.bak.7z`.

@@ -198,7 +198,7 @@ namespace GymService
                 DataCenter.BusinessProcess.Maintenance = new Modules.Maintenance.MaintenanceModule(tools);
                 DataCenter.BusinessProcess.Billing = new Modules.Billing.BillingModule(tools);
                 DataCenter.BusinessProcess.Finance = new Modules.Finance.FinanceModule(tools);
-                DataCenter.BusinessProcess.Reports = new Modules.Reports.ReportsModule(tools);
+                DataCenter.BusinessProcess.Reports = new Modules.Reports.ReportsModule(tools, DataCenter.EmailService, _configuration);
                 DataCenter.BusinessProcess.Kiosk = new Modules.Kiosk.KioskModule(tools);
                 DataCenter.BusinessProcess.Staff = new Modules.Staff.StaffModule(tools);
                 DataCenter.BusinessProcess.Cash = new Modules.Cash.CashModule(tools);

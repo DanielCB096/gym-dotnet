@@ -596,6 +596,14 @@ envía un correo al owner con el detalle.
 - El respaldo completo tiene `WakeToRun` para despertar el equipo a las 02:00.
 - Detalle y comandos: [`deploy/monitoring/README.md`](deploy/monitoring/README.md).
 
+### Reportes programados
+
+En **Reportes → Programar reporte** se elige tipo (ventas, miembros, asistencia, inventario,
+caja, membresías o kardex), frecuencia (diario/semanal/mensual) y destinatarios separados por
+coma. El servicio revisa cada `Reports:CheckIntervalMinutes` (5 min por defecto), ejecuta los
+vencidos a la hora `Reports:ScheduledHour` (8 por defecto) y envía un Excel adjunto por SMTP.
+La tabla muestra última y próxima ejecución.
+
 ## Reglas de negocio
 
 Las reglas de membresías, renovaciones y control de acceso se documentan en

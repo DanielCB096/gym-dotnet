@@ -71,8 +71,11 @@ export default function Reports() {
       canEdit={false}
       columns={[
         { key: 'reportName', label: 'Reporte' },
+        { key: 'reportType', label: 'Tipo' },
         { key: 'schedule', label: 'Programación' },
+        { key: 'emailRecipients', label: 'Destinatarios' },
         { key: 'lastRun', label: 'Última ejecución', render: (row) => formatDateTime(row.lastRun) },
+        { key: 'nextRun', label: 'Próxima ejecución', render: (row) => formatDateTime(row.nextRun) },
       ]}
       fields={[
         { name: 'reportName', label: 'Nombre del reporte', required: true },
@@ -86,6 +89,9 @@ export default function Reports() {
             { value: 'members', label: 'Miembros' },
             { value: 'attendance', label: 'Asistencia' },
             { value: 'inventory', label: 'Inventario' },
+            { value: 'cash', label: 'Caja' },
+            { value: 'memberships', label: 'Membresías' },
+            { value: 'kardex', label: 'Kardex' },
           ],
         },
         {
@@ -98,6 +104,14 @@ export default function Reports() {
             { value: 'weekly', label: 'Semanal' },
             { value: 'monthly', label: 'Mensual' },
           ],
+        },
+        {
+          name: 'emailRecipients',
+          label: 'Destinatarios',
+          required: true,
+          full: true,
+          placeholder: 'dueno@centrofit.mx, administracion@centrofit.mx',
+          help: 'Separa varios correos con coma. Se envía un Excel adjunto.',
         },
       ]}
       toolbar={({ notify }) => <ExportButtons notify={notify} />}

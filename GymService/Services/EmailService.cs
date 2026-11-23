@@ -173,7 +173,19 @@ namespace GymService.Services
             return useSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.None;
         }
 
-        private bool TrySendEmail(string to, string subject, string html, out string error)
+        /// <summary>
+        /// Envía un reporte programado en Excel como adjunto.
+        /// </summary>
+        public bool TrySendScheduledReport(string to, string reportName, byte[] excel, out string error)
+        {
+            string subject = $"Reporte {reportName} - Centro Fit";
+            string html = $@"<p>Adjuntamos el reporte <strong>{Html(reportName)}</strong> generado por Centro Fit.</p>
+  <p>Este mensaje se envió automáticamente según la programación configurada.</p>";
+            string fileName = $"{SanitizeFileName(reportName)}-{DateTime.Now:yyyyMMdd}.xlsx";
+            return TrySendEmail(to, subject, html, out error, excel, fileName);
+        }
+
+        private bool TrySendEmail(string to, string subject, string html, out string error, byte[]? attachment = null, string? attachmentName = null)
         {
             error = string.Empty;
 
@@ -193,7 +205,7 @@ namespace GymService.Services
                         return false;
                     }
 
-                    SaveToOutbox(to, subject, html);
+                    SaveToOutbox(to, subject, html, attachment, attachmentName);
                     return true;
                 }
 
@@ -207,7 +219,19 @@ namespace GymService.Services
                 message.From.Add(new MailboxAddress(fromName, fromAddress));
                 message.To.Add(MailboxAddress.Parse(to));
                 message.Subject = subject;
-                message.Body = new TextPart("html") { Text = html };
+                if (attachment != null && attachment.Length > 0)
+                {
+                    var builder = new BodyBuilder { HtmlBody = html };
+                    builder.Attachments.Add(
+                        attachmentName ?? "reporte.xlsx",
+                        attachment,
+                        new ContentType("application", "vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+                    message.Body = builder.ToMessageBody();
+                }
+                else
+                {
+                    message.Body = new TextPart("html") { Text = html };
+                }
 
                 using var client = new SmtpClient();
                 client.Connect(server, port, ResolveSocketOptions(port, useSsl));
@@ -240,17 +264,24 @@ namespace GymService.Services
             }
         }
 
-        private void SaveToOutbox(string to, string subject, string html)
+        private void SaveToOutbox(string to, string subject, string html, byte[]? attachment = null, string? attachmentName = null)
         {
             string outbox = _configuration["Email:OutboxDirectory"]!;
             Directory.CreateDirectory(outbox);
 
-            string file = Path.Combine(
-                outbox,
-                $"{DateTime.Now:yyyyMMdd-HHmmss-fff}_{SanitizeFileName(to)}_{Guid.NewGuid():N}.html");
+            string baseName = $"{DateTime.Now:yyyyMMdd-HHmmss-fff}_{SanitizeFileName(to)}_{Guid.NewGuid():N}";
+            string file = Path.Combine(outbox, baseName + ".html");
 
             string content = $"<!-- Para: {to} | Asunto: {subject} -->{Environment.NewLine}{html}";
             File.WriteAllText(file, content, new UTF8Encoding(false));
+
+            if (attachment != null && attachment.Length > 0)
+            {
+                string attachmentFile = Path.Combine(
+                    outbox,
+                    $"{baseName}_{SanitizeFileName(attachmentName ?? "reporte.xlsx")}");
+                File.WriteAllBytes(attachmentFile, attachment);
+            }
 
             Logger.AddInfoSubModule(SubModule, $"Correo '{subject}' guardado en outbox para {MaskEmail(to)}");
         }
@@ -313,7 +344,7 @@ namespace GymService.Services
         {
             var builder = new StringBuilder(email.Length);
             foreach (char c in email)
-                builder.Append(char.IsLetterOrDigit(c) ? c : '-');
+                builder.Append(char.IsLetterOrDigit(c) || c == '.' || c == '-' || c == '_' ? c : '-');
 
             return builder.ToString();
         }
