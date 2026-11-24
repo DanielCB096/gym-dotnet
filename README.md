@@ -57,7 +57,7 @@ gimnasio-dotnet/
 | Módulo | Descripción |
 |--------|-------------|
 | **Identity** | Autenticación, sesiones Bearer, MFA TOTP, OTP por correo, RBAC, bootstrap de dueño |
-| **Members** | Socios, membresías, ciclo de vida (freeze/resume/cancel), pagos manuales y crédito por cancelación |
+| **Members** | Socios, membresías, ciclo de vida (freeze/resume/cancel), pagos manuales, crédito y ficha completa con impresión |
 | **Access** | Códigos rotativos HMAC, check-in, bitácora, override manual |
 | **Sales** | Punto de venta, devoluciones, ventas offline, tickets PDF |
 | **Inventory** | Productos, stock, proveedores, órdenes de compra |
@@ -609,6 +609,19 @@ La tabla muestra última y próxima ejecución.
 En **Rutinas → Asignaciones → Imprimir** se abre una ficha lista para imprimir o guardar
 como PDF: datos del socio, rutina, dificultad, duración, descripción y ejercicios agrupados
 por día con series, reps, equipo y notas. No requiere conexión adicional ni cambios de base.
+
+### Ficha completa del socio
+
+En **Miembros → Ficha** se abre una hoja lista para imprimir o guardar como PDF con:
+
+- Nombre, estado, email y teléfono.
+- CURP, RFC y dirección.
+- Contacto y teléfono de emergencia.
+- Membresía actual: plan, estado, inicio, vencimiento y crédito.
+- Notas del socio.
+
+Los campos se capturan en el alta/edición del socio. La ficha omite la membresía si el socio
+no tiene una asignada.
 
 ## Reglas de negocio
 

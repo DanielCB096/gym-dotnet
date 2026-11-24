@@ -34,6 +34,13 @@ public class MembersFlowTests
                 ["lastName"] = "Perez",
                 ["email"] = email,
                 ["phone"] = "5551234567",
+                ["curp"] = "PEPJ900101HDFRRN01",
+                ["rfc"] = "PEPJ900101AB1",
+                ["address"] = "Calle Prueba 123",
+                ["emergencyContact"] = "Maria Perez",
+                ["emergencyPhone"] = "5559876543",
+                ["photoUrl"] = "https://example.com/foto.jpg",
+                ["notes"] = "Nota de prueba",
                 ["membershipType"] = "Mensual",
                 ["createdBy"] = 1L
             }, out var response);
@@ -51,6 +58,13 @@ public class MembersFlowTests
             var data = Assert.IsAssignableFrom<List<Dictionary<string, object>>>(list["data"]);
             Assert.Single(data);
             Assert.Equal(email, data[0]["email"]);
+            Assert.Equal("PEPJ900101HDFRRN01", data[0]["curp"]);
+            Assert.Equal("PEPJ900101AB1", data[0]["rfc"]);
+            Assert.Equal("Calle Prueba 123", data[0]["address"]);
+            Assert.Equal("Maria Perez", data[0]["emergencyContact"]);
+            Assert.Equal("5559876543", data[0]["emergencyPhone"]);
+            Assert.Equal("https://example.com/foto.jpg", data[0]["photoUrl"]);
+            Assert.Equal("Nota de prueba", data[0]["notes"]);
         }
         finally
         {

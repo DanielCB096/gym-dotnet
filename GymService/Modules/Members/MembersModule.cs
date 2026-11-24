@@ -124,11 +124,19 @@ namespace GymService.Modules.Members
                             ["lastName"] = Convert.ToString(GetRowValue(row, result, "last_name")) ?? "",
                             ["email"] = Convert.ToString(GetRowValue(row, result, "email")) ?? "",
                             ["phone"] = Convert.ToString(GetRowValue(row, result, "phone")) ?? "",
+                            ["curp"] = Convert.ToString(GetRowValue(row, result, "curp")) ?? "",
+                            ["rfc"] = Convert.ToString(GetRowValue(row, result, "rfc")) ?? "",
+                            ["address"] = Convert.ToString(GetRowValue(row, result, "address")) ?? "",
+                            ["emergencyContact"] = Convert.ToString(GetRowValue(row, result, "emergency_contact")) ?? "",
+                            ["emergencyPhone"] = Convert.ToString(GetRowValue(row, result, "emergency_phone")) ?? "",
+                            ["photoUrl"] = Convert.ToString(GetRowValue(row, result, "photo_url")) ?? "",
+                            ["notes"] = Convert.ToString(GetRowValue(row, result, "notes")) ?? "",
                             ["status"] = Convert.ToString(GetRowValue(row, result, "member_status")) ?? "active",
                             ["membershipType"] = membershipType,
                             ["membershipStatus"] = membershipStatus,
                             ["hasActiveMembership"] = membershipStatus == "active",
                             ["membershipId"] = GetRowValue(row, result, "membership_id") != null ? Convert.ToInt64(GetRowValue(row, result, "membership_id")) : (long?)null,
+                            ["membershipStart"] = GetRowValue(row, result, "start_date") != null ? Convert.ToDateTime(GetRowValue(row, result, "start_date")) : (DateTime?)null,
                             ["membershipEnd"] = membershipEnd,
                             ["creditBalance"] = Convert.ToDecimal(GetRowValue(row, result, "credit_balance"))
                         });
@@ -172,6 +180,13 @@ namespace GymService.Modules.Members
                 var lastName = (memberData.ContainsKey("lastName") ? Convert.ToString(memberData["lastName"]) : "")?.Trim() ?? "";
                 var email = (memberData.ContainsKey("email") ? Convert.ToString(memberData["email"]) : "")?.Trim() ?? "";
                 var phone = (memberData.ContainsKey("phone") ? Convert.ToString(memberData["phone"]) : "")?.Trim() ?? "";
+                var curp = (memberData.ContainsKey("curp") ? Convert.ToString(memberData["curp"]) : "")?.Trim().ToUpperInvariant() ?? "";
+                var rfc = (memberData.ContainsKey("rfc") ? Convert.ToString(memberData["rfc"]) : "")?.Trim().ToUpperInvariant() ?? "";
+                var address = (memberData.ContainsKey("address") ? Convert.ToString(memberData["address"]) : "")?.Trim() ?? "";
+                var emergencyContact = (memberData.ContainsKey("emergencyContact") ? Convert.ToString(memberData["emergencyContact"]) : "")?.Trim() ?? "";
+                var emergencyPhone = (memberData.ContainsKey("emergencyPhone") ? Convert.ToString(memberData["emergencyPhone"]) : "")?.Trim() ?? "";
+                var photoUrl = (memberData.ContainsKey("photoUrl") ? Convert.ToString(memberData["photoUrl"]) : "")?.Trim() ?? "";
+                var notes = (memberData.ContainsKey("notes") ? Convert.ToString(memberData["notes"]) : "")?.Trim() ?? "";
                 var membershipType = (memberData.ContainsKey("membershipType") ? Convert.ToString(memberData["membershipType"]) : "")?.Trim() ?? "";
                 var createdBy = memberData.ContainsKey("createdBy") ? Convert.ToInt64(memberData["createdBy"]) : CurrentUser.ForAudit;
 
@@ -179,6 +194,15 @@ namespace GymService.Modules.Members
                 {
                     response["success"] = false;
                     response["message"] = "El nombre y el apellido son requeridos";
+                    return false;
+                }
+
+                if (curp.Length > 18 || rfc.Length > 13 || address.Length > 500 ||
+                    emergencyContact.Length > 200 || emergencyPhone.Length > 20 ||
+                    photoUrl.Length > 500 || notes.Length > 2000)
+                {
+                    response["success"] = false;
+                    response["message"] = "Uno de los datos del socio excede la longitud permitida";
                     return false;
                 }
 
@@ -229,6 +253,13 @@ namespace GymService.Modules.Members
                     LAST_NAME = lastName ?? "",
                     EMAIL = email,
                     PHONE = phone,
+                    CURP = curp,
+                    RFC = rfc,
+                    ADDRESS = address,
+                    EMERGENCY_CONTACT = emergencyContact,
+                    EMERGENCY_PHONE = emergencyPhone,
+                    PHOTO_URL = photoUrl,
+                    NOTES = notes,
                     STATUS = "active"
                 });
 
@@ -309,6 +340,28 @@ namespace GymService.Modules.Members
                     ? (Convert.ToString(memberData["phone"]) ?? "").Trim()
                     : current.Value.Phone;
 
+                var curp = memberData.ContainsKey("curp")
+                    ? (Convert.ToString(memberData["curp"]) ?? "").Trim().ToUpperInvariant()
+                    : current.Value.Curp;
+                var rfc = memberData.ContainsKey("rfc")
+                    ? (Convert.ToString(memberData["rfc"]) ?? "").Trim().ToUpperInvariant()
+                    : current.Value.Rfc;
+                var address = memberData.ContainsKey("address")
+                    ? (Convert.ToString(memberData["address"]) ?? "").Trim()
+                    : current.Value.Address;
+                var emergencyContact = memberData.ContainsKey("emergencyContact")
+                    ? (Convert.ToString(memberData["emergencyContact"]) ?? "").Trim()
+                    : current.Value.EmergencyContact;
+                var emergencyPhone = memberData.ContainsKey("emergencyPhone")
+                    ? (Convert.ToString(memberData["emergencyPhone"]) ?? "").Trim()
+                    : current.Value.EmergencyPhone;
+                var photoUrl = memberData.ContainsKey("photoUrl")
+                    ? (Convert.ToString(memberData["photoUrl"]) ?? "").Trim()
+                    : current.Value.PhotoUrl;
+                var notes = memberData.ContainsKey("notes")
+                    ? (Convert.ToString(memberData["notes"]) ?? "").Trim()
+                    : current.Value.Notes;
+
                 var status = memberData.ContainsKey("status")
                     ? (Convert.ToString(memberData["status"]) ?? "").Trim().ToLowerInvariant()
                     : current.Value.Status;
@@ -324,6 +377,15 @@ namespace GymService.Modules.Members
                 {
                     response["success"] = false;
                     response["message"] = "Estado de socio no válido";
+                    return false;
+                }
+
+                if (curp.Length > 18 || rfc.Length > 13 || address.Length > 500 ||
+                    emergencyContact.Length > 200 || emergencyPhone.Length > 20 ||
+                    photoUrl.Length > 500 || notes.Length > 2000)
+                {
+                    response["success"] = false;
+                    response["message"] = "Uno de los datos del socio excede la longitud permitida";
                     return false;
                 }
 
@@ -348,6 +410,13 @@ namespace GymService.Modules.Members
                     LAST_NAME = lastName,
                     EMAIL = email,
                     PHONE = phone,
+                    CURP = curp,
+                    RFC = rfc,
+                    ADDRESS = address,
+                    EMERGENCY_CONTACT = emergencyContact,
+                    EMERGENCY_PHONE = emergencyPhone,
+                    PHOTO_URL = photoUrl,
+                    NOTES = notes,
                     STATUS = status
                 });
 
@@ -1425,10 +1494,13 @@ namespace GymService.Modules.Members
             }
         }
 
-        private (string FirstName, string LastName, string Email, string Phone, string Status)? GetMemberState(long memberId)
+        private (string FirstName, string LastName, string Email, string Phone, string Status,
+                 string Curp, string Rfc, string Address, string EmergencyContact, string EmergencyPhone,
+                 string PhotoUrl, string Notes)? GetMemberState(long memberId)
         {
             var result = _tools.ExecuteQueryResultSet(
-                "SELECT FIRST_NAME, LAST_NAME, EMAIL, PHONE, STATUS FROM GYM_MEMBERS WHERE ID = ?", memberId);
+                "SELECT FIRST_NAME, LAST_NAME, EMAIL, PHONE, STATUS, CURP, RFC, ADDRESS, " +
+                "EMERGENCY_CONTACT, EMERGENCY_PHONE, PHOTO_URL, NOTES FROM GYM_MEMBERS WHERE ID = ?", memberId);
 
             if (result == null || result.Rows.Count == 0)
                 return null;
@@ -1440,7 +1512,14 @@ namespace GymService.Modules.Members
                 Convert.ToString(GetRowValue(row, result, "last_name")) ?? "",
                 Convert.ToString(GetRowValue(row, result, "email")) ?? "",
                 Convert.ToString(GetRowValue(row, result, "phone")) ?? "",
-                Convert.ToString(GetRowValue(row, result, "status")) ?? "active"
+                Convert.ToString(GetRowValue(row, result, "status")) ?? "active",
+                Convert.ToString(GetRowValue(row, result, "curp")) ?? "",
+                Convert.ToString(GetRowValue(row, result, "rfc")) ?? "",
+                Convert.ToString(GetRowValue(row, result, "address")) ?? "",
+                Convert.ToString(GetRowValue(row, result, "emergency_contact")) ?? "",
+                Convert.ToString(GetRowValue(row, result, "emergency_phone")) ?? "",
+                Convert.ToString(GetRowValue(row, result, "photo_url")) ?? "",
+                Convert.ToString(GetRowValue(row, result, "notes")) ?? ""
             );
         }
 

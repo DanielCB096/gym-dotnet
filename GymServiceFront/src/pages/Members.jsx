@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { CreditCard, Upload, XCircle } from 'lucide-react';
+import { CreditCard, Upload, XCircle, FileText } from 'lucide-react';
 import api from '../services/api';
 import CrudPage from '../components/CrudPage';
 import ImportDialog from '../components/ImportDialog';
 import MembershipModal from '../components/MembershipModal';
 import CancelMembershipModal from '../components/CancelMembershipModal';
+import MemberProfilePreview from '../components/MemberProfilePreview';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import { formatCurrency, formatDate } from '../utils/format';
@@ -22,6 +23,7 @@ export default function Members() {
   const [plansError, setPlansError] = useState('');
   const [membershipTarget, setMembershipTarget] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
+  const [profileTarget, setProfileTarget] = useState(null);
   const [importTarget, setImportTarget] = useState(null);
 
   useEffect(() => {
@@ -134,6 +136,13 @@ export default function Members() {
         { name: 'lastName', label: 'Apellido', required: true, placeholder: 'Pérez' },
         { name: 'email', label: 'Email', type: 'email', placeholder: 'juan@email.com' },
         { name: 'phone', label: 'Teléfono', type: 'tel', placeholder: '555-1234' },
+        { name: 'curp', label: 'CURP', placeholder: '18 caracteres', maxLength: 18 },
+        { name: 'rfc', label: 'RFC', placeholder: '13 caracteres', maxLength: 13 },
+        { name: 'address', label: 'Dirección', full: true, maxLength: 500 },
+        { name: 'emergencyContact', label: 'Contacto de emergencia', maxLength: 200 },
+        { name: 'emergencyPhone', label: 'Teléfono de emergencia', type: 'tel', maxLength: 20 },
+        { name: 'photoUrl', label: 'URL de foto', full: true, maxLength: 500, placeholder: 'https://…' },
+        { name: 'notes', label: 'Notas', type: 'textarea', full: true, rows: 3, maxLength: 2000 },
         planField,
       ]}
       editFields={[
@@ -141,6 +150,13 @@ export default function Members() {
         { name: 'lastName', label: 'Apellido', required: true },
         { name: 'email', label: 'Email', type: 'email' },
         { name: 'phone', label: 'Teléfono', type: 'tel' },
+        { name: 'curp', label: 'CURP', maxLength: 18 },
+        { name: 'rfc', label: 'RFC', maxLength: 13 },
+        { name: 'address', label: 'Dirección', full: true, maxLength: 500 },
+        { name: 'emergencyContact', label: 'Contacto de emergencia', maxLength: 200 },
+        { name: 'emergencyPhone', label: 'Teléfono de emergencia', type: 'tel', maxLength: 20 },
+        { name: 'photoUrl', label: 'URL de foto', full: true, maxLength: 500 },
+        { name: 'notes', label: 'Notas', type: 'textarea', full: true, rows: 3, maxLength: 2000 },
         {
           name: 'status',
           label: 'Estado de la cuenta',
@@ -152,6 +168,11 @@ export default function Members() {
         },
       ]}
       actions={[
+        {
+          label: 'Ficha',
+          icon: FileText,
+          onClick: (row) => setProfileTarget(row),
+        },
         {
           label: 'Membresía',
           icon: CreditCard,
@@ -191,6 +212,8 @@ export default function Members() {
           }}
         />
       )}
+
+      <MemberProfilePreview member={profileTarget} onClose={() => setProfileTarget(null)} />
 
       {importTarget && (
         <ImportDialog

@@ -11,6 +11,13 @@
 
 ## Backend (.NET)
 
+### Ficha completa del socio (2026-11-23, versión 1.7.8)
+- **Backend:** `CreateMember`/`UpdateMember` ahora guardan CURP, RFC, dirección, contacto/teléfono de emergencia, foto (URL) y notas; `GetMembers` los devuelve y `GetMemberState` los conserva al editar.
+- **UI:** el alta/edición de socio incluye esos campos con límites de longitud.
+- **Ficha imprimible:** **Miembros → Ficha** abre una hoja A4 con datos personales, contacto de emergencia, membresía actual (plan, estado, inicio, vencimiento, crédito) y notas; botón **Imprimir / Guardar PDF**. El contenido dinámico se escapa.
+- **Verificación:** **136/136** pruebas (roundtrip de campos en alta); prueba en instancia temporal y en producción con un socio temporal: CURP, RFC, dirección, emergencia y notas visibles en la ficha; sin errores de consola. Datos temporales eliminados.
+- **Despliegue:** servicio 1.7.8 healthy.
+
 ### Impresión de rutinas (2026-11-23, versión 1.7.7)
 - **Nueva vista:** **Rutinas → Asignaciones → Imprimir** abre una ficha A4 con el socio, rutina, fecha de asignación, dificultad, duración, descripción y ejercicios agrupados por día (series, reps, equipo y notas).
 - **Salida:** botón **Imprimir / Guardar PDF**; usa el diálogo del navegador. Sin cambios de base ni librerías nuevas.
