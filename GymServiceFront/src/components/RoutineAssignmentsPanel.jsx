@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AlertCircle, CheckCircle2, Plus, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Plus, XCircle, Printer } from 'lucide-react';
 import api from '../services/api';
 import Button from './ui/Button';
 import Select from './ui/Select';
 import Table from './ui/Table';
 import Badge from './ui/Badge';
+import RoutinePrintPreview from './RoutinePrintPreview';
 import { formatDateTime } from '../utils/format';
 
 const errorMessage = (err, fallback) => err?.response?.data?.message || fallback;
@@ -17,6 +18,8 @@ export default function RoutineAssignmentsPanel() {
   const [form, setForm] = useState({ memberId: '', planId: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [printingId, setPrintingId] = useState(null);
+  const [printData, setPrintData] = useState(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState(null);
 
@@ -84,6 +87,24 @@ export default function RoutineAssignmentsPanel() {
       await load();
     } catch (err) {
       setError(errorMessage(err, 'No se pudo desactivar la asignación.'));
+    }
+  };
+
+  const openPrint = async (row) => {
+    setPrintingId(row.id);
+    setError('');
+    try {
+      const response = await api.get(`/routines/${row.planId}/exercises`);
+      const plan = plans.find((item) => Number(item.id) === Number(row.planId)) || null;
+      setPrintData({
+        assignment: row,
+        plan,
+        exercises: response.data?.data || []
+      });
+    } catch (err) {
+      setError(errorMessage(err, 'No se pudo cargar la rutina para imprimir.'));
+    } finally {
+      setPrintingId(null);
     }
   };
 
@@ -161,7 +182,16 @@ export default function RoutineAssignmentsPanel() {
             header: '',
             accessor: 'id',
             render: (_, row) => (
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={Printer}
+                  loading={printingId === row.id}
+                  onClick={() => openPrint(row)}
+                >
+                  Imprimir
+                </Button>
                 <Button variant="ghost" size="sm" icon={XCircle} disabled={!row.isActive} onClick={() => deactivate(row)}>
                   Desactivar
                 </Button>
@@ -173,6 +203,8 @@ export default function RoutineAssignmentsPanel() {
         loading={loading}
         emptyText="No hay rutinas asignadas"
       />
+
+      <RoutinePrintPreview data={printData} onClose={() => setPrintData(null)} />
     </div>
   );
 }

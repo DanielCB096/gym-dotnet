@@ -62,12 +62,12 @@ gimnasio-dotnet/
 | **Sales** | Punto de venta, devoluciones, ventas offline, tickets PDF |
 | **Inventory** | Productos, stock, proveedores, órdenes de compra |
 | **Classes** | Tipos, salones, sesiones, reservas, lista de espera, asistencia |
-| **Routines** | Planes, ejercicios, asignaciones, entrenamientos, medidas, metas |
+| **Routines** | Planes, ejercicios, asignaciones, entrenamientos, medidas, metas, impresión de rutina |
 | **Fisio** | Paquetes, citas, historial |
 | **Maintenance** | Equipos, tickets, bitácora técnica, rondas |
 | **Billing** | Facturas CFDI 4.0 (diferido), complementos de pago PPD |
 | **Finance** | Cuentas bancarias, importación CSV, conciliación |
-| **Reports** | Reportes financieros y operativos, CSV programados |
+| **Reports** | Reportes financieros y operativos, Excel programados |
 | **Kiosk** | Dispositivos, tokens de 90 días, validación de códigos |
 | **Staff** | Personal, roles, permisos, push notifications |
 
@@ -603,6 +603,12 @@ caja, membresías o kardex), frecuencia (diario/semanal/mensual) y destinatarios
 coma. El servicio revisa cada `Reports:CheckIntervalMinutes` (5 min por defecto), ejecuta los
 vencidos a la hora `Reports:ScheduledHour` (8 por defecto) y envía un Excel adjunto por SMTP.
 La tabla muestra última y próxima ejecución.
+
+### Impresión de rutinas
+
+En **Rutinas → Asignaciones → Imprimir** se abre una ficha lista para imprimir o guardar
+como PDF: datos del socio, rutina, dificultad, duración, descripción y ejercicios agrupados
+por día con series, reps, equipo y notas. No requiere conexión adicional ni cambios de base.
 
 ## Reglas de negocio
 

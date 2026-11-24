@@ -11,6 +11,13 @@
 
 ## Backend (.NET)
 
+### Impresión de rutinas (2026-11-23, versión 1.7.7)
+- **Nueva vista:** **Rutinas → Asignaciones → Imprimir** abre una ficha A4 con el socio, rutina, fecha de asignación, dificultad, duración, descripción y ejercicios agrupados por día (series, reps, equipo y notas).
+- **Salida:** botón **Imprimir / Guardar PDF**; usa el diálogo del navegador. Sin cambios de base ni librerías nuevas.
+- **Seguridad:** todo el contenido dinámico se escapa antes de insertarlo en el HTML de la vista.
+- **Verificación:** build/lint sin errores; prueba en instancia temporal y en producción con un socio/rutina temporal (día 1 y 2, tres ejercicios, series/reps/notas); vista correcta, sin errores de consola; datos temporales eliminados.
+- **Despliegue:** servicio 1.7.7 healthy.
+
 ### Reportes programados con ejecución real (2026-11-22, versión 1.7.6)
 - **Ejecución:** nuevo `ScheduledReportHostedService` revisa cada `Reports:CheckIntervalMinutes` (5 min por defecto) y ejecuta los reportes cuya `NEXT_RUN` venció. Hora local configurable con `Reports:ScheduledHour` (8 por defecto).
 - **Generación y envío:** genera Excel con `ReportExportService` (ventas, miembros, asistencia, inventario, caja, membresías, kardex) y lo envía como adjunto por SMTP a los destinatarios. Si no hay SMTP, usa el outbox.
