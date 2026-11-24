@@ -124,6 +124,9 @@ Informe detallado: [`qa-2026-11-21.md`](qa-2026-11-21.md).
 - [x] **P2 - Ficha completa del socio** (2026-11-23, versión 1.7.8): CURP, RFC, dirección,
       emergencia, foto (URL) y notas guardados y editables; ficha A4 con membresía y notas,
       Imprimir/Guardar PDF. Probada en vivo; datos temporales eliminados.
+- [x] **P2 - Foto real del socio** (2026-11-24, versión 1.7.9): subida JPG/PNG/WebP hasta 5 MB,
+      validación de firma, almacenamiento GUID, avatar y ficha con foto. Subida/descarga probadas
+      por API; build/lint correctos.
 - [ ] **P2 - Otras funciones anunciadas.** Push sin emisor, búsqueda global y campana sin
       acción, PDF de facturas sin generación, auditoría sin visor.
 - [x] **P2 — Monitoreo de respaldos** (2026-11-22, versión 1.7.5): monitor diario con alerta

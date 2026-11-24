@@ -212,6 +212,10 @@ namespace GymService.Services
             {
                 ["POST"] = "members.create"
             },
+            ["/api/members/photo"] = new Dictionary<string, string>
+            {
+                ["POST"] = "members.edit"
+            },
             ["/api/members/freeze"] = new Dictionary<string, string>
             {
                 ["POST"] = "members.edit"

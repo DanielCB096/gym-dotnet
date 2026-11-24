@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { CreditCard, Upload, XCircle, FileText } from 'lucide-react';
+import { Camera, CreditCard, Upload, XCircle, FileText } from 'lucide-react';
 import api from '../services/api';
 import CrudPage from '../components/CrudPage';
 import ImportDialog from '../components/ImportDialog';
 import MembershipModal from '../components/MembershipModal';
 import CancelMembershipModal from '../components/CancelMembershipModal';
 import MemberProfilePreview from '../components/MemberProfilePreview';
+import MemberPhotoModal from '../components/MemberPhotoModal';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import { formatCurrency, formatDate } from '../utils/format';
@@ -24,6 +25,7 @@ export default function Members() {
   const [membershipTarget, setMembershipTarget] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [profileTarget, setProfileTarget] = useState(null);
+  const [photoTarget, setPhotoTarget] = useState(null);
   const [importTarget, setImportTarget] = useState(null);
 
   useEffect(() => {
@@ -89,8 +91,12 @@ export default function Members() {
           label: 'Nombre',
           render: (row) => (
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                {(row.firstName || 'U').charAt(0).toUpperCase()}
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0 overflow-hidden">
+                {row.photoUrl ? (
+                  <img src={row.photoUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  (row.firstName || 'U').charAt(0).toUpperCase()
+                )}
               </div>
               <span className="text-sm font-medium text-slate-800">
                 {`${row.firstName || ''} ${row.lastName || ''}`.trim() || '—'}
@@ -169,6 +175,11 @@ export default function Members() {
       ]}
       actions={[
         {
+          label: 'Foto',
+          icon: Camera,
+          onClick: (row, { reload, notify }) => setPhotoTarget({ member: row, reload, notify }),
+        },
+        {
           label: 'Ficha',
           icon: FileText,
           onClick: (row) => setProfileTarget(row),
@@ -214,6 +225,18 @@ export default function Members() {
       )}
 
       <MemberProfilePreview member={profileTarget} onClose={() => setProfileTarget(null)} />
+
+      {photoTarget && (
+        <MemberPhotoModal
+          key={`photo-${photoTarget.member.id}`}
+          member={photoTarget.member}
+          onClose={() => setPhotoTarget(null)}
+          onUploaded={(photoUrl, message) => {
+            photoTarget.notify?.('success', message || 'Foto actualizada.');
+            photoTarget.reload?.();
+          }}
+        />
+      )}
 
       {importTarget && (
         <ImportDialog

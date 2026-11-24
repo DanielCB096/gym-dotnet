@@ -43,6 +43,10 @@ function buildHtml(member) {
     .map((part) => part.charAt(0).toUpperCase())
     .join('');
 
+  const photoUrl = member.photoUrl
+    ? (member.photoUrl.startsWith('http') ? member.photoUrl : `${window.location.origin}${member.photoUrl}`)
+    : '';
+
   const membership = member.membershipType
     ? `
       <div class="membership">
@@ -84,6 +88,7 @@ function buildHtml(member) {
   .subtitle { color: #64748b; font-size: 12px; margin-top: 2px; }
   .identity { display: flex; gap: 14px; align-items: center; margin: 18px 0 14px; }
   .avatar { width: 48px; height: 48px; border-radius: 50%; background: #eef2ff; color: #465fff; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; }
+  .photo { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 1px solid #e2e8f0; }
   h1 { font-size: 21px; margin: 0 0 3px; }
   h2 { font-size: 13px; margin: 18px 0 7px; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 28px; }
@@ -108,7 +113,9 @@ function buildHtml(member) {
   </div>
 
   <div class="identity">
-    <div class="avatar">${escapeHtml(initials || 'S')}</div>
+    ${photoUrl
+      ? `<img class="photo" src="${escapeHtml(photoUrl)}" alt="" />`
+      : `<div class="avatar">${escapeHtml(initials || 'S')}</div>`}
     <div>
       <h1>${escapeHtml(`${member.firstName || ''} ${member.lastName || ''}`.trim())}</h1>
       <div class="subtitle">${escapeHtml(member.status === 'active' ? 'Socio activo' : 'Socio inactivo')}</div>

@@ -78,6 +78,11 @@ if (-not $Rollback) {
     Grant-Acl $logPath '(OI)(CI)M' -Recurse
     Grant-Acl $ConfigPath '(R)'
 
+    # Fotos de socios subidas desde el panel.
+    $uploadDir = Join-Path $installDir 'wwwroot\uploads\members'
+    if (-not (Test-Path $uploadDir)) { New-Item -ItemType Directory -Force -Path $uploadDir | Out-Null }
+    Grant-Acl $uploadDir '(OI)(CI)M' -Recurse
+
     if ($certDir) {
         Grant-Acl $certDir '(OI)(CI)R' -Recurse
         Grant-Acl $certPath '(R)'

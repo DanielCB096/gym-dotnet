@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using GymService.Tools;
 
@@ -38,6 +40,117 @@ namespace GymService.Controllers
 
             var success = DataCenter.BusinessProcess.Members.CreateMember(memberData, out var response);
             return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPost]
+        [Route("api/members/photo")]
+        [RequestSizeLimit(6 * 1024 * 1024)]
+        public ActionResult<Dictionary<string, object>> UploadMemberPhoto()
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Members == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            if (!Request.HasFormContentType || Request.Form.Files.Count == 0)
+                return BadRequest(new { success = false, message = "Selecciona una imagen" });
+
+            long memberId;
+            try
+            {
+                memberId = Convert.ToInt64(Request.Form["memberId"].ToString());
+            }
+            catch
+            {
+                memberId = 0;
+            }
+
+            if (memberId <= 0)
+                return BadRequest(new { success = false, message = "memberId es requerido" });
+
+            var file = Request.Form.Files[0];
+            if (file.Length <= 0)
+                return BadRequest(new { success = false, message = "El archivo está vacío" });
+
+            if (file.Length > 5 * 1024 * 1024)
+                return BadRequest(new { success = false, message = "La imagen no puede superar 5 MB" });
+
+            string extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (extension == ".jpeg") extension = ".jpg";
+            if (extension != ".jpg" && extension != ".png" && extension != ".webp")
+                return BadRequest(new { success = false, message = "Usa una imagen JPG, PNG o WebP" });
+
+            string uploadDir = Path.Combine(AppContext.BaseDirectory, "wwwroot", "uploads", "members");
+            Directory.CreateDirectory(uploadDir);
+
+            string fileName = Guid.NewGuid().ToString("N") + extension;
+            string filePath = Path.Combine(uploadDir, fileName);
+
+            try
+            {
+                using (var input = file.OpenReadStream())
+                {
+                    var header = new byte[12];
+                    int read = input.Read(header, 0, header.Length);
+                    if (!HasValidImageSignature(header, read, extension))
+                        return BadRequest(new { success = false, message = "El archivo no parece una imagen válida" });
+                }
+
+                using (var output = System.IO.File.Create(filePath))
+                {
+                    file.CopyTo(output);
+                }
+
+                string photoUrl = "/uploads/members/" + fileName;
+                var success = DataCenter.BusinessProcess.Members.SetMemberPhoto(memberId, photoUrl, out var response);
+                if (!success)
+                {
+                    System.IO.File.Delete(filePath);
+                    return BadRequest(response);
+                }
+
+                var oldPhoto = Convert.ToString(response.GetValueOrDefault("oldPhotoUrl", "")) ?? "";
+                DeleteManagedPhoto(oldPhoto, uploadDir);
+
+                response["photoUrl"] = photoUrl;
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                if (System.IO.File.Exists(filePath))
+                    System.IO.File.Delete(filePath);
+
+                return BadRequest(new { success = false, message = $"No se pudo guardar la imagen: {ex.Message}" });
+            }
+        }
+
+        private static bool HasValidImageSignature(byte[] header, int length, string extension)
+        {
+            if (length < 12) return false;
+
+            return extension switch
+            {
+                ".jpg" => header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF,
+                ".png" => header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47,
+                ".webp" => header[0] == (byte)'R' && header[1] == (byte)'I' && header[2] == (byte)'F' && header[3] == (byte)'F' &&
+                           header[8] == (byte)'W' && header[9] == (byte)'E' && header[10] == (byte)'B' && header[11] == (byte)'P',
+                _ => false
+            };
+        }
+
+        private static void DeleteManagedPhoto(string photoUrl, string uploadDir)
+        {
+            if (string.IsNullOrWhiteSpace(photoUrl) ||
+                !photoUrl.StartsWith("/uploads/members/", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var fileName = Path.GetFileName(photoUrl);
+            if (string.IsNullOrWhiteSpace(fileName)) return;
+
+            var path = Path.Combine(uploadDir, fileName);
+            if (System.IO.File.Exists(path))
+                System.IO.File.Delete(path);
         }
 
         [HttpPut]

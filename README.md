@@ -57,7 +57,7 @@ gimnasio-dotnet/
 | Módulo | Descripción |
 |--------|-------------|
 | **Identity** | Autenticación, sesiones Bearer, MFA TOTP, OTP por correo, RBAC, bootstrap de dueño |
-| **Members** | Socios, membresías, ciclo de vida (freeze/resume/cancel), pagos manuales, crédito y ficha completa con impresión |
+| **Members** | Socios, membresías, ciclo de vida (freeze/resume/cancel), pagos manuales, crédito, ficha completa y foto |
 | **Access** | Códigos rotativos HMAC, check-in, bitácora, override manual |
 | **Sales** | Punto de venta, devoluciones, ventas offline, tickets PDF |
 | **Inventory** | Productos, stock, proveedores, órdenes de compra |
@@ -622,6 +622,12 @@ En **Miembros → Ficha** se abre una hoja lista para imprimir o guardar como PD
 
 Los campos se capturan en el alta/edición del socio. La ficha omite la membresía si el socio
 no tiene una asignada.
+
+### Foto del socio
+
+En **Miembros → Foto** se sube una imagen JPG, PNG o WebP de hasta 5 MB. Se guarda en
+`wwwroot/uploads/members` con un nombre GUID y se muestra en la tabla, en el modal y en la
+ficha imprimible. Los archivos son estáticos dentro de la LAN; no se indexan ni se listan.
 
 ## Reglas de negocio
 

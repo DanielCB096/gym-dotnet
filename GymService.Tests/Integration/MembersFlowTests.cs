@@ -73,6 +73,45 @@ public class MembersFlowTests
     }
 
     [Fact]
+    public void Member_Photo_Can_Be_Set_And_Removed()
+    {
+        if (!_fx.Available) return;
+
+        var module = new MembersModule(_fx.Tools!);
+        string email = $"photo_{Guid.NewGuid():N}@test.local";
+        long memberId = 0;
+
+        CurrentUser.Id = 1;
+        try
+        {
+            Assert.True(module.CreateMember(new Dictionary<string, object>
+            {
+                ["firstName"] = "Foto",
+                ["lastName"] = "Prueba",
+                ["email"] = email
+            }, out var created), created.GetValueOrDefault("message")?.ToString());
+
+            memberId = Convert.ToInt64(created["memberId"]);
+
+            Assert.True(module.SetMemberPhoto(memberId, "/uploads/members/test.png", out var set), set.GetValueOrDefault("message")?.ToString());
+            Assert.True(module.GetMembers(out var list, id: memberId));
+            var data = Assert.IsAssignableFrom<List<Dictionary<string, object>>>(list["data"]);
+            Assert.Equal("/uploads/members/test.png", data[0]["photoUrl"]);
+
+            Assert.True(module.SetMemberPhoto(memberId, null, out var removed), removed.GetValueOrDefault("message")?.ToString());
+            Assert.True(module.GetMembers(out var after, id: memberId));
+            var afterData = Assert.IsAssignableFrom<List<Dictionary<string, object>>>(after["data"]);
+            Assert.Equal("", afterData[0]["photoUrl"]);
+        }
+        finally
+        {
+            CurrentUser.Id = 0;
+            if (memberId > 0)
+                _fx.Execute("DELETE FROM GYM_MEMBERS WHERE ID = @id", ("@id", memberId));
+        }
+    }
+
+    [Fact]
     public void CreateMember_Rejects_Duplicate_Email_And_Unknown_Plan()
     {
         if (!_fx.Available) return;

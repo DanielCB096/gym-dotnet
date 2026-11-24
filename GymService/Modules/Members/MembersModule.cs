@@ -308,6 +308,64 @@ namespace GymService.Modules.Members
         /// Get active membership plans
         /// </summary>
         /// <summary>
+        /// Actualiza la foto del socio (ruta externa o archivo subido).
+        /// </summary>
+        public bool SetMemberPhoto(long memberId, string? photoUrl, out Dictionary<string, object> response)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                var current = _tools.ExecuteQueryResultSet(
+                    "SELECT id, photo_url FROM gym_members WHERE id = ?", memberId);
+
+                if (current == null || current.Rows.Count == 0)
+                {
+                    response["success"] = false;
+                    response["message"] = "El socio no existe";
+                    return false;
+                }
+
+                var oldPhoto = Convert.ToString(GetRowValue(current.Rows[0], current, "photo_url")) ?? string.Empty;
+                var value = string.IsNullOrWhiteSpace(photoUrl) ? null : photoUrl.Trim();
+
+                if (value != null && value.Length > 500)
+                {
+                    response["success"] = false;
+                    response["message"] = "La ruta de la foto excede la longitud permitida";
+                    return false;
+                }
+
+                var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                session.UpdateObjectChanges(new GYM_MEMBERS
+                {
+                    ID = memberId,
+                    PHOTO_URL = value
+                });
+
+                if (session.TryExecute().IsError)
+                {
+                    response["success"] = false;
+                    response["message"] = "No se pudo actualizar la foto";
+                    return false;
+                }
+
+                response["success"] = true;
+                response["message"] = "Foto actualizada correctamente";
+                response["photoUrl"] = value ?? "";
+                response["oldPhotoUrl"] = oldPhoto;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en SetMemberPhoto: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Actualiza los datos del socio.
         /// </summary>
         public bool UpdateMember(long memberId, Dictionary<string, object> memberData, out Dictionary<string, object> response)

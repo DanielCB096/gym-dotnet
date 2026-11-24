@@ -11,6 +11,13 @@
 
 ## Backend (.NET)
 
+### Foto real del socio (2026-11-24, versión 1.7.9)
+- **Subida:** `POST /api/members/photo` (multipart, permiso `members.edit`), JPG/PNG/WebP hasta 5 MB, validación de firma del archivo y nombre GUID en `wwwroot/uploads/members`.
+- **UI:** acción **Foto** en Miembros con vista previa y reemplazo; el avatar de la tabla y la ficha imprimible usan la imagen.
+- **Servicio:** `Set-ServiceAccount.ps1` crea la carpeta y concede escritura a la cuenta virtual; instaladores/MSI la aplican.
+- **Verificación:** **137/137** pruebas (roundtrip de foto); subida real por API, descarga estática con bytes idénticos; build/lint correctos. El navegador estaba desconectado para la prueba visual del avatar.
+- **Despliegue:** servicio 1.7.9 healthy; carpeta de uploads creada. Quedó una imagen de prueba de 68 bytes pendiente de borrar porque el UAC se canceló.
+
 ### Ficha completa del socio (2026-11-23, versión 1.7.8)
 - **Backend:** `CreateMember`/`UpdateMember` ahora guardan CURP, RFC, dirección, contacto/teléfono de emergencia, foto (URL) y notas; `GetMembers` los devuelve y `GetMemberState` los conserva al editar.
 - **UI:** el alta/edición de socio incluye esos campos con límites de longitud.
