@@ -11,6 +11,13 @@
 
 ## Backend (.NET)
 
+### Comprobante imprimible de facturas (2026-11-25, versión 1.7.10)
+- **Nueva vista:** **Facturación → Imprimir** abre un comprobante interno A4 con número, fecha, socio, estado, subtotal, IVA, total y UUID si existe.
+- **Salida:** botón **Imprimir / Guardar PDF**; sin cambios de base ni librerías nuevas.
+- **Aclaración:** el documento indica que no sustituye un CFDI; la facturación fiscal sigue diferida.
+- **Verificación:** build/lint correctos; prueba en instancia temporal con factura `FAC-QA-001` (subtotal $1,000, IVA $160, total $1,160, estado Pendiente); vista correcta y sin errores de consola.
+- **Despliegue:** paquete 1.7.10 y MSI generados; **pendiente de UAC** para copiar/restart del servicio (el servidor sigue en 1.7.9).
+
 ### Foto real del socio (2026-11-24, versión 1.7.9)
 - **Subida:** `POST /api/members/photo` (multipart, permiso `members.edit`), JPG/PNG/WebP hasta 5 MB, validación de firma del archivo y nombre GUID en `wwwroot/uploads/members`.
 - **UI:** acción **Foto** en Miembros con vista previa y reemplazo; el avatar de la tabla y la ficha imprimible usan la imagen.

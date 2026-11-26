@@ -65,7 +65,7 @@ gimnasio-dotnet/
 | **Routines** | Planes, ejercicios, asignaciones, entrenamientos, medidas, metas, impresión de rutina |
 | **Fisio** | Paquetes, citas, historial |
 | **Maintenance** | Equipos, tickets, bitácora técnica, rondas |
-| **Billing** | Facturas CFDI 4.0 (diferido), complementos de pago PPD |
+| **Billing** | Facturas, comprobante interno imprimible (CFDI 4.0 diferido) |
 | **Finance** | Cuentas bancarias, importación CSV, conciliación |
 | **Reports** | Reportes financieros y operativos, Excel programados |
 | **Kiosk** | Dispositivos, tokens de 90 días, validación de códigos |
@@ -628,6 +628,12 @@ no tiene una asignada.
 En **Miembros → Foto** se sube una imagen JPG, PNG o WebP de hasta 5 MB. Se guarda en
 `wwwroot/uploads/members` con un nombre GUID y se muestra en la tabla, en el modal y en la
 ficha imprimible. Los archivos son estáticos dentro de la LAN; no se indexan ni se listan.
+
+### Impresión de facturas
+
+En **Facturación → Imprimir** se abre un comprobante interno A4 con número, fecha, socio,
+estado, subtotal, IVA y total. El botón **Imprimir / Guardar PDF** usa el diálogo del navegador.
+El documento indica que **no sustituye un CFDI**; la facturación fiscal sigue diferida.
 
 ## Reglas de negocio
 

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import { Printer } from 'lucide-react';
 import api from '../services/api';
 import CrudPage from '../components/CrudPage';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Select from '../components/ui/Select';
+import InvoicePrintPreview from '../components/InvoicePrintPreview';
 import { formatCurrency, formatDate } from '../utils/format';
 
 const statusInfo = {
@@ -21,6 +23,7 @@ const statusOptions = [
 export default function Billing() {
   const [members, setMembers] = useState([]);
   const [statusFilter, setStatusFilter] = useState('');
+  const [printInvoice, setPrintInvoice] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -67,6 +70,7 @@ export default function Billing() {
   ];
 
   return (
+    <>
     <CrudPage
       title="Facturación"
       subtitle="Facturas emitidas a los socios"
@@ -116,6 +120,13 @@ export default function Billing() {
         },
         { key: 'invoiceDate', label: 'Fecha', render: (row) => formatDate(row.invoiceDate) },
       ]}
+      actions={[
+        {
+          label: 'Imprimir',
+          icon: Printer,
+          onClick: (row) => setPrintInvoice(row),
+        },
+      ]}
       fields={createFields}
       createFields={createFields}
       editFields={[
@@ -124,5 +135,8 @@ export default function Billing() {
       updatePath={(invoice) => `/billing/invoices/${invoice.id}/status`}
       updatePayload={(form) => ({ status: form.status })}
     />
+
+    <InvoicePrintPreview invoice={printInvoice} onClose={() => setPrintInvoice(null)} />
+    </>
   );
 }

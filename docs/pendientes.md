@@ -127,6 +127,9 @@ Informe detallado: [`qa-2026-11-21.md`](qa-2026-11-21.md).
 - [x] **P2 - Foto real del socio** (2026-11-24, versión 1.7.9): subida JPG/PNG/WebP hasta 5 MB,
       validación de firma, almacenamiento GUID, avatar y ficha con foto. Subida/descarga probadas
       por API; build/lint correctos.
+- [x] **P2 - Comprobante imprimible de facturas** (2026-11-25, versión 1.7.10): subtotal, IVA,
+      total, estado y nota de que no sustituye CFDI; Imprimir/Guardar PDF. Probado en instancia
+      temporal; **despliegue pendiente de UAC** (servidor sigue en 1.7.9).
 - [ ] **P2 - Otras funciones anunciadas.** Push sin emisor, búsqueda global y campana sin
       acción, PDF de facturas sin generación, auditoría sin visor.
 - [x] **P2 — Monitoreo de respaldos** (2026-11-22, versión 1.7.5): monitor diario con alerta
