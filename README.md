@@ -642,6 +642,12 @@ la evolución por tipo de medida (peso, grasa, cintura, etc.). Selecciona un soc
 para ver su serie; la gráfica muestra el último valor y la diferencia desde la primera medición.
 Se dibuja en SVG, sin dependencias externas.
 
+### Búsqueda global y notificaciones
+
+El buscador del encabezado busca socios, planes y facturas y navega al módulo correspondiente.
+La campana de notificaciones muestra membresías por vencer y productos con stock bajo usando el
+resumen del dashboard, con enlaces directos a Miembros e Inventario.
+
 ## Reglas de negocio
 
 Las reglas de membresías, renovaciones y control de acceso se documentan en

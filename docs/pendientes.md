@@ -133,6 +133,9 @@ Informe detallado: [`qa-2026-11-21.md`](qa-2026-11-21.md).
 - [x] **P2 - Gráficas de progreso** (2026-11-25, versión 1.7.11): peso por ejercicio y evolución
       por medida, SVG sin dependencias, selector de socio/tipo. Probado en instancia temporal con
       3 puntos por gráfica; build/lint correctos. **Despliegue pendiente de UAC.**
+- [x] **P2 - Búsqueda global y campana** (2026-11-25, versión 1.7.12): búsqueda de socios, planes
+      y facturas; campana con membresías por vencer y stock bajo. Probado en instancia temporal;
+      **despliegue pendiente de UAC.**
 - [ ] **P2 - Otras funciones anunciadas.** Push sin emisor, búsqueda global y campana sin
       acción, PDF de facturas sin generación, auditoría sin visor.
 - [x] **P2 — Monitoreo de respaldos** (2026-11-22, versión 1.7.5): monitor diario con alerta

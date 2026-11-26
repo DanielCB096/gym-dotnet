@@ -5,8 +5,10 @@ import {
   LayoutDashboard, Users, Package, DollarSign, Dumbbell, UserCog,
   FileText, Landmark, Wrench, Activity, ClipboardCheck, Monitor,
   BarChart3, Shield, LogOut, Menu, X, ChevronLeft, ChevronRight,
-  Bell, Search, Home, Tags, Wallet, Truck
+  Bell, Home, Tags, Wallet, Truck
 } from 'lucide-react';
+import GlobalSearch from './GlobalSearch';
+import NotificationsModal from './NotificationsModal';
 
 const menuSections = [
   {
@@ -72,6 +74,7 @@ export default function Layout({ children }) {
     return stored ? stored === 'false' : true;
   });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const mainRef = useRef(null);
 
   // Cada página empieza arriba: el scroll vive dentro de <main>, no en el documento.
@@ -271,19 +274,16 @@ export default function Layout({ children }) {
             {/* Right: Search, Notifications, User */}
             <div className="flex items-center gap-1 lg:gap-2 flex-shrink-0">
               {/* Search */}
-              <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 w-48 lg:w-64">
-                <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                <input
-                  type="text"
-                  placeholder="Buscar..."
-                  className="bg-transparent text-sm text-slate-600 placeholder-slate-400 outline-none w-full"
-                />
-              </div>
+              <GlobalSearch />
 
               {/* Notifications */}
-              <button className="relative p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors flex-shrink-0" aria-label="Notificaciones">
+              <button
+                type="button"
+                onClick={() => setNotificationsOpen(true)}
+                className="relative p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors flex-shrink-0"
+                aria-label="Notificaciones"
+              >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-danger-500 rounded-full ring-2 ring-white"></span>
               </button>
 
               {/* User avatar */}
@@ -309,6 +309,8 @@ export default function Layout({ children }) {
           {children}
         </div>
       </main>
+
+      <NotificationsModal open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
     </div>
   );
 }

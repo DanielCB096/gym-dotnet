@@ -11,6 +11,13 @@
 
 ## Backend (.NET)
 
+### Búsqueda global y campana de notificaciones (2026-11-25, versión 1.7.12)
+- **Búsqueda:** el campo del encabezado consulta socios, planes y facturas con debounce; muestra resultados agrupados y navega al módulo. En móvil permanece oculto como antes.
+- **Campana:** abre un modal con membresías por vencer y productos con stock bajo desde el resumen del dashboard, con enlaces a Miembros e Inventario; si no hay alertas muestra “Todo al día”.
+- **Permisos:** cada consulta usa los endpoints existentes y tolera 403 si el rol no tiene acceso; no se agregó superficie nueva.
+- **Verificación:** build/lint correctos; prueba en instancia temporal con un socio y una factura: búsqueda encontró “Buscame Uno”, navegó a Miembros y la campana abrió correctamente; sin errores de consola.
+- **Despliegue:** ZIP/MSI 1.7.12 generados; **pendiente de UAC**. El servidor sigue en 1.7.9, por lo que factura imprimible, gráficas y esta mejora esperan el mismo despliegue.
+
 ### Gráficas de progreso de rutinas y medidas (2026-11-25, versión 1.7.11)
 - **Entrenamientos:** gráfica de peso por ejercicio para el socio filtrado, con último valor y diferencia desde la primera medición.
 - **Medidas:** gráfica por tipo (peso, grasa, cintura, etc.), con selector de tipo y unidad.
