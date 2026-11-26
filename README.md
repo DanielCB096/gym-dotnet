@@ -70,6 +70,7 @@ gimnasio-dotnet/
 | **Reports** | Reportes financieros y operativos, Excel programados |
 | **Kiosk** | Dispositivos, tokens de 90 días, validación de códigos |
 | **Staff** | Personal, roles, permisos, push notifications |
+| **Audit** | Visor de sesiones de usuario y accesos, permiso `audit.view` |
 
 ## Base de Datos
 
@@ -647,6 +648,15 @@ Se dibuja en SVG, sin dependencias externas.
 El buscador del encabezado busca socios, planes y facturas y navega al módulo correspondiente.
 La campana de notificaciones muestra membresías por vencer y productos con stock bajo usando el
 resumen del dashboard, con enlaces directos a Miembros e Inventario.
+
+### Auditoría
+
+En **Auditoría** se consultan las sesiones de usuario (activas, expiradas y revocadas) con
+usuario, rol, IP, dispositivo y fechas, y los accesos al gimnasio con filtros por fecha,
+resultado y texto. El resumen muestra sesiones activas, inicios en las últimas 24 horas y
+accesos concedidos o denegados del día. Es una vista de solo lectura que requiere el permiso
+`audit.view` (OWNER y ADMIN). Al arrancar, el servicio crea el permiso si falta y lo otorga al
+OWNER de forma idempotente.
 
 ## Reglas de negocio
 

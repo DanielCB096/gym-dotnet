@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Users, Package, DollarSign, Dumbbell, UserCog,
   FileText, Landmark, Wrench, Activity, ClipboardCheck, Monitor,
   BarChart3, Shield, LogOut, Menu, X, ChevronLeft, ChevronRight,
-  Bell, Home, Tags, Wallet, Truck
+  Bell, Home, Tags, Wallet, Truck, History
 } from 'lucide-react';
 import GlobalSearch from './GlobalSearch';
 import NotificationsModal from './NotificationsModal';
@@ -16,6 +16,7 @@ const menuSections = [
     items: [
       { to: '/', label: 'Dashboard', icon: LayoutDashboard },
       { to: '/security', label: 'Seguridad', icon: Shield },
+      { to: '/audit', label: 'Auditoría', icon: History },
     ],
   },
   {
@@ -61,6 +62,7 @@ const routeLabels = {
   '/reports': 'Reportes',
   '/access-logs': 'Logs Acceso',
   '/security': 'Seguridad',
+  '/audit': 'Auditoría',
 };
 
 export default function Layout({ children }) {

@@ -82,6 +82,7 @@ namespace GymService
             BusinessProcess.Staff = null;
             BusinessProcess.Cash = null;
             BusinessProcess.Dashboard = null;
+            BusinessProcess.Audit = null;
         }
     }
 
@@ -106,5 +107,6 @@ namespace GymService
         public Modules.Staff.StaffModule? Staff { get; set; }
         public Modules.Cash.CashModule? Cash { get; set; }
         public Modules.Dashboard.DashboardModule? Dashboard { get; set; }
+        public Modules.Audit.AuditModule? Audit { get; set; }
     }
 }

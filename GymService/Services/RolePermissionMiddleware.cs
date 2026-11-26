@@ -164,6 +164,8 @@ namespace GymService.Services
                 "reports.view",
                 // Staff
                 "staff.view", "staff.manage",
+                // Auditoría
+                "audit.view",
                 // Admin
                 "admin.settings"
             },
@@ -428,6 +430,11 @@ namespace GymService.Services
             ["/api/dashboard"] = new Dictionary<string, string>
             {
                 ["GET"] = "reports.view"
+            },
+            // Auditoría de seguridad
+            ["/api/audit"] = new Dictionary<string, string>
+            {
+                ["GET"] = "audit.view"
             },
             // Kiosk
             ["/api/kiosk/register"] = new Dictionary<string, string>

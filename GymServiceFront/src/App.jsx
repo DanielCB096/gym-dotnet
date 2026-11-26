@@ -20,6 +20,7 @@ import Routines from './pages/Routines';
 import Kiosk from './pages/Kiosk';
 import Reports from './pages/Reports';
 import AccessLogs from './pages/AccessLogs';
+import Audit from './pages/Audit';
 import Security from './pages/Security';
 import NotFound from './pages/NotFound';
 
@@ -195,6 +196,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <AccessLogs />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Audit />
                 </Layout>
               </ProtectedRoute>
             }

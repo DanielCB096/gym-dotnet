@@ -136,8 +136,11 @@ Informe detallado: [`qa-2026-11-21.md`](qa-2026-11-21.md).
 - [x] **P2 - Búsqueda global y campana** (2026-11-25, versión 1.7.12): búsqueda de socios, planes
       y facturas; campana con membresías por vencer y stock bajo. Probado en instancia temporal;
       **despliegue pendiente de UAC.**
-- [ ] **P2 - Otras funciones anunciadas.** Push sin emisor, búsqueda global y campana sin
-      acción, PDF de facturas sin generación, auditoría sin visor.
+- [x] **P2 - Visor de auditoría** (2026-11-25, versión 1.7.13): sesiones con estado
+      activa/expirada/revocada, accesos con filtros y resumen de 24 h; permiso `audit.view` solo
+      para OWNER/ADMIN. Migración idempotente al arrancar. Probado por API y navegador;
+      **despliegue pendiente de UAC.**
+- [ ] **P2 - Otras funciones anunciadas.** Push sin emisor y PDF de facturas sin generación.
 - [x] **P2 — Monitoreo de respaldos** (2026-11-22, versión 1.7.5): monitor diario con alerta
       SMTP, verificación semanal de restauración real, control de espacio local y copia de clave
       MFA; el respaldo completo ahora tiene `WakeToRun`. Queda pendiente consultar la **cuota de

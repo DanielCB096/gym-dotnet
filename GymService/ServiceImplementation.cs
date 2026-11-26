@@ -187,6 +187,7 @@ namespace GymService
                 var tools = dbManager.Tools;
                 DataCenter.EmailService ??= new EmailService(_configuration);
                 DataCenter.BusinessProcess.Identity = new Modules.Identity.IdentityModule(tools, _configuration);
+                DataCenter.BusinessProcess.Identity.EnsureAuditPermission();
                 DataCenter.BusinessProcess.Members = new Modules.Members.MembersModule(tools, DataCenter.EmailService);
                 DataCenter.BusinessProcess.Members.EnsureDefaultPlans();
                 DataCenter.BusinessProcess.Access = new Modules.Access.AccessModule(tools);
@@ -203,6 +204,7 @@ namespace GymService
                 DataCenter.BusinessProcess.Staff = new Modules.Staff.StaffModule(tools);
                 DataCenter.BusinessProcess.Cash = new Modules.Cash.CashModule(tools);
                 DataCenter.BusinessProcess.Dashboard = new Modules.Dashboard.DashboardModule(tools);
+                DataCenter.BusinessProcess.Audit = new Modules.Audit.AuditModule(tools);
 
                 Logger.AddInfo("Módulos de negocio inicializados");
             }

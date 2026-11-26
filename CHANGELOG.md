@@ -11,6 +11,13 @@
 
 ## Backend (.NET)
 
+### Visor de auditoría (2026-11-25, versión 1.7.13)
+- **Nueva sección Auditoría:** sesiones de usuario con estado calculado (activa, expirada o revocada), filtros por usuario, IP, dispositivo y estado; accesos al gimnasio con filtros por fecha, resultado y texto; resumen de sesiones activas, inicios en 24 h y accesos concedidos o denegados del día.
+- **Seguridad:** ruta `/api/audit` protegida por el permiso `audit.view` (solo OWNER y ADMIN). La migración de arranque crea el permiso y lo otorga al OWNER de forma idempotente; ADMIN usa la matriz por defecto. El seed de bootstrap ahora omite concesiones ya existentes para no duplicarlas.
+- **Solo lectura:** no modifica sesiones ni bitácoras; las consultas son parametrizadas y paginadas.
+- **Verificación:** suite 137/137; build/lint correctos; prueba en instancia temporal con 3 sesiones (activa/revocada), 1 acceso concedido, filtros por estado/resultado/texto y STAFF rechazado con 403; sin errores de consola.
+- **Despliegue:** ZIP/MSI 1.7.13 generados; **pendiente de UAC**. El servidor sigue en 1.7.9.
+
 ### Búsqueda global y campana de notificaciones (2026-11-25, versión 1.7.12)
 - **Búsqueda:** el campo del encabezado consulta socios, planes y facturas con debounce; muestra resultados agrupados y navega al módulo. En móvil permanece oculto como antes.
 - **Campana:** abre un modal con membresías por vencer y productos con stock bajo desde el resumen del dashboard, con enlaces a Miembros e Inventario; si no hay alertas muestra “Todo al día”.

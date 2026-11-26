@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>GymService</RootNamespace>
     <AssemblyName>GymService</AssemblyName>
-    <Version>1.7.12</Version>
+    <Version>1.7.13</Version>
     <!-- Ruta de las GymCore Libraries. Prioridad: -p:GymLibsRoot, GYM_LIBS_ROOT, copia local. -->
     <GymLibsRoot Condition="'$(GymLibsRoot)' == '' and '$(GYM_LIBS_ROOT)' != ''">$(GYM_LIBS_ROOT)</GymLibsRoot>
     <GymLibsRoot Condition="'$(GymLibsRoot)' == ''">..\third_party\gym-core</GymLibsRoot>

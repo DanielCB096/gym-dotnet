@@ -1503,6 +1503,68 @@ namespace GymService.Modules.Identity
         /// <summary>
         /// Seed default permissions
         /// </summary>
+        /// <summary>
+        /// Garantiza el permiso de auditoria en instalaciones existentes. Es idempotente:
+        /// crea el permiso si falta y lo otorga al OWNER. ADMIN usa la matriz por defecto
+        /// mientras no tenga permisos explicitos en la base.
+        /// </summary>
+        public void EnsureAuditPermission()
+        {
+            try
+            {
+                long exists = _tools.ExecuteQueryObjectCount(
+                    "SELECT COUNT(*) FROM gym_permissions WHERE permission_code = ?", "audit.view");
+
+                if (exists == 0)
+                {
+                    var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                    session.InsertObject(new GYM_PERMISSIONS
+                    {
+                        PERMISSION_CODE = "audit.view",
+                        PERMISSION_NAME = "Ver auditor\u00EDa",
+                        MODULE = "audit",
+                        DESCRIPTION = "Ver auditor\u00EDa"
+                    });
+
+                    if (session.TryExecute().IsError)
+                    {
+                        Logger.AddWarningSubModule(SubModule, "No se pudo crear el permiso audit.view");
+                        return;
+                    }
+                }
+
+                var permission = _tools.ExecuteQueryResultSet(
+                    "SELECT id FROM gym_permissions WHERE permission_code = ?", "audit.view");
+
+                if (permission == null || permission.Rows.Count == 0)
+                    return;
+
+                long permissionId = Convert.ToInt64(GetRowValue(permission.Rows[0], permission, "id"));
+
+                long ownerGrant = _tools.ExecuteQueryObjectCount(
+                    "SELECT COUNT(*) FROM gym_role_permissions WHERE role = ? AND permission_id = ?",
+                    "OWNER", permissionId);
+
+                if (ownerGrant == 0)
+                {
+                    var grant = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
+                    grant.InsertObject(new GYM_ROLE_PERMISSIONS
+                    {
+                        ROLE = "OWNER",
+                        PERMISSION_ID = permissionId,
+                        GRANTED = true
+                    });
+
+                    if (grant.TryExecute().IsError)
+                        Logger.AddWarningSubModule(SubModule, "No se pudo otorgar audit.view al rol OWNER");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en EnsureAuditPermission: {ex.Message}");
+            }
+        }
+
         private void SeedDefaultPermissions()
         {
             var permissions = new[]
@@ -1533,6 +1595,7 @@ namespace GymService.Modules.Identity
                 ("reports.view", "Ver reportes", "reports"),
                 ("staff.view", "Ver personal", "staff"),
                 ("staff.manage", "Gestionar personal", "staff"),
+                ("audit.view", "Ver auditor\u00EDa", "audit"),
                 ("admin.settings", "Configuración", "admin")
             };
 
@@ -1581,6 +1644,14 @@ namespace GymService.Modules.Identity
                 foreach (var row in allPermsResult.Rows)
                 {
                     var permId = Convert.ToInt64(GetRowValue(row, allPermsResult, "id"));
+
+                    // No duplicar concesiones ya creadas por una migracion previa.
+                    long alreadyGranted = _tools.ExecuteQueryObjectCount(
+                        "SELECT COUNT(*) FROM gym_role_permissions WHERE role = 'OWNER' AND permission_id = ?",
+                        permId);
+
+                    if (alreadyGranted > 0)
+                        continue;
 
                     // GYM_ROLE_PERMISSIONS tiene PK surrogate: la asigna la secuencia GymCore.
                     session.InsertObject(new GYM_ROLE_PERMISSIONS
