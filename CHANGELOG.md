@@ -11,6 +11,13 @@
 
 ## Backend (.NET)
 
+### Gráficas de progreso de rutinas y medidas (2026-11-25, versión 1.7.11)
+- **Entrenamientos:** gráfica de peso por ejercicio para el socio filtrado, con último valor y diferencia desde la primera medición.
+- **Medidas:** gráfica por tipo (peso, grasa, cintura, etc.), con selector de tipo y unidad.
+- **Implementación:** componente SVG propio, sin librerías nuevas; requiere seleccionar un socio para evitar mezclar series.
+- **Verificación:** build/lint correctos; prueba en instancia temporal con tres pesos (60→62.5→65 kg) y tres medidas (80→79.2→78.5 kg): 3 puntos por gráfica, sin errores de consola.
+- **Despliegue:** ZIP/MSI 1.7.11 generados; **pendiente de UAC**. El servidor sigue en 1.7.9, por lo que también están pendientes factura imprimible (1.7.10) y estas gráficas.
+
 ### Comprobante imprimible de facturas (2026-11-25, versión 1.7.10)
 - **Nueva vista:** **Facturación → Imprimir** abre un comprobante interno A4 con número, fecha, socio, estado, subtotal, IVA, total y UUID si existe.
 - **Salida:** botón **Imprimir / Guardar PDF**; sin cambios de base ni librerías nuevas.

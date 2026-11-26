@@ -130,6 +130,9 @@ Informe detallado: [`qa-2026-11-21.md`](qa-2026-11-21.md).
 - [x] **P2 - Comprobante imprimible de facturas** (2026-11-25, versión 1.7.10): subtotal, IVA,
       total, estado y nota de que no sustituye CFDI; Imprimir/Guardar PDF. Probado en instancia
       temporal; **despliegue pendiente de UAC** (servidor sigue en 1.7.9).
+- [x] **P2 - Gráficas de progreso** (2026-11-25, versión 1.7.11): peso por ejercicio y evolución
+      por medida, SVG sin dependencias, selector de socio/tipo. Probado en instancia temporal con
+      3 puntos por gráfica; build/lint correctos. **Despliegue pendiente de UAC.**
 - [ ] **P2 - Otras funciones anunciadas.** Push sin emisor, búsqueda global y campana sin
       acción, PDF de facturas sin generación, auditoría sin visor.
 - [x] **P2 — Monitoreo de respaldos** (2026-11-22, versión 1.7.5): monitor diario con alerta

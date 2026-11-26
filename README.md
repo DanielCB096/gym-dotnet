@@ -62,7 +62,7 @@ gimnasio-dotnet/
 | **Sales** | Punto de venta, devoluciones, ventas offline, tickets PDF |
 | **Inventory** | Productos, stock, proveedores, órdenes de compra |
 | **Classes** | Tipos, salones, sesiones, reservas, lista de espera, asistencia |
-| **Routines** | Planes, ejercicios, asignaciones, entrenamientos, medidas, metas, impresión de rutina |
+| **Routines** | Planes, ejercicios, asignaciones, entrenamientos, medidas, metas, gráficas, impresión de rutina |
 | **Fisio** | Paquetes, citas, historial |
 | **Maintenance** | Equipos, tickets, bitácora técnica, rondas |
 | **Billing** | Facturas, comprobante interno imprimible (CFDI 4.0 diferido) |
@@ -634,6 +634,13 @@ ficha imprimible. Los archivos son estáticos dentro de la LAN; no se indexan ni
 En **Facturación → Imprimir** se abre un comprobante interno A4 con número, fecha, socio,
 estado, subtotal, IVA y total. El botón **Imprimir / Guardar PDF** usa el diálogo del navegador.
 El documento indica que **no sustituye un CFDI**; la facturación fiscal sigue diferida.
+
+### Gráficas de progreso
+
+En **Rutinas → Entrenamientos** se grafica el peso por ejercicio y en **Rutinas → Medidas**
+la evolución por tipo de medida (peso, grasa, cintura, etc.). Selecciona un socio en el filtro
+para ver su serie; la gráfica muestra el último valor y la diferencia desde la primera medición.
+Se dibuja en SVG, sin dependencias externas.
 
 ## Reglas de negocio
 

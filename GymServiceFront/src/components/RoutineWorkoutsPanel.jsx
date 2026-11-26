@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AlertCircle, CheckCircle2, Plus, Trash2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Plus, Trash2, LineChart } from 'lucide-react';
 import api from '../services/api';
 import Button from './ui/Button';
 import Input from './ui/Input';
 import Select from './ui/Select';
 import Table from './ui/Table';
+import Card from './ui/Card';
+import ProgressChart from './ProgressChart';
 import { formatDateTime } from '../utils/format';
 
 const errorMessage = (err, fallback) => err?.response?.data?.message || fallback;
@@ -22,6 +24,7 @@ export default function RoutineWorkoutsPanel() {
   const [exercises, setExercises] = useState([]);
   const [workouts, setWorkouts] = useState([]);
   const [filterMember, setFilterMember] = useState('');
+  const [chartExercise, setChartExercise] = useState('');
   const [form, setForm] = useState({
     memberId: '',
     exerciseId: '',
@@ -111,6 +114,18 @@ export default function RoutineWorkoutsPanel() {
     }
   };
 
+  const selectedMember = members.find((member) => Number(member.id) === Number(filterMember));
+  const exerciseOptions = Array.from(
+    new Map(workouts.map((workout) => [workout.exerciseId, workout.exerciseName])).entries()
+  ).map(([id, name]) => ({ value: id, label: name }));
+  const selectedExerciseId = exerciseOptions.some((exercise) => Number(exercise.value) === Number(chartExercise))
+    ? chartExercise
+    : exerciseOptions[0]?.value || '';
+  const chartPoints = workouts
+    .filter((workout) => Number(workout.exerciseId) === Number(selectedExerciseId) && workout.weight != null)
+    .map((workout) => ({ date: workout.workoutDate, value: workout.weight }));
+  const selectedExerciseName = exerciseOptions.find((exercise) => Number(exercise.value) === Number(selectedExerciseId))?.label;
+
   return (
     <div className="space-y-4">
       <form onSubmit={create} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -168,6 +183,34 @@ export default function RoutineWorkoutsPanel() {
         />
         <Button variant="outline" onClick={load} className="sm:mb-0.5">Actualizar</Button>
       </div>
+
+      <Card
+        title="Progreso de peso"
+        subtitle={selectedMember ? `${selectedMember.firstName} ${selectedMember.lastName}` : 'Selecciona un socio para ver su evolución'}
+        actions={(
+          <Select
+            value={selectedExerciseId}
+            onChange={(event) => setChartExercise(event.target.value)}
+            options={exerciseOptions}
+            placeholder="Ejercicio"
+          />
+        )}
+      >
+        {!filterMember ? (
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <LineChart className="h-4 w-4" />
+            Selecciona un socio en el filtro para graficar su progreso.
+          </div>
+        ) : chartPoints.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            {selectedExerciseName
+              ? `No hay pesos registrados para ${selectedExerciseName}.`
+              : 'No hay entrenamientos con peso para este socio.'}
+          </p>
+        ) : (
+          <ProgressChart points={chartPoints} unit="kg" color="#10b981" />
+        )}
+      </Card>
 
       <Table
         columns={[

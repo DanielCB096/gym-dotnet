@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AlertCircle, CheckCircle2, Plus, Trash2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Plus, Trash2, LineChart } from 'lucide-react';
 import api from '../services/api';
 import Button from './ui/Button';
 import Input from './ui/Input';
 import Select from './ui/Select';
 import Table from './ui/Table';
+import Card from './ui/Card';
+import ProgressChart from './ProgressChart';
 import { formatDateTime, humanize } from '../utils/format';
 
 const errorMessage = (err, fallback) => err?.response?.data?.message || fallback;
@@ -33,6 +35,7 @@ export default function RoutineMeasurementsPanel() {
   const [members, setMembers] = useState([]);
   const [measurements, setMeasurements] = useState([]);
   const [filterMember, setFilterMember] = useState('');
+  const [chartType, setChartType] = useState('weight');
   const [form, setForm] = useState({
     memberId: '',
     measurementType: 'weight',
@@ -116,6 +119,12 @@ export default function RoutineMeasurementsPanel() {
     }
   };
 
+  const selectedMember = members.find((member) => Number(member.id) === Number(filterMember));
+  const chartInfo = measurementTypes.find((item) => item.value === chartType) || measurementTypes[0];
+  const chartPoints = measurements
+    .filter((measurement) => measurement.measurementType === chartType)
+    .map((measurement) => ({ date: measurement.measuredAt, value: measurement.value }));
+
   return (
     <div className="space-y-4">
       <form onSubmit={create} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -185,6 +194,31 @@ export default function RoutineMeasurementsPanel() {
         />
         <Button variant="outline" onClick={load} className="sm:mb-0.5">Actualizar</Button>
       </div>
+
+      <Card
+        title="Progreso de medidas"
+        subtitle={selectedMember ? `${selectedMember.firstName} ${selectedMember.lastName}` : 'Selecciona un socio para ver su evolución'}
+        actions={(
+          <Select
+            value={chartType}
+            onChange={(event) => setChartType(event.target.value)}
+            options={measurementTypes.map((item) => ({ value: item.value, label: item.label }))}
+          />
+        )}
+      >
+        {!filterMember ? (
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <LineChart className="h-4 w-4" />
+            Selecciona un socio en el filtro para graficar su progreso.
+          </div>
+        ) : chartPoints.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            No hay mediciones de {chartInfo.label.toLowerCase()} para este socio.
+          </p>
+        ) : (
+          <ProgressChart points={chartPoints} unit={chartInfo.unit} color="#465fff" />
+        )}
+      </Card>
 
       <Table
         columns={[
