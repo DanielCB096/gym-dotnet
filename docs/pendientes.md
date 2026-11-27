@@ -3,6 +3,10 @@
 > Actualizado: 2026-11-21. Lista viva de lo que falta para producción.
 > No sustituye a `CHANGELOG.md` (historial) ni a `docs/reglas-negocio.md`.
 
+## Handoff para la PC de casa
+
+Instrucciones para la IA que continúe con SQL Server: [`handoff-casa.md`](handoff-casa.md).
+
 ## 0. Despliegue 1.7.13
 
 Runbook y MSI 1.7.13 preparados. Artefacto: `artifacts/GymService-1.7.13-win-x64.msi` (48.35 MB). Pendiente: ventana, UAC y ensayo en copia de producción.
