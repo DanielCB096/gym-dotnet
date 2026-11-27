@@ -281,64 +281,6 @@
 
   </object>
 
-  <object name="GYM_MEMBERSHIP_EVENTS" table="gym_membership_events" sequence="GYM_MEMBERSHIP_EVENTS_SEQ">
-
-    <attribute name="ID" column="id" type="int64" flag="primarykey" />
-    <attribute name="MEMBER_ID" column="member_id" type="int64" flag="not_null" />
-    <attribute name="MEMBERSHIP_ID" column="membership_id" type="int64" flag="null" />
-    <attribute name="EVENT_TYPE" column="event_type" type="string" flag="not_null" stringlength="30" />
-    <attribute name="EVENT_AT" column="event_at" type="datetime2" flag="not_null" default="GETDATE()" />
-    <attribute name="PLAN_ID" column="plan_id" type="int64" flag="null" />
-    <attribute name="PREVIOUS_END_DATE" column="previous_end_date" type="date" flag="null" />
-    <attribute name="NEW_END_DATE" column="new_end_date" type="date" flag="null" />
-    <attribute name="AMOUNT" column="amount" type="decimal" flag="null" precision="10" scale="2" />
-    <attribute name="CURRENCY" column="currency" type="string" flag="null" stringlength="3" />
-    <attribute name="PAYMENT_ID" column="payment_id" type="int64" flag="null" />
-    <attribute name="REASON" column="reason" type="string" flag="null" stringlength="300" />
-    <attribute name="USER_ID" column="user_id" type="int64" flag="null" />
-    <attribute name="SOURCE" column="source" type="string" flag="not_null" stringlength="20" default="live" />
-    <attribute name="DETAILS" column="details" type="string" flag="null" stringlength="2000" />
-
-    <!-- RECORD TRACKING CHANGES (WHO) -->
-    <attribute name="CREATION_DATETIME" column="created_at" type="datetime" flag="inserttracking" default="GETDATE()" />
-    <attribute name="LAST_UPDATED_DATETIME" column="updated_at" type="datetime" flag="updatetracking" default="GETDATE()" />
-    <attribute name="CREATED_BY" column="created_by" type="int64" flag="insertusertracking" default="-1" />
-    <attribute name="LAST_UPDATED_BY" column="last_updated_by" type="int64" flag="updateusertracking" default="-1" />
-    <attribute name="LAST_UPDATE_LOG" column="last_update_log" type="string" stringlength="100" flag="logtracking" default="[EMPTY]" />
-    <attribute name="OBJECT_VERSION" column="object_version" type="int32" flag="versiontracking" default="1" />
-
-    <indexes>
-      <index name="IX_GYM_MEMBERSHIP_EVENTS_MEMBER" type="NON_UNIQUE">
-        <attribute name="MEMBER_ID" />
-      </index>
-      <index name="IX_GYM_MEMBERSHIP_EVENTS_MEMBERSHIP" type="NON_UNIQUE">
-        <attribute name="MEMBERSHIP_ID" />
-      </index>
-      <index name="IX_GYM_MEMBERSHIP_EVENTS_AT" type="NON_UNIQUE">
-        <attribute name="EVENT_AT" />
-      </index>
-      <index name="IX_GYM_MEMBERSHIP_EVENTS_TYPE" type="NON_UNIQUE">
-        <attribute name="EVENT_TYPE" />
-      </index>
-    </indexes>
-
-    <references>
-      <reference external_table="gym_members">
-        <column local="member_id" external="id" />
-      </reference>
-      <reference external_table="gym_memberships">
-        <column local="membership_id" external="id" />
-      </reference>
-      <reference external_table="gym_membership_plans">
-        <column local="plan_id" external="id" />
-      </reference>
-      <reference external_table="gym_payments">
-        <column local="payment_id" external="id" />
-      </reference>
-    </references>
-
-  </object>
-
   <object name="GYM_MEMBER_CREDITS" table="gym_member_credits" sequence="GYM_MEMBER_CREDITS_SEQ">
 
     <attribute name="ID" column="id" type="int64" flag="primarykey" />

@@ -138,20 +138,6 @@ public class MappingSchemaTests
             _ => typeof(object)
         };
     }
-
-    [Fact]
-    public void MembershipEvents_Has_Timeline_Columns()
-    {
-        var table = TableOf(GYM_MEMBERSHIP_EVENTS.DatabaseMappingObject);
-
-        Assert.Contains(table.Columns, c => c.ColumnName == "MEMBER_ID");
-        Assert.Contains(table.Columns, c => c.ColumnName == "MEMBERSHIP_ID");
-        Assert.Contains(table.Columns, c => c.ColumnName == "EVENT_TYPE");
-        Assert.Contains(table.Columns, c => c.ColumnName == "EVENT_AT");
-        Assert.Contains(table.Columns, c => c.ColumnName == "PREVIOUS_END_DATE");
-        Assert.Contains(table.Columns, c => c.ColumnName == "NEW_END_DATE");
-        Assert.Contains(table.Columns, c => c.ColumnName == "AMOUNT");
-        Assert.Contains(table.Columns, c => c.ColumnName == "SOURCE");
-        Assert.Contains(table.Columns, c => c.ColumnName == "CREATED_AT");
-    }
 }
+
+

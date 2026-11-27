@@ -11,7 +11,7 @@ public class ModelGymTests
     [Fact]
     public void Contains_All_Objects()
     {
-        Assert.Equal(42, Mappings.Count);
+        Assert.Equal(41, Mappings.Count);
     }
 
     [Fact]

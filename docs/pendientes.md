@@ -110,7 +110,7 @@ o la licencia lo permite.
 
 ## 2.1 Historial de membresía (D)
 
-Implementado en `feat/membership-history`: tabla `gym_membership_events`, escritura en alta/renovación/congelamiento/reanudación/cancelación/pago, API `events` y línea de tiempo en el modal. 138 pruebas unitarias; **pendiente prueba en vivo con SQL Server, backfill y merge**. Ver [`membership-history-d.md`](membership-history-d.md).
+Diseño listo en [`membership-history-d.md`](membership-history-d.md): tabla inmutable de eventos, escritura en las cinco operaciones, línea de tiempo y backfill marcado. Se implementa después de desplegar 1.7.13.
 
 ## 3. Hallazgos del QA completo (2026-11-21)
 

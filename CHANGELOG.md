@@ -11,12 +11,6 @@
 
 ## Backend (.NET)
 
-### Historial de membresía (2026-11-27, rama feat/membership-history)
-- **Datos:** nueva tabla `GYM_MEMBERSHIP_EVENTS` (42 tablas GYM) con tipo, fecha, plan, vencimiento anterior/nuevo, importe, moneda, pago, motivo, usuario y origen `live`/`backfill`.
-- **Registro:** alta, renovación, congelamiento, reanudación, cancelación y pago escriben su evento en la misma transacción que la operación.
-- **API/UI:** `GET /api/members/{id}/memberships` agrega `events`; el modal muestra una línea de tiempo con etiquetas en español y distintivo **Reconstruido**.
-- **Pruebas:** mapping y 138 unitarias; build/lint correctos. **Pendiente:** prueba en vivo con SQL Server, backfill marcado y merge tras desplegar 1.7.13.
-
 ### Empaquetado 1.7.13 y dependencias del frontend (2026-11-27)
 - **MSI:** `artifacts/GymService-1.7.13-win-x64.msi` generado y validado con WiX ICE (48.35 MB, self-contained).
 - **Corrección:** `publish.ps1` ahora ejecuta siempre `npm ci`; un `node_modules` viejo omitía `qrcode.react` y rompía el build del panel (pantalla Seguridad).
