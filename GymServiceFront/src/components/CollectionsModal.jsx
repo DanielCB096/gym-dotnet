@@ -24,6 +24,7 @@ export default function CollectionsModal({ isOpen, onClose }) {
   const [error, setError] = useState('');
   const [data, setData] = useState({ summary: {}, data: [], mode: 'shadow', days: 7 });
   const [filter, setFilter] = useState('todas');
+  const [exporting, setExporting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -48,6 +49,31 @@ export default function CollectionsModal({ isOpen, onClose }) {
   }, [data, filter]);
 
   const summary = data.summary || {};
+
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      const response = await api.get('/reports/collections/excel', {
+        params: { days: 7 },
+        responseType: 'blob',
+      });
+      const disposition = response.headers['content-disposition'] || '';
+      const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
+      const filename = match ? decodeURIComponent(match[1]) : `cobranza_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      const url = URL.createObjectURL(response.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo exportar la cobranza.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const exportCsv = () => {
     const headers = ['Socio', 'Teléfono', 'Email', 'Plan', 'Vence', 'Días', 'Estado', 'Último pago', 'Crédito'];
@@ -124,6 +150,9 @@ export default function CollectionsModal({ isOpen, onClose }) {
           <div className="flex gap-2">
             <Button size="sm" variant="outline" icon={Download} onClick={exportCsv}>
               Exportar CSV
+            </Button>
+            <Button size="sm" variant="outline" icon={Download} onClick={exportExcel} disabled={exporting}>
+              Exportar Excel
             </Button>
             <Button size="sm" variant="ghost" icon={RefreshCw} onClick={load} disabled={loading}>
               Actualizar

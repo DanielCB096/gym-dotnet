@@ -173,6 +173,92 @@ namespace GymService.Services
         }
 
         /// <summary>
+        /// Exporta la cobranza en modo aviso. Misma consulta que Members.GetCollections.
+        /// </summary>
+        public byte[] ExportCollectionsToExcel(int days = 7)
+        {
+            try
+            {
+                if (days < 1) days = 1;
+                if (days > 60) days = 60;
+
+                var result = _tools.ExecuteQueryResultSet(@"
+                    SELECT m.id, m.first_name, m.last_name, m.phone, m.email,
+                           mem.end_date, mem.status AS membership_status,
+                           p.plan_name,
+                           ISNULL((SELECT SUM(c.remaining_amount) FROM gym_member_credits c
+                                   WHERE c.member_id = m.id AND c.status = 'available'), 0) AS credit_balance,
+                           (SELECT MAX(pay.payment_date) FROM gym_payments pay
+                            WHERE pay.member_id = m.id) AS last_payment
+                    FROM gym_members m
+                    OUTER APPLY (SELECT TOP 1 mem2.end_date, mem2.status, mem2.plan_id
+                                 FROM gym_memberships mem2
+                                 WHERE mem2.member_id = m.id AND mem2.status <> 'cancelled'
+                                 ORDER BY CASE WHEN mem2.status = 'active' THEN 0
+                                               WHEN mem2.status = 'frozen' THEN 1 ELSE 2 END,
+                                          mem2.end_date DESC) mem
+                    LEFT JOIN gym_membership_plans p ON p.id = mem.plan_id
+                    WHERE m.status = 'active'
+                      AND (mem.end_date IS NULL OR
+                           mem.end_date <= DATEADD(DAY, ?, CAST(GETDATE() AS DATE)))
+                    ORDER BY mem.end_date ASC, m.last_name, m.first_name", days);
+
+                using var workbook = new XLWorkbook();
+                var worksheet = workbook.Worksheets.Add("Cobranza");
+                var headers = new[] { "ID", "Nombre", "Apellido", "Teléfono", "Email", "Plan", "Vence", "Días", "Estado", "Último pago", "Crédito" };
+                for (int i = 0; i < headers.Length; i++)
+                    worksheet.Cell(1, i + 1).Value = headers[i];
+
+                var headerRange = worksheet.Range(1, 1, 1, headers.Length);
+                headerRange.Style.Fill.SetBackgroundColor(XLColor.DarkGreen);
+                headerRange.Style.Font.Bold = true;
+                headerRange.Style.Font.SetFontColor(XLColor.White);
+
+                int row = 2;
+                DateTime today = DateTime.Now.Date;
+                if (result != null)
+                {
+                    foreach (Row r in result.Rows)
+                    {
+                        var endRaw = GetRowValue(r, result, "end_date");
+                        DateTime? endDate = endRaw != null ? Convert.ToDateTime(endRaw).Date : (DateTime?)null;
+                        int? dias = endDate.HasValue ? (endDate.Value - today).Days : (int?)null;
+                        string estado = endDate == null ? "sin membresía"
+                            : dias < 0 ? "vencida"
+                            : dias <= days ? "próxima" : "vigente";
+
+                        worksheet.Cell(row, 1).Value = Convert.ToInt64(GetRowValue(r, result, "id"));
+                        worksheet.Cell(row, 2).Value = Convert.ToString(GetRowValue(r, result, "first_name")) ?? "";
+                        worksheet.Cell(row, 3).Value = Convert.ToString(GetRowValue(r, result, "last_name")) ?? "";
+                        worksheet.Cell(row, 4).Value = Convert.ToString(GetRowValue(r, result, "phone")) ?? "";
+                        worksheet.Cell(row, 5).Value = Convert.ToString(GetRowValue(r, result, "email")) ?? "";
+                        worksheet.Cell(row, 6).Value = Convert.ToString(GetRowValue(r, result, "plan_name")) ?? "";
+                        worksheet.Cell(row, 7).Value = endDate?.ToString("dd/MM/yyyy") ?? "";
+                        if (dias.HasValue)
+                            worksheet.Cell(row, 8).Value = dias.Value;
+                        else
+                            worksheet.Cell(row, 8).Value = "";
+                        worksheet.Cell(row, 9).Value = estado;
+                        var last = GetRowValue(r, result, "last_payment");
+                        worksheet.Cell(row, 10).Value = last != null ? Convert.ToDateTime(last).ToString("dd/MM/yyyy HH:mm") : "";
+                        worksheet.Cell(row, 11).Value = Convert.ToDecimal(GetRowValue(r, result, "credit_balance"));
+                        row++;
+                    }
+                }
+
+                worksheet.ColumnsUsed().AdjustToContents();
+                using var stream = new MemoryStream();
+                workbook.SaveAs(stream);
+                return stream.ToArray();
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorDevExceptionSubModule(SubModule, $"Error exporting collections to Excel: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Export attendance report to Excel for a date range.
         /// </summary>
         public byte[] ExportAttendanceToExcel(DateTime? startDate = null, DateTime? endDate = null)

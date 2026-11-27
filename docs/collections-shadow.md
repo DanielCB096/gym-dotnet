@@ -10,7 +10,7 @@
   - resumen: vencidas, próximas dentro de N días, sin membresía y crédito a favor;
   - socios activos con membresía vencida o próxima a vencer;
   - plan, vencimiento, días restantes, último pago y crédito.
-- En el panel: botón **Cobranza** en Miembros → modal con resumen, filtros y tabla.
+- En el panel: botón **Cobranza** en Miembros → modal con resumen, filtros, tabla y exportación CSV/Excel (`/api/reports/collections/excel`).
 - No modifica membresías, accesos, pagos ni caja.
 
 ## Consulta

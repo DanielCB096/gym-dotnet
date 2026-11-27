@@ -162,6 +162,20 @@ namespace GymService.Controllers
             return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"miembros_{DateTime.Now:yyyyMMdd}.xlsx");
         }
 
+        // ==================== COLLECTIONS EXPORT ====================
+
+        [HttpGet]
+        [Route("api/reports/collections/excel")]
+        public ActionResult ExportCollectionsExcel([FromQuery] int days = 7)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            var service = GetExportService();
+            var bytes = service.ExportCollectionsToExcel(days);
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"cobranza_{DateTime.Now:yyyyMMdd}.xlsx");
+        }
+
         // ==================== ATTENDANCE EXPORTS ====================
 
         [HttpGet]
