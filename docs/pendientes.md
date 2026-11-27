@@ -104,6 +104,10 @@ o la licencia lo permite.
       OneDrive quedó con 43/43 archivos disponibles. La administración SQL se hace con
       autenticación Windows del servidor.
 
+## 2.1 Historial de membresía (D)
+
+Diseño listo en [`membership-history-d.md`](membership-history-d.md): tabla inmutable de eventos, escritura en las cinco operaciones, línea de tiempo y backfill marcado. Se implementa después de desplegar 1.7.13.
+
 ## 3. Hallazgos del QA completo (2026-11-21)
 
 Informe detallado: [`qa-2026-11-21.md`](qa-2026-11-21.md).
