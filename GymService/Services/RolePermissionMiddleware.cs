@@ -226,6 +226,10 @@ namespace GymService.Services
             {
                 ["POST"] = "members.edit"
             },
+            ["/api/members/collections"] = new Dictionary<string, string>
+            {
+                ["GET"] = "members.view"
+            },
             ["/api/members/plans"] = new Dictionary<string, string>
             {
                 ["GET"] = "members.view",

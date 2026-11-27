@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Camera, CreditCard, Upload, XCircle, FileText } from 'lucide-react';
+import { Camera, CreditCard, Upload, XCircle, FileText, Wallet } from 'lucide-react';
 import api from '../services/api';
 import CrudPage from '../components/CrudPage';
 import ImportDialog from '../components/ImportDialog';
@@ -7,6 +7,7 @@ import MembershipModal from '../components/MembershipModal';
 import CancelMembershipModal from '../components/CancelMembershipModal';
 import MemberProfilePreview from '../components/MemberProfilePreview';
 import MemberPhotoModal from '../components/MemberPhotoModal';
+import CollectionsModal from '../components/CollectionsModal';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import { formatCurrency, formatDate } from '../utils/format';
@@ -27,6 +28,7 @@ export default function Members() {
   const [profileTarget, setProfileTarget] = useState(null);
   const [photoTarget, setPhotoTarget] = useState(null);
   const [importTarget, setImportTarget] = useState(null);
+  const [collectionsOpen, setCollectionsOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -75,14 +77,24 @@ export default function Members() {
       searchParam="query"
       searchPlaceholder="Buscar por nombre o email"
       toolbar={({ reload }) => (
-        <Button
-          variant="outline"
-          icon={Upload}
-          onClick={() => setImportTarget({ reload })}
-          className="w-full sm:w-auto"
-        >
-          Importar
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            icon={Wallet}
+            onClick={() => setCollectionsOpen(true)}
+            className="w-full sm:w-auto"
+          >
+            Cobranza
+          </Button>
+          <Button
+            variant="outline"
+            icon={Upload}
+            onClick={() => setImportTarget({ reload })}
+            className="w-full sm:w-auto"
+          >
+            Importar
+          </Button>
+        </div>
       )}
       canDelete={false}
       columns={[
@@ -246,6 +258,8 @@ export default function Members() {
           onImported={() => importTarget.reload()}
         />
       )}
+
+      <CollectionsModal isOpen={collectionsOpen} onClose={() => setCollectionsOpen(false)} />
     </>
   );
 }

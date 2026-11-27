@@ -112,6 +112,10 @@ o la licencia lo permite.
 
 Diseño listo en [`membership-history-d.md`](membership-history-d.md): tabla inmutable de eventos, escritura en las cinco operaciones, línea de tiempo y backfill marcado. Se implementa después de desplegar 1.7.13.
 
+## 2.2 Cobranza en modo aviso (C1)
+
+Implementada en `feat/collections-shadow`: lista de vencidos/próximos/sin membresía, resumen y crédito a favor; **no bloquea accesos**. Pendiente prueba con SQL Server y validación del dueño. Ver [`collections-shadow.md`](collections-shadow.md).
+
 ## 3. Hallazgos del QA completo (2026-11-21)
 
 Informe detallado: [`qa-2026-11-21.md`](qa-2026-11-21.md).

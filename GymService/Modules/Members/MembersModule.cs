@@ -499,6 +499,127 @@ namespace GymService.Modules.Members
         }
 
         /// <summary>
+        /// Cobranza en modo aviso: socios vencidos, próximos a vencer y sin
+        /// membresía. No modifica accesos ni bloquea; solo informa.
+        /// </summary>
+        public bool GetCollections(out Dictionary<string, object> response, int days = 7)
+        {
+            response = new Dictionary<string, object>();
+
+            try
+            {
+                if (days < 1) days = 1;
+                if (days > 60) days = 60;
+
+                var result = _tools.ExecuteQueryResultSet(@"
+                    SELECT m.id, m.first_name, m.last_name, m.phone, m.email,
+                           mem.end_date, mem.status AS membership_status,
+                           p.plan_name, p.price AS plan_price, p.currency,
+                           ISNULL((SELECT SUM(c.remaining_amount) FROM gym_member_credits c
+                                   WHERE c.member_id = m.id AND c.status = 'available'), 0) AS credit_balance,
+                           (SELECT MAX(pay.payment_date) FROM gym_payments pay
+                            WHERE pay.member_id = m.id) AS last_payment
+                    FROM gym_members m
+                    OUTER APPLY (SELECT TOP 1 mem2.end_date, mem2.status, mem2.plan_id
+                                 FROM gym_memberships mem2
+                                 WHERE mem2.member_id = m.id
+                                   AND mem2.status <> 'cancelled'
+                                 ORDER BY CASE WHEN mem2.status = 'active' THEN 0
+                                               WHEN mem2.status = 'frozen' THEN 1 ELSE 2 END,
+                                          mem2.end_date DESC) mem
+                    LEFT JOIN gym_membership_plans p ON p.id = mem.plan_id
+                    WHERE m.status = 'active'
+                      AND (mem.end_date IS NULL OR
+                           mem.end_date <= DATEADD(DAY, ?, CAST(GETDATE() AS DATE)))
+                    ORDER BY mem.end_date ASC, m.last_name, m.first_name", days);
+
+                var items = new List<Dictionary<string, object>>();
+                int vencidas = 0;
+                int proximas = 0;
+                int sinMembresia = 0;
+                decimal creditos = 0m;
+
+                DateTime today = DateTime.Now.Date;
+
+                if (result != null)
+                {
+                    foreach (Row row in result.Rows)
+                    {
+                        var endRaw = GetRowValue(row, result, "end_date");
+                        DateTime? endDate = endRaw != null ? Convert.ToDateTime(endRaw).Date : (DateTime?)null;
+                        string membershipStatus = Convert.ToString(GetRowValue(row, result, "membership_status")) ?? "";
+                        int? dias = endDate.HasValue ? (endDate.Value - today).Days : (int?)null;
+
+                        string estado;
+                        if (endDate == null)
+                        {
+                            estado = "sin_membresia";
+                            sinMembresia++;
+                        }
+                        else if (dias < 0)
+                        {
+                            estado = "vencida";
+                            vencidas++;
+                        }
+                        else if (dias <= days)
+                        {
+                            estado = "proxima";
+                            proximas++;
+                        }
+                        else
+                        {
+                            continue;
+                        }
+
+                        decimal credito = GetRowValue(row, result, "credit_balance") != null
+                            ? Convert.ToDecimal(GetRowValue(row, result, "credit_balance"))
+                            : 0m;
+                        creditos += credito;
+
+                        items.Add(new Dictionary<string, object>
+                        {
+                            ["id"] = Convert.ToInt64(GetRowValue(row, result, "id")),
+                            ["firstName"] = Convert.ToString(GetRowValue(row, result, "first_name")) ?? "",
+                            ["lastName"] = Convert.ToString(GetRowValue(row, result, "last_name")) ?? "",
+                            ["phone"] = Convert.ToString(GetRowValue(row, result, "phone")) ?? "",
+                            ["email"] = Convert.ToString(GetRowValue(row, result, "email")) ?? "",
+                            ["planName"] = Convert.ToString(GetRowValue(row, result, "plan_name")) ?? "",
+                            ["membershipStatus"] = membershipStatus,
+                            ["endDate"] = endDate,
+                            ["daysLeft"] = dias,
+                            ["state"] = estado,
+                            ["creditBalance"] = credito,
+                            ["lastPayment"] = GetRowValue(row, result, "last_payment") != null
+                                ? Convert.ToDateTime(GetRowValue(row, result, "last_payment"))
+                                : (DateTime?)null
+                        });
+                    }
+                }
+
+                response["success"] = true;
+                response["mode"] = "shadow";
+                response["days"] = days;
+                response["summary"] = new Dictionary<string, object>
+                {
+                    ["overdue"] = vencidas,
+                    ["upcoming"] = proximas,
+                    ["withoutMembership"] = sinMembresia,
+                    ["creditBalance"] = creditos
+                };
+                response["data"] = items;
+                response["count"] = items.Count;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.AddErrorSubModule(SubModule, $"Error en GetCollections: {ex.Message}");
+                response["success"] = false;
+                response["message"] = "Error interno del servidor";
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Lista el historial de membresías de un socio.
         /// </summary>
         public bool GetMembershipHistory(long memberId, out Dictionary<string, object> response)

@@ -168,6 +168,20 @@ namespace GymService.Controllers
         }
 
         [HttpGet]
+        [Route("api/members/collections")]
+        public ActionResult<Dictionary<string, object>> GetCollections([FromQuery] int days = 7)
+        {
+            if (!SecurityValidation.ValidateAuthentication(Request, Response, out var userData, out var errorMessage))
+                return Unauthorized(new { success = false, message = errorMessage });
+
+            if (DataCenter.BusinessProcess.Members == null)
+                return BadRequest(new { success = false, message = "Servicio no disponible" });
+
+            var success = DataCenter.BusinessProcess.Members.GetCollections(out var response, days);
+            return success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpGet]
         [Route("api/members/{memberId}/memberships")]
         public ActionResult<Dictionary<string, object>> GetMembershipHistory(long memberId)
         {

@@ -9,6 +9,7 @@ public class PermissionMatrixTests
     [InlineData("/api/members", "GET", "members.view")]
     [InlineData("/api/members/1/payments", "POST", "members.create")]
     [InlineData("/api/members/plans", "GET", "members.view")]
+    [InlineData("/api/members/collections", "GET", "members.view")]
     [InlineData("/api/memberships/1/freeze", "POST", "members.edit")]
     [InlineData("/api/access/code/generate", "POST", "access.view")]
     [InlineData("/api/access/logs", "GET", "access.view")]

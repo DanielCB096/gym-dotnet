@@ -7,14 +7,14 @@
 
 ## 1. Estado del repositorio
 
-- `main` = `d70d84e` (incluye runbook de despliegue, MSI y arreglo de `npm ci`).
+- `main` = `a742fa1` (runbook, MSI y `npm ci`; D se revirtió de main hasta probarlo).
 - Rama **`feat/membership-history`** = `1575767`:
   - tabla `GYM_MEMBERSHIP_EVENTS` (42 tablas GYM);
   - eventos en alta, renovación, congelamiento, reanudación, cancelación y pago;
   - endpoint `GET /api/members/{id}/memberships` devuelve `events`;
   - modal de membresía con línea de tiempo.
   - **No fusionada**: falta prueba en vivo, backfill y merge.
-- La rama `feat/collections-shadow` (C1 en modo aviso) se crea después de este documento.
+- Rama **`feat/collections-shadow`**: C1 en modo aviso, endpoint `/api/members/collections` y modal **Cobranza**. No bloquea accesos; pendiente prueba con SQL Server.
 
 ## 2. Entorno
 
