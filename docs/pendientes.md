@@ -3,6 +3,10 @@
 > Actualizado: 2026-11-21. Lista viva de lo que falta para producción.
 > No sustituye a `CHANGELOG.md` (historial) ni a `docs/reglas-negocio.md`.
 
+## 0. Despliegue 1.7.13
+
+Runbook preparado en [`release-1.7.13.md`](release-1.7.13.md). Pendiente: ventana, UAC y ensayo en copia de producción.
+
 ## 1. Rebranding: retirar la marca anterior
 
 **Estado:** **A + B aplicado** el 2026-11-21 (versión 1.6.0). **Fase C pendiente de decisión.**
