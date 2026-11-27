@@ -42,7 +42,7 @@ gimnasio-dotnet/
 │   │   ├── Kiosk/                 # Dispositivos kiosco
 │   │   └── Staff/                 # Personal y push
 │   ├── Models/
-│   │   └── ModelGym.cs            # 36 tablas SQL Server
+│   │   └── ModelGym.cs            # 42 tablas SQL Server
 │   ├── Services/
 │   │   ├── WebServerService.cs    # Kestrel + panel web
 │   │   └── DatabaseService.cs     # Esquema de BD
@@ -74,7 +74,7 @@ gimnasio-dotnet/
 
 ## Base de Datos
 
-41 tablas GYM (42 con `ANXO_SEQUENCES`) gestionadas por el modelo de objetos de GymCore. La fuente de verdad es
+42 tablas GYM (43 con `ANXO_SEQUENCES`) gestionadas por el modelo de objetos de GymCore. La fuente de verdad es
 `GymService/Models/_ModelGym.xml`; las entidades (`IDatabaseObject`) y el registro
 `ModelGym.MappingObjects` se generan en `GymService/Models/Generated/`.
 

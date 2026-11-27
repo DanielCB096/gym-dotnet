@@ -23,6 +23,33 @@ namespace GymService.Modules.Members
             _email = email ?? DataCenter.EmailService;
         }
 
+        /// <summary>
+        /// Crea un evento de historial de membresía para insertarlo en la misma
+        /// sesión/transacción que la operación original.
+        /// </summary>
+        private GYM_MEMBERSHIP_EVENTS NuevoEvento(long memberId, long? membershipId,
+            string eventType, DateTime eventAt, long? planId, DateTime? previousEnd,
+            DateTime? newEnd, decimal? amount, string currency, string reason,
+            string details = "")
+        {
+            return new GYM_MEMBERSHIP_EVENTS
+            {
+                MEMBER_ID = memberId,
+                MEMBERSHIP_ID = membershipId,
+                EVENT_TYPE = eventType,
+                EVENT_AT = eventAt,
+                PLAN_ID = planId,
+                PREVIOUS_END_DATE = previousEnd,
+                NEW_END_DATE = newEnd,
+                AMOUNT = amount,
+                CURRENCY = string.IsNullOrWhiteSpace(currency) ? null : currency,
+                REASON = reason,
+                USER_ID = CurrentUser.ForAudit,
+                SOURCE = "live",
+                DETAILS = details
+            };
+        }
+
         private int GetColumnIndex(ResultSet result, string columnName)
         {
             for (int i = 0; i < result.Columns.Count; i++)
@@ -534,8 +561,40 @@ namespace GymService.Modules.Members
                     }
                 }
 
+                var events = new List<Dictionary<string, object>>();
+                var eventosResult = _tools.ExecuteQueryResultSet(@"
+                    SELECT e.*, p.PLAN_NAME, u.FULL_NAME AS USER_NAME
+                    FROM GYM_MEMBERSHIP_EVENTS e
+                    LEFT JOIN GYM_MEMBERSHIP_PLANS p ON p.ID = e.PLAN_ID
+                    LEFT JOIN GYM_USERS u ON u.ID = e.USER_ID
+                    WHERE e.MEMBER_ID = ?
+                    ORDER BY e.EVENT_AT DESC, e.ID DESC", memberId);
+
+                if (eventosResult != null)
+                {
+                    foreach (Row row in eventosResult.Rows)
+                    {
+                        events.Add(new Dictionary<string, object>
+                        {
+                            ["id"] = Convert.ToInt64(GetRowValue(row, eventosResult, "id")),
+                            ["type"] = Convert.ToString(GetRowValue(row, eventosResult, "event_type")) ?? "",
+                            ["at"] = GetRowValue(row, eventosResult, "event_at") != null ? Convert.ToDateTime(GetRowValue(row, eventosResult, "event_at")) : (DateTime?)null,
+                            ["planName"] = Convert.ToString(GetRowValue(row, eventosResult, "plan_name")) ?? "",
+                            ["previousEndDate"] = GetRowValue(row, eventosResult, "previous_end_date") != null ? Convert.ToDateTime(GetRowValue(row, eventosResult, "previous_end_date")) : (DateTime?)null,
+                            ["newEndDate"] = GetRowValue(row, eventosResult, "new_end_date") != null ? Convert.ToDateTime(GetRowValue(row, eventosResult, "new_end_date")) : (DateTime?)null,
+                            ["amount"] = GetRowValue(row, eventosResult, "amount") != null ? Convert.ToDecimal(GetRowValue(row, eventosResult, "amount")) : (decimal?)null,
+                            ["currency"] = Convert.ToString(GetRowValue(row, eventosResult, "currency")) ?? "",
+                            ["reason"] = Convert.ToString(GetRowValue(row, eventosResult, "reason")) ?? "",
+                            ["source"] = Convert.ToString(GetRowValue(row, eventosResult, "source")) ?? "live",
+                            ["userName"] = Convert.ToString(GetRowValue(row, eventosResult, "user_name")) ?? "",
+                            ["details"] = Convert.ToString(GetRowValue(row, eventosResult, "details")) ?? ""
+                        });
+                    }
+                }
+
                 response["success"] = true;
                 response["data"] = items;
+                response["events"] = events;
                 response["count"] = items.Count;
                 return true;
             }
@@ -779,6 +838,13 @@ namespace GymService.Modules.Members
                         REASON = creditReason
                     });
                 }
+
+                session.InsertObject(NuevoEvento(membership.Value.MemberId, membershipId,
+                    "cancelled", DateTime.Now, membership.Value.PlanId,
+                    membership.Value.EndDate, null,
+                    creditAmount > 0 ? creditAmount : null,
+                    creditCurrency, reason,
+                    $"daysLeft={daysLeft};creditId={creditId}"));
 
                 if (session.TryExecute().IsError)
                 {
@@ -1059,6 +1125,7 @@ namespace GymService.Modules.Members
 
             try
             {
+                var membership = GetMembershipState(membershipId);
                 var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.UpdateObjectChanges(new GYM_MEMBERSHIPS
                 {
@@ -1067,6 +1134,15 @@ namespace GymService.Modules.Members
                     FREEZE_START = freezeStart,
                     FREEZE_END = freezeEnd
                 });
+
+                if (membership != null)
+                {
+                    session.InsertObject(NuevoEvento(membership.Value.MemberId, membershipId,
+                        "frozen", DateTime.Now, membership.Value.PlanId,
+                        membership.Value.EndDate, membership.Value.EndDate,
+                        null, null, "Congelamiento",
+                        $"desde={freezeStart:yyyy-MM-dd};hasta={freezeEnd:yyyy-MM-dd}"));
+                }
 
                 if (session.TryExecute().IsError)
                 {
@@ -1098,6 +1174,7 @@ namespace GymService.Modules.Members
 
             try
             {
+                var membership = GetMembershipState(membershipId);
                 var session = _tools.CreateSession(SubModule, CurrentUser.ForAudit);
                 session.UpdateObjectChanges(new GYM_MEMBERSHIPS
                 {
@@ -1106,6 +1183,14 @@ namespace GymService.Modules.Members
                     FREEZE_START = null,
                     FREEZE_END = null
                 });
+
+                if (membership != null)
+                {
+                    session.InsertObject(NuevoEvento(membership.Value.MemberId, membershipId,
+                        "resumed", DateTime.Now, membership.Value.PlanId,
+                        membership.Value.EndDate, membership.Value.EndDate,
+                        null, null, "Reanudación"));
+                }
 
                 if (session.TryExecute().IsError)
                 {
@@ -1151,6 +1236,10 @@ namespace GymService.Modules.Members
                     NOTES = "",
                     CASH_SESSION_ID = GymService.Modules.Cash.CashModule.GetOpenSessionId(_tools)
                 });
+
+                session.InsertObject(NuevoEvento(memberId, membershipId, "payment",
+                    DateTime.Now, null, null, null, amount, "MXN",
+                    $"Pago {paymentMethod}"));
 
                 if (session.TryExecute().IsError)
                 {
@@ -1377,6 +1466,15 @@ namespace GymService.Modules.Members
 
                 // La activación de la membresía también activa la cuenta del socio.
                 session.UpdateObjectChanges(new GYM_MEMBERS { ID = memberId, STATUS = "active" });
+
+                bool esRenovacion = latest != null &&
+                    string.Equals(latest.Value.Status, "active", StringComparison.OrdinalIgnoreCase);
+                session.InsertObject(NuevoEvento(memberId, membershipId,
+                    esRenovacion ? "renewed" : "created", DateTime.Now, planId,
+                    esRenovacion ? latest.Value.EndDate : (DateTime?)null, endDate,
+                    noCharge ? (decimal?)null : amountPaid, plan.Value.Currency,
+                    noCharge ? "Cortesía" : $"Pago {paymentMethod}",
+                    $"start={startDate:yyyy-MM-dd};credit={creditApplied:0.00};noCharge={noCharge}"));
 
                 if (session.TryExecute().IsError)
                 {
