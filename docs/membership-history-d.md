@@ -1,6 +1,6 @@
 # Historial de membresía (D) — diseño
 
-**Estado:** diseño aprobado para implementar; sin código todavía.  
+**Estado:** implementado en `feat/membership-history` (2026-11-27); pendiente prueba en vivo en SQL Server y merge.  
 **Fecha:** 2026-11-27.  
 **Objetivo:** conservar y mostrar todos los cambios de membresía de un socio, sin reconstruir historia que nunca se registró.
 
@@ -98,6 +98,16 @@ Permiso: `members.view`. El endpoint viejo `/memberships` se conserva para no ro
 - Backfill: conteos y marcas; no debe crear renovaciones inventadas.
 - UI: línea de tiempo, filtros, recibo y estado vacío.
 - En vivo: un socio de prueba con al menos dos renovaciones, un congelamiento y una cancelación; revisar en navegador y borrar los datos temporales.
+
+## Checklist para la PC de casa
+
+1. Restaurar una copia de producción o crear una base temporal.
+2. Arrancar esta rama contra esa base y confirmar que `gym_membership_events` se crea al iniciar.
+3. Crear un socio de prueba y asignar membresía; renovar dos veces; congelar, reanudar y cancelar.
+4. Abrir **Miembros → Membresía → Historial**: deben aparecer alta, renovaciones, congelamiento, reanudación, cancelación y pagos, con fechas y usuario.
+5. Verificar que el fallo de un evento revierta la operación (probar en una base temporal).
+6. Revisar que el historial viejo siga mostrándose cuando no haya eventos (compatibilidad).
+7. Borrar los datos temporales y registrar evidencia en `docs/pruebas-en-vivo.md`.
 
 ## Fuera de alcance
 
