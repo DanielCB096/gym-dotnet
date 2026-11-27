@@ -52,7 +52,13 @@ dotnet test GymService.Tests\GymService.Tests.csproj -c Release --no-build
 
 Diseño completo: [`membership-history-d.md`](membership-history-d.md).
 
-## 5. C1 en modo aviso
+## 5. C1 en modo aviso y política de acceso
+
+- Rama `feat/collections-shadow`: endpoint `/api/members/collections`, modal **Cobranza**, filtros y CSV. **No bloquea accesos.**
+- Diseño de la fase 2 (gracia, excepciones, modos Off/Shadow/Enforce): [`access-policy-c1.md`](access-policy-c1.md).
+- El sistema **ya bloquea** al vencido; la gracia propuesta (3 días) suaviza la regla. No activar Enforce hasta probar la sombra y tener aprobación del dueño.
+
+## 6. C1 en modo aviso (detalle anterior)
 
 - Lista de socios vencidos y próximos a vencer, saldo pendiente y último pago.
 - **No bloquear accesos** todavía; solo marcar y reportar.

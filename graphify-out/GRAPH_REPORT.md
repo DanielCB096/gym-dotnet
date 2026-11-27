@@ -1,7 +1,7 @@
 # Graph Report - gimnasio-dotnet  (2026-11-27)
 
 ## Corpus Check
-- 223 files · ~255,813 words
+- 223 files · ~256,899 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 11 file(s) not represented in the graph (top: (none) 3, .css 2, .xml 2)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a742fa10`
+- Built from commit: `4898cec3`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -163,12 +163,12 @@
 10. `react` - 52 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `P1 — Endurecimiento de producción pendiente` --references--> `WebServerService`  [INFERRED]
+  docs/qa-2026-11-21.md → GymService/Services/WebServerService.cs
 - `Obstáculo 1: Propiedad mal nombrada en DataCenter.cs` --references--> `BusinessProcess`  [INFERRED]
   OBSTACLES_AND_API.md → GymService/DataCenter.cs
 - `Operación y seguridad (2026-11-19)` --references--> `DatabaseService`  [INFERRED]
   CHANGELOG.md → GymService/Services/DatabaseService.cs
-- `P1 — Endurecimiento de producción pendiente` --references--> `WebServerService`  [INFERRED]
-  docs/qa-2026-11-21.md → GymService/Services/WebServerService.cs
 - `Membresías y socios` --references--> `GYM_MEMBER_CREDITS`  [INFERRED]
   docs/reglas-negocio.md → GymService/Models/Generated/GYM_MEMBER_CREDITS.cs
 - `5. Tareas NO delegadas (las asume la IA grande / Daniel)` --references--> `IdentityModule`  [INFERRED]
@@ -603,17 +603,17 @@ Nodes (10): Auditoría de permisos por ruta (2026-11-20), Cierre del frontend: I
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `GymService - Registro de Cambios y Correcciones` connect `GymService - Registro de Cambios y Correcciones` to `ReportsModule`, `PermissionMatrix`, `List`, `MembersModule.CreateMember`?**
-  _High betweenness centrality (0.154) - this node is a cross-community bridge._
+- **Why does `Backend (.NET)` connect `MembersModule.CreateMember` to `GYM_MEMBER_CREDITS`, `Fact`, `AccessModule`, `BulkImportResult`, `GYM_MEMBERSHIPS`, `CurrentUser`, `FinanceModule`, `GYM_ROUTINE_PLAN_EXERCISES`, `WebServerService`, `GymService - Registro de Cambios y Correcciones`, `PermissionMatrix`?**
+  _High betweenness centrality (0.141) - this node is a cross-community bridge._
 - **What connects `CREATED_BY`, `CREATION_DATETIME`, `InDatabase` to the rest of the system?**
   _536 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Dictionary` be split into smaller, more focused modules?**
   _Cohesion score 0.12298387096774194 - nodes in this community are weakly interconnected._
-- **Why does `Backend (.NET)` connect `MembersModule.CreateMember` to `GYM_MEMBER_CREDITS`, `Fact`, `AccessModule`, `BulkImportResult`, `GYM_MEMBERSHIPS`, `CurrentUser`, `FinanceModule`, `GYM_ROUTINE_PLAN_EXERCISES`, `WebServerService`, `GymService - Registro de Cambios y Correcciones`, `PermissionMatrix`?**
-  _High betweenness centrality (0.151) - this node is a cross-community bridge._
+- **Why does `GymService - Registro de Cambios y Correcciones` connect `GymService - Registro de Cambios y Correcciones` to `ReportsModule`, `PermissionMatrix`, `List`, `MembersModule.CreateMember`?**
+  _High betweenness centrality (0.131) - this node is a cross-community bridge._
 - **Should `GYM_BANK_TRANSACTIONS` be split into smaller, more focused modules?**
   _Cohesion score 0.06836055656382335 - nodes in this community are weakly interconnected._
 - **Why does `Estado actual del sistema` connect `GymService - Registro de Cambios y Correcciones` to `Audit.jsx`?**
-  _High betweenness centrality (0.140) - this node is a cross-community bridge._
+  _High betweenness centrality (0.107) - this node is a cross-community bridge._
 - **Should `xunit` be split into smaller, more focused modules?**
   _Cohesion score 0.06578947368421052 - nodes in this community are weakly interconnected._

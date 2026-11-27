@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CalendarClock, RefreshCw, Wallet } from 'lucide-react';
+import { AlertTriangle, CalendarClock, Download, RefreshCw, Wallet } from 'lucide-react';
 import api from '../services/api';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
@@ -49,6 +49,33 @@ export default function CollectionsModal({ isOpen, onClose }) {
 
   const summary = data.summary || {};
 
+  const exportCsv = () => {
+    const headers = ['Socio', 'Teléfono', 'Email', 'Plan', 'Vence', 'Días', 'Estado', 'Último pago', 'Crédito'];
+    const rows = items.map((item) => [
+      `${item.firstName || ''} ${item.lastName || ''}`.trim(),
+      item.phone || '',
+      item.email || '',
+      item.planName || '',
+      item.endDate ? formatDate(item.endDate) : '',
+      item.daysLeft == null ? '' : String(item.daysLeft),
+      stateInfo[item.state]?.label || item.state,
+      item.lastPayment ? formatDateTime(item.lastPayment) : '',
+      item.creditBalance > 0 ? formatCurrency(item.creditBalance) : '',
+    ]);
+
+    const escape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const csv = [headers, ...rows].map((row) => row.map(escape).join(',')).join('\r\n');
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `cobranza_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Cobranza — modo aviso" size="lg">
       <div className="space-y-4">
@@ -94,9 +121,14 @@ export default function CollectionsModal({ isOpen, onClose }) {
               </Button>
             ))}
           </div>
-          <Button size="sm" variant="ghost" icon={RefreshCw} onClick={load} disabled={loading}>
-            Actualizar
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" icon={Download} onClick={exportCsv}>
+              Exportar CSV
+            </Button>
+            <Button size="sm" variant="ghost" icon={RefreshCw} onClick={load} disabled={loading}>
+              Actualizar
+            </Button>
+          </div>
         </div>
 
         {error && (
