@@ -3,6 +3,10 @@
 > Actualizado: 2026-11-21. Lista viva de lo que falta para producción.
 > No sustituye a `CHANGELOG.md` (historial) ni a `docs/reglas-negocio.md`.
 
+## Comercial D + C1
+
+Borrador de paquete, precios de referencia, discurso y cláusulas: [`comercial-d-c1.md`](comercial-d-c1.md).
+
 ## Handoff para la PC de casa
 
 Instrucciones para la IA que continúe con SQL Server: [`handoff-casa.md`](handoff-casa.md).
