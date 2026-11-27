@@ -31,11 +31,21 @@ if (-not $SkipFrontend) {
     Write-Host "== Frontend ==" -ForegroundColor Cyan
     Push-Location (Join-Path $root 'GymServiceFront')
     try {
-        if (-not (Test-Path 'node_modules')) {
-            Write-Host "Instalando dependencias del frontend..." -ForegroundColor Yellow
+        $anterior = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try {
+            # Siempre sincroniza con el lockfile: un node_modules viejo puede
+            # omitir dependencias nuevas (por ejemplo qrcode.react) y romper el build.
+            Write-Host "Sincronizando dependencias del frontend (npm ci)..." -ForegroundColor Yellow
             npm ci
+            if ($LASTEXITCODE -ne 0) { throw "npm ci falló con código $LASTEXITCODE" }
+
+            npm run build
+            if ($LASTEXITCODE -ne 0) { throw "npm run build falló con código $LASTEXITCODE" }
         }
-        npm run build
+        finally {
+            $ErrorActionPreference = $anterior
+        }
     }
     finally {
         Pop-Location
