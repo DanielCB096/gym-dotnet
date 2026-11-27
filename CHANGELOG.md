@@ -11,6 +11,11 @@
 
 ## Backend (.NET)
 
+### Empaquetado 1.7.13 y dependencias del frontend (2026-11-27)
+- **MSI:** `artifacts/GymService-1.7.13-win-x64.msi` generado y validado con WiX ICE (48.35 MB, self-contained).
+- **Corrección:** `publish.ps1` ahora ejecuta siempre `npm ci`; un `node_modules` viejo omitía `qrcode.react` y rompía el build del panel (pantalla Seguridad).
+- **Pendiente:** despliegue en producción, bloqueado por UAC; el servidor sigue en 1.7.9.
+
 ### Visor de auditoría (2026-11-25, versión 1.7.13)
 - **Nueva sección Auditoría:** sesiones de usuario con estado calculado (activa, expirada o revocada), filtros por usuario, IP, dispositivo y estado; accesos al gimnasio con filtros por fecha, resultado y texto; resumen de sesiones activas, inicios en 24 h y accesos concedidos o denegados del día.
 - **Seguridad:** ruta `/api/audit` protegida por el permiso `audit.view` (solo OWNER y ADMIN). La migración de arranque crea el permiso y lo otorga al OWNER de forma idempotente; ADMIN usa la matriz por defecto. El seed de bootstrap ahora omite concesiones ya existentes para no duplicarlas.

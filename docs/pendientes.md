@@ -5,7 +5,7 @@
 
 ## 0. Despliegue 1.7.13
 
-Runbook preparado en [`release-1.7.13.md`](release-1.7.13.md). Pendiente: ventana, UAC y ensayo en copia de producción.
+Runbook y MSI 1.7.13 preparados. Artefacto: `artifacts/GymService-1.7.13-win-x64.msi` (48.35 MB). Pendiente: ventana, UAC y ensayo en copia de producción.
 
 ## 1. Rebranding: retirar la marca anterior
 

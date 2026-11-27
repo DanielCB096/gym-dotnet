@@ -7,6 +7,12 @@
 
 > Regla: no se toca producción sin haber hecho el ensayo completo en una copia. El CI self-hosted está caído; la validación local (`build` + 137 pruebas) y el ensayo son la red de seguridad.
 
+## Artefacto generado
+
+- MSI local: `artifacts\GymService-1.7.13-win-x64.msi` (48.35 MB, 2026-11-27).
+- El empaquetado ejecuta `npm ci` antes de `npm run build`; un `node_modules` viejo omitía `qrcode.react` y rompía la pantalla de Seguridad.
+- El MSI valida con WiX ICE y no requiere las librerías GymCore en el servidor (publicación self-contained).
+
 ## 0. Datos que hay que confirmar antes
 
 - Edición y modelo de recuperación de SQL Server (`SELECT SERVERPROPERTY('Edition'), SERVERPROPERTY('RecoveryModel')`). En este equipo es **Express**; los respaldos usan FULL + LOG.
