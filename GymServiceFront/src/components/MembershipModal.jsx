@@ -32,6 +32,19 @@ const paymentMethodLabel = {
   transfer: 'Transferencia',
 };
 
+const eventLabel = {
+  created: { variant: 'success', label: 'Alta' },
+  renewed: { variant: 'success', label: 'Renovación' },
+  plan_changed: { variant: 'info', label: 'Cambio de plan' },
+  frozen: { variant: 'warning', label: 'Congelada' },
+  resumed: { variant: 'info', label: 'Reanudada' },
+  cancelled: { variant: 'danger', label: 'Cancelada' },
+  payment: { variant: 'info', label: 'Pago' },
+  courtesy: { variant: 'neutral', label: 'Cortesía' },
+  credit_applied: { variant: 'neutral', label: 'Crédito aplicado' },
+  backfill: { variant: 'neutral', label: 'Reconstruido' },
+};
+
 const errorMessage = (err, fallback) => err?.response?.data?.message || fallback;
 
 export default function MembershipModal({ target, plans, onClose, onSaved }) {
@@ -44,6 +57,7 @@ export default function MembershipModal({ target, plans, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [history, setHistory] = useState([]);
+  const [events, setEvents] = useState([]);
   const [payments, setPayments] = useState([]);
   const [receipt, setReceipt] = useState(null);
 
@@ -52,8 +66,16 @@ export default function MembershipModal({ target, plans, onClose, onSaved }) {
     if (!member) return () => { active = false; };
 
     api.get(`/members/${member.id}/memberships`)
-      .then((response) => { if (active) setHistory(response.data?.data || []); })
-      .catch(() => { if (active) setHistory([]); });
+      .then((response) => {
+        if (!active) return;
+        setHistory(response.data?.data || []);
+        setEvents(response.data?.events || []);
+      })
+      .catch(() => {
+        if (!active) return;
+        setHistory([]);
+        setEvents([]);
+      });
 
     api.get(`/members/${member.id}/payments`)
       .then((response) => { if (active) setPayments(response.data?.data || []); })
@@ -233,12 +255,41 @@ export default function MembershipModal({ target, plans, onClose, onSaved }) {
                 </div>
               )}
 
-              {history.length > 0 && (
+              {(events.length > 0 || history.length > 0) && (
                 <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Historial</p>
-                  <div className="max-h-32 space-y-1 overflow-y-auto text-xs text-slate-600">
-                    {history.slice(0, 6).map((item) => (
-                      <div key={item.id} className="flex items-center justify-between gap-2">
+                  <div className="max-h-56 space-y-2 overflow-y-auto text-xs text-slate-600">
+                    {events.length > 0 ? events.map((item) => {
+                      const meta = eventLabel[item.type] || { variant: 'neutral', label: item.type };
+                      return (
+                        <div key={`event-${item.id}`} className="flex items-start gap-2">
+                          <Badge variant={meta.variant}>{meta.label}</Badge>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-x-2">
+                              <span className="font-medium text-slate-700">{item.planName || 'Membresía'}</span>
+                              <span className="text-slate-400">{formatDateTime(item.at)}</span>
+                              {item.source === 'backfill' && (
+                                <Badge variant="neutral">Reconstruido</Badge>
+                              )}
+                            </div>
+                            {(item.previousEndDate || item.newEndDate) && (
+                              <p className="text-slate-500">
+                                {item.previousEndDate ? formatDate(item.previousEndDate) : '—'} →{' '}
+                                {item.newEndDate ? formatDate(item.newEndDate) : '—'}
+                              </p>
+                            )}
+                            {item.amount != null && (
+                              <p className="text-slate-500">
+                                {formatCurrency(item.amount, item.currency || 'MXN')}
+                              </p>
+                            )}
+                            {item.reason && <p className="text-slate-500">{item.reason}</p>}
+                            {item.userName && <p className="text-slate-400">Por {item.userName}</p>}
+                          </div>
+                        </div>
+                      );
+                    }) : history.map((item) => (
+                      <div key={`membership-${item.id}`} className="flex items-center justify-between gap-2">
                         <span>{item.planName}</span>
                         <span className="text-slate-400">
                           {formatDate(item.startDate)} → {formatDate(item.endDate)}
