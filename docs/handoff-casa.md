@@ -16,6 +16,8 @@
   - **No fusionada**: falta prueba en vivo, backfill y merge.
 - La rama `feat/collections-shadow` (C1 en modo aviso) se crea después de este documento.
 
+> **Actualización 2026-11-28:** en el equipo con SQL Server se validó **1.7.13** en staging (healthy, `audit.view`) y se reaplicó D en **`feat/membership-history-reapply`** (`c862a5c`, grafo `c11739f`), con 43 tablas y `GYM_MEMBERSHIP_EVENTS` creada. Build 0 errores y 138/138 pruebas. Falta la prueba viva con credenciales, el backfill y el merge. Ver [`pruebas-staging-2026-11-28.md`](pruebas-staging-2026-11-28.md).
+
 ## 2. Entorno
 
 ```powershell

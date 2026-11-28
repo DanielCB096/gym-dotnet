@@ -15,6 +15,8 @@ Instrucciones para la IA que continúe con SQL Server: [`handoff-casa.md`](hando
 
 Runbook y MSI 1.7.13 preparados. Artefacto: `artifacts/GymService-1.7.13-win-x64.msi` (48.35 MB). Pendiente: ventana, UAC y ensayo en copia de producción.
 
+**Validación de staging (2026-11-28):** el binario 1.7.13 arrancó healthy sobre una copia de producción (`GymManager_Staging`), migró sin errores y agregó `audit.view`. El servicio de producción sigue en 1.7.9. Ver [`pruebas-staging-2026-11-28.md`](pruebas-staging-2026-11-28.md).
+
 ## 1. Rebranding: retirar la marca anterior
 
 **Estado:** **A + B aplicado** el 2026-11-21 (versión 1.6.0). **Fase C pendiente de decisión.**
@@ -114,7 +116,7 @@ o la licencia lo permite.
 
 ## 2.1 Historial de membresía (D)
 
-Implementado en `feat/membership-history`: tabla `gym_membership_events`, escritura en alta/renovación/congelamiento/reanudación/cancelación/pago, API `events` y línea de tiempo en el modal. 138 pruebas unitarias; **pendiente prueba en vivo con SQL Server, backfill y merge**. Ver [`membership-history-d.md`](membership-history-d.md).
+**Estado 2026-11-28:** reaplicado en `feat/membership-history-reapply` (`c862a5c`, grafo `c11739f`). Build 0 errores, 138/138 pruebas. En staging se creó `GYM_MEMBERSHIP_EVENTS` (43 tablas) y health 1.7.13 healthy; la copia se eliminó. **Pendiente la prueba viva con credenciales** (alta, dos renovaciones, congelar, reanudar, cancelar y pago), el backfill y el merge. Ver [`pruebas-staging-2026-11-28.md`](pruebas-staging-2026-11-28.md).
 
 ## 3. Hallazgos del QA completo (2026-11-21)
 

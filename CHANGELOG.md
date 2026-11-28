@@ -9,6 +9,14 @@
 
 ---
 
+## Staging 2026-11-28
+
+- **1.7.13 en staging:** paquete extraído y ejecutado en consola contra `GymManager_Staging` (copia de producción). `/health` 200, versión 1.7.13, 42 tablas, permiso `audit.view`; `/api/audit` y `/api/members` responden 401 sin token. Producción sigue en 1.7.9.
+- **Historial de membresía (D):** rama `feat/membership-history-reapply` (`c862a5c`, grafo `c11739f`) que revierte el revert de D. Build 0 errores, 138/138 pruebas; staging healthy con 43 tablas y `GYM_MEMBERSHIP_EVENTS` (columnas e índices del diseño). Falta la prueba viva con credenciales, backfill y merge.
+- Evidencia: `docs/pruebas-staging-2026-11-28.md`. La base de staging se eliminó después de la prueba.
+
+---
+
 ## Backend (.NET)
 
 ### Historial de membresía (2026-11-27, rama feat/membership-history)
